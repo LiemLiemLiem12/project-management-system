@@ -14,7 +14,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Main */}
       <div className="flex-1 flex flex-col">
         {/* Navbar */}
-        <div className="h-14 bg-white z-10">
+        <div className="h-14 bg-white z-20">
           <ProjectNavbar />
         </div>
 

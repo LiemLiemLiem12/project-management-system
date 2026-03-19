@@ -84,7 +84,7 @@ const NotificationDropdown = () => {
             onClick={() => setIsOpen(false)}
           ></div>
 
-          <div className="absolute top-12 right-0 w-130 bg-white shadow-lg px-7 py-5 z-20">
+          <div className="absolute top-12 right-0 w-130 bg-white shadow-lg px-7 py-5 z-100">
             <div className="flex justify-between items-center mb-4">
               <p className="text-lg font-bold text-dark">Notifications</p>
 
