@@ -7,8 +7,8 @@ export default function ProjectNavbar() {
   return (
     <>
       <div className="block lg:hidden">
-        <div className="w-full gap-4 px-5 py-3">
-          <div className="flex gap-10">
+        <div className="w-full px-5 py-3">
+          <div className="flex w-full gap-2">
             <div className="relative flex-1">
               <Search className="absolute text-gray-500 left-1 top-1/6" />
               <input

@@ -84,7 +84,7 @@ const NotificationDropdown = () => {
             onClick={() => setIsOpen(false)}
           ></div>
 
-          <div className="absolute top-12 right-0 w-130 bg-white shadow-lg px-7 py-5 z-100">
+          <div className="absolute flex flex-col top-12 right-0 w-130 max-h-[600px] overflow-y-hidden bg-white shadow-lg px-7 py-5 z-100">
             <div className="flex justify-between items-center mb-4">
               <p className="text-lg font-bold text-dark">Notifications</p>
 
@@ -98,32 +98,36 @@ const NotificationDropdown = () => {
             </div>
 
             {/* Notification Main Section  */}
-            <p className="text-sm font-medium text-gray-500 mt-7">Today</p>
-            <div className="flex flex-col gap-4 mt-4 max-h-[600px] overflow-y-auto">
-              {data.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex p-4 overflow-hidden cursor-pointer hover:bg-gray-100 items-center gap-4"
-                >
-                  <div className="w-10 h-10 overflow-hidden rounded-lg relative">
-                    <Image
-                      objectFit="cover"
-                      fill
-                      src={item.image}
-                      alt="avatar"
-                    />
+            <div className="flex-1 overflow-y-auto">
+              <p className="text-sm font-medium text-gray-500 mt-7">Today</p>
+              <div className="flex flex-col gap-2 mt-4 ">
+                {data.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex p-4 overflow-hidden cursor-pointer hover:bg-gray-100 items-center gap-4"
+                  >
+                    <div className="w-10 h-10 overflow-hidden rounded-lg relative">
+                      <Image
+                        objectFit="cover"
+                        fill
+                        src={item.image}
+                        alt="avatar"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <p className="text-sm font-medium text-dark">
+                        {item.label}{" "}
+                        <span className="text-xs text-gray-500">
+                          ({item.time})
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {item.ProjectName}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <p className="text-sm font-medium text-dark">
-                      {item.label}{" "}
-                      <span className="text-xs text-gray-500">
-                        ({item.time})
-                      </span>
-                    </p>
-                    <p className="text-xs text-gray-500">{item.ProjectName}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </>

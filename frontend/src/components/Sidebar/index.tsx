@@ -12,20 +12,20 @@ import ProjectItem from "./ProjectItem";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { ProjectContext } from "@/contexts/ProjectContext";
-import { useContext } from "react";
+import { Dispatch, SetStateAction, useContext, useState } from "react";
 
 export default function Sidebar() {
   const pathName = usePathname();
   const context = useContext(ProjectContext);
 
-  const { isOpenSidebar, setisOpenSidebar } = context || {
-    isOpenSidebar: true,
-    setisOpenSidebar: () => {},
-  };
+  const [isOpenSidebar, setIsOpenSidebar]: [
+    boolean,
+    Dispatch<SetStateAction<boolean>>,
+  ] = useState(true);
 
   return (
     <aside
-      className={`h-screen overflow-hidden border-r border-slate-100 hidden md:flex flex-col bg-white p-4
+      className={`h-screen overflow-hidden border-slate-100 hidden md:flex flex-col bg-white p-4
   transition-all duration-400 ease-in-out
   ${isOpenSidebar ? "w-64" : "w-20"}
   `}
@@ -117,10 +117,11 @@ export default function Sidebar() {
             </span>
 
             <div className="flex flex-col gap-1">
-              <ProjectItem label="Project 1" link="/projects/1" />
-              <ProjectItem label="Project 2" link="/projects/2" />
-              <ProjectItem label="Project 3" link="/projects/3" />
-              <ProjectItem label="Project 4" link="/projects/4" />
+              <ProjectItem label="Project 1" link="/project/1" />
+              <ProjectItem label="Project 1" link="/project/1" />
+              <ProjectItem label="Project 2" link="/project/2" />
+              <ProjectItem label="Project 3" link="/project/3" />
+              <ProjectItem label="Project 4" link="/project/4" />
             </div>
           </div>
         )}
@@ -128,7 +129,9 @@ export default function Sidebar() {
 
       <div className="mt-auto pt-4 border-t border-slate-50">
         <button
-          onClick={() => setisOpenSidebar(!isOpenSidebar)}
+          onClick={() => {
+            setIsOpenSidebar(!isOpenSidebar);
+          }}
           className="flex items-center whitespace-nowrap gap-3 px-3 py-2 text-sm text-slate-500 cursor-pointer hover:text-slate-800 transition-colors w-full"
         >
           {isOpenSidebar ? (

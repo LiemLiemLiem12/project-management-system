@@ -8,17 +8,41 @@ import {
   Share2,
   MoreHorizontal,
 } from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
 const ProjectDetailNavbar = () => {
+  const { id } = useParams() || "";
+
   const [activeTab, setActiveTab]: [string, Dispatch<SetStateAction<string>>] =
     useState("Dashboard");
 
   const navItems = [
-    { name: "Dashboard", icon: <Gauge size={18} /> },
-    { name: "Timeline", icon: <GitBranch size={18} /> },
-    { name: "Kanban", icon: <Layout size={18} /> },
-    { name: "Spreadsheet", icon: <Table size={18} /> },
-    { name: "Storage", icon: <Archive size={18} /> },
+    {
+      name: "Dashboard",
+      icon: <Gauge size={18} />,
+      link: `/project/${id}/dashboard`,
+    },
+    {
+      name: "Timeline",
+      icon: <GitBranch size={18} />,
+      link: `/project/${id}/timeline`,
+    },
+    {
+      name: "Kanban",
+      icon: <Layout size={18} />,
+      link: `/project/${id}/kanban`,
+    },
+    {
+      name: "Spreadsheet",
+      icon: <Table size={18} />,
+      link: `/project/${id}/spreadsheet`,
+    },
+    {
+      name: "Storage",
+      icon: <Archive size={18} />,
+      link: `/project/${id}/storage`,
+    },
   ];
 
   return (
@@ -38,9 +62,10 @@ const ProjectDetailNavbar = () => {
       </div>
 
       {/* Bottom Section: Tabs */}
-      <div className="flex items-center space-x-6">
+      <div className="flex items-center space-x-6 overflow-x-auto">
         {navItems.map((item) => (
-          <button
+          <Link
+            href={item.link}
             key={item.name}
             onClick={() => setActiveTab(item.name)}
             className={`flex items-center gap-2 pb-3 text-sm transition-all duration-100 ease-in font-medium transition-all relative
@@ -58,7 +83,7 @@ const ProjectDetailNavbar = () => {
               {item.icon}
             </span>
             {item.name}
-          </button>
+          </Link>
         ))}
       </div>
     </nav>

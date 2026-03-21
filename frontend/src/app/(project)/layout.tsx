@@ -5,14 +5,12 @@ import ProjectProvider from "@/contexts/ProjectContext";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="h-screen overflow-hidden flex">
+    <div className="h-screen w-full overflow-hidden flex">
       {/* Sidebar */}
-      <div className="w-64 flex-shrink-0 border-r bg-white">
-        <Sidebar />
-      </div>
+      <Sidebar />
 
       {/* Main */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col">
         {/* Navbar */}
         <div className="h-14 bg-white z-20">
           <ProjectNavbar />

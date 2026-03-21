@@ -16,7 +16,7 @@ export default function ProjectProvider({
   children: React.ReactNode;
 }) {
   const [isOpenSidebar, setisOpenSidebar]: [boolean, (value: boolean) => void] =
-    useState(true);
+    useState(false);
   return (
     <ProjectContext.Provider value={{ isOpenSidebar, setisOpenSidebar }}>
       {children}
