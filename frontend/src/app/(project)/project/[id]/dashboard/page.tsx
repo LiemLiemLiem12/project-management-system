@@ -1,4 +1,5 @@
 import CalendarWidget from "@/components/Dashboard/CalendarWidget";
+import FilterButton from "@/components/Dashboard/FilterButton";
 import ProjectStatusProgressBar from "@/components/Dashboard/ProjectStatusProgressBar";
 import QuickStatisticCardList from "@/components/Dashboard/QuickStatisticCardList";
 import RecentActivity from "@/components/Dashboard/RecentActivity";
@@ -31,6 +32,9 @@ export default function DashboardPage() {
   return (
     <>
       <div className="h-full w-full">
+        <div className="flex w-full justify-end">
+          <FilterButton />
+        </div>
         <QuickStatisticCardList />
         <div className="flex flex-col w-full lg:flex-row gap-3 mt-3">
           <TaskOverviewChart data={taskData} />

@@ -34,7 +34,7 @@ const QuickStatisticCardList = () => {
   ];
 
   return (
-    <div className="mt-10">
+    <div className="mt-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statsData.map((stat, index) => (
           <QuickStaticCard

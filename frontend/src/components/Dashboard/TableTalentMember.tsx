@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Edit, ChevronLeft, ChevronRight } from "lucide-react";
 import RoleDropdown from "./RoleDropdown";
-import DashboardFilter from "./DashboardFilter";
+import LabelMemberChoice from "./LabelMemberChoice";
 
 // Dữ liệu mẫu (Mock data)
 const mockMembers = [
@@ -60,7 +60,6 @@ export default function TableTalentMember() {
         </div>
         <div className="flex items-center gap-4 mt-4 sm:mt-0">
           <RoleDropdown />
-          <DashboardFilter />
         </div>
       </div>
 
@@ -109,7 +108,7 @@ export default function TableTalentMember() {
                 </td>
 
                 {/* Cột Role */}
-                <td className="py-4 px-6">
+                {/* <td className="py-4 px-6">
                   <div className="flex items-center gap-2">
                     {member.roles.map((role, index) => (
                       <span
@@ -120,6 +119,9 @@ export default function TableTalentMember() {
                       </span>
                     ))}
                   </div>
+                </td> */}
+                <td className="py-4 px-6 min-w-10 max-w-100 w-1/4">
+                  <LabelMemberChoice />
                 </td>
 
                 {/* Cột Task Progression */}
