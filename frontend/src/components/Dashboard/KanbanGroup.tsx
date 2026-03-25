@@ -13,7 +13,7 @@ const KanbanGroup = ({ column, index }: { column: any; index: number }) => {
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`flex flex-col bg-[#F1F2F4] rounded-xl w-[320px] shrink-0 max-h-full transition-colors ${
+          className={`flex flex-col bg-[#F1F2F4] rounded-xl w-[320px] shrink-0 h-full transition-colors ${
             snapshot.isDragging
               ? "shadow-2xl ring-2 ring-blue-500 z-40 opacity-90"
               : ""

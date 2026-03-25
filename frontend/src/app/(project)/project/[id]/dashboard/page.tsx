@@ -31,7 +31,7 @@ const projectStatusData = [
 export default function DashboardPage() {
   return (
     <>
-      <div className="h-full w-full">
+      <div className="h-full w-full p-10">
         <div className="flex w-full justify-end">
           <FilterButton />
         </div>

@@ -15,9 +15,7 @@ export default function ProjectLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Content scroll */}
-      <div className="flex-1 px-15 md:px-20 py-10  overflow-y-auto">
-        {children}
-      </div>
+      <div className="flex-1 overflow-x-auto">{children}</div>
     </div>
   );
 }
