@@ -1,68 +1,77 @@
-import { Search } from "lucide-react";
-import { Plus, Bell } from "lucide-react";
-import Image from "next/image";
+"use client";
+
+import { Search, Plus } from "lucide-react";
 import NotificationDropdown from "./NotificationDropdown";
+import UserDropdown from "./UserDropdown";
 
 export default function ProjectNavbar() {
   return (
     <>
+      {/* ── Mobile ── */}
       <div className="block lg:hidden">
-        <div className="w-full px-5 py-3">
-          <div className="flex w-full gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute text-gray-500 left-1 top-1/6" />
+        <div className="w-full px-5 py-3 border-b border-gray-100 bg-white">
+          <div className="flex w-full gap-2 items-center">
+            {/* SEARCH MOBILE: Dùng Flexbox, bỏ Absolute */}
+            <div className="flex items-center flex-1 bg-gray-100 rounded-xl px-3 focus-within:bg-gray-200/60 transition-all">
+              <Search className="text-gray-400 flex-shrink-0" size={16} />
               <input
                 type="text"
-                className="pl-9 pr-2 w-full focus:border-0 py-2 bg-gray-200 rounded-xl"
-                placeholder="Search anything..."
+                className="w-full py-2 pl-2 pr-1 bg-transparent outline-none text-sm placeholder-gray-400"
+                placeholder=" Search anything..."
               />
             </div>
-            <div className="flex gap-2 items-center">
-              <div className="flex items-center gap-3 px-3 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600">
-                <Plus width={20} />
-                <p>Create</p>
-              </div>
-              <div className="w-10 h-10 cursor-pointer border border-primary relative overflow-hidden rounded-full bg-gray-300 mt-1">
-                <Image
-                  objectFit="cover"
-                  src={"/avatar.jpg"}
-                  alt="avatar"
-                  fill
-                />
-              </div>
+
+            <div className="flex gap-2 items-center flex-shrink-0">
+              <button className="flex items-center justify-center p-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors">
+                <Plus size={20} />
+              </button>
+              {/* Mobile: chỉ avatar */}
+              <UserDropdown
+                name="Alex Rivera"
+                email="ducxww@gmail.com"
+                role="Project Manager"
+                avatarSrc="/avatar.jpg"
+                variant="avatar"
+              />
             </div>
           </div>
         </div>
       </div>
-      <div className="hidden lg:block">
+
+      {/* ── Desktop ── */}
+      <div className="hidden lg:block border-b border-gray-100 bg-white">
         <div className="w-full grid grid-cols-5 gap-4 px-5 py-3">
+          {/* Left */}
           <div className="col-span-3 flex items-center gap-4">
-            <div className="relative w-full">
-              <Search className="absolute text-gray-500 left-1 top-1/6" />
+            {/* SEARCH DESKTOP: Dùng Flexbox, bỏ Absolute */}
+            <div className="flex items-center w-full max-w-md bg-gray-100 rounded-xl px-3 focus-within:bg-gray-200/60 transition-all">
+              <Search className="text-gray-400 flex-shrink-0" size={16} />
               <input
                 type="text"
-                className="pl-9 pr-2 w-full focus:border-0 py-2 bg-gray-200 rounded-xl"
-                placeholder="Search anything..."
+                className="w-full py-2 pl-2 pr-1 bg-transparent outline-none text-sm placeholder-gray-400"
+                placeholder=" Search anything..."
               />
             </div>
 
-            <div className="flex items-center gap-3 px-3 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600">
-              <Plus width={20} />
-              <p>Create</p>
-            </div>
+            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors text-sm font-medium whitespace-nowrap shadow-sm active:scale-95">
+              <Plus size={18} />
+              <span>Create</span>
+            </button>
           </div>
 
-          <div className="col-span-2 flex items-center justify-end gap-4">
+          {/* Right */}
+          <div className="col-span-2 flex items-center justify-end gap-5">
             <NotificationDropdown />
-            <div className="flex flex-row items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-200 rounded-xl">
-              <div className="flex flex-col">
-                <p className="font-semibold">Alex Rivera</p>
-                <p className="text-sm text-dark">Project Manager</p>
-              </div>
-              <div className="w-12 h-12 border border-primary relative overflow-hidden rounded-full bg-gray-300 mt-1">
-                <Image src={"/avatar.jpg"} alt="avatar" fill />
-              </div>
-            </div>
+            <div className="h-6 w-[1px] bg-gray-200" />{" "}
+            {/* Vạch chia mờ cho đẹp */}
+            {/* Desktop: tên + role + avatar */}
+            <UserDropdown
+              name="Alex Rivera"
+              email="ducxww@gmail.com"
+              role="Project Manager"
+              avatarSrc="/avatar.jpg"
+              variant="full"
+            />
           </div>
         </div>
       </div>
