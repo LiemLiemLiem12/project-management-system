@@ -95,7 +95,7 @@ export default function Sidebar() {
           ) : (
             <Link
               href="/favourites"
-              className="flex relative overflow-hidden g-2 w-full items-center gap-3 px-3 py-2 rounded-md text-sm font-medium  cursor-pointer  hover:bg-slate -200 transition-colors"
+              className="flex relative overflow-hidden g-2 w-full items-center gap-3 px-3 py-2 rounded-md text-sm font-medium  cursor-pointer  hover:bg-slate-200 transition-colors"
             >
               <Star
                 className={isOpenSidebar ? "w-4 h-4" : "w-full flex-shrink-0"}
