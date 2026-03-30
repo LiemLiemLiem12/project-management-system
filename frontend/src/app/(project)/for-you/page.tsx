@@ -1,16 +1,26 @@
-import RecentProject from "@/components/ForYou/RecentProject";
+import WelcomeHeader from "@/components/Dashboard/WelcomeHeader";
+import FrequentlyVisited from "@/components/Dashboard/FrequentlyVisited";
+import ActivityFeed from "@/components/Dashboard/ActivityFeed";
+import MyTasks from "@/components/Dashboard/MyTasks";
+import ProjectDeadlineCard from "@/components/Dashboard/ProjectDeadlineCard";
 
-export default function ForYouPage() {
+export default function DashboardPage() {
   return (
-    <div className="size-full flex gap-3">
-      <div className="flex-2/3 flex flex-col gap-3 px-10">
-        <div className="flex flex-col mt-10">
-          <h1 className="text-2xl font-bold">Good morning, Alex</h1>
-          <p className="text-md">You have 3 new tasks today</p>
+    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          <div className="flex-1 min-w-0 flex flex-col gap-8">
+            <WelcomeHeader />
+            <FrequentlyVisited />
+            <ActivityFeed />
+          </div>
+
+          <aside className="w-full lg:w-80 flex-none flex flex-col gap-6 order-first lg:order-last">
+            <MyTasks />
+            <ProjectDeadlineCard />
+          </aside>
         </div>
-        <RecentProject />
       </div>
-      <div className="flex-1/3"></div>
     </div>
   );
 }
