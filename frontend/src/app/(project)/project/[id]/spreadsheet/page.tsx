@@ -22,7 +22,7 @@ export default function TaskBoardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8 flex items-start justify-center">
-      <div className="w-full max-w-6xl">
+      <div className="w-full ">
         {/* Card wrapper */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           {/* Toolbar */}
