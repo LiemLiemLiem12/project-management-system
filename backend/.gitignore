@@ -38,6 +38,9 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Environment Files
+.env
+
 .nx/cache
 .nx/workspace-data
 .claude/worktrees

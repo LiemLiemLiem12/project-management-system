@@ -4,7 +4,9 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './modules/auth/auth.entity';
+import { MailModule } from './modules/mail/mail.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { User } from './modules/auth/entities/user.entity';
 
 @Module({
   imports: [
@@ -25,6 +27,10 @@ import { User } from './modules/auth/auth.entity';
     }),
 
     AuthModule,
+
+    MailModule,
+
+    EventEmitterModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -24,8 +24,11 @@ export class User {
   @Column({ name: 'avatar_url', nullable: true })
   avatarUrl!: string;
 
-  @Column({ default: 'local' }) // Mặc định là local nếu không phải google/fb
+  @Column({ default: 'local' })
   provider!: string;
+
+  @Column({ name: 'birthday', type: 'date', default: null })
+  birthday!: Date;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
