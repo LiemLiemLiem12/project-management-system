@@ -68,4 +68,24 @@ export class AuthService {
       throw new HttpException(error.message, error.statusCode || 400);
     }
   }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.token.refresh', { refreshToken }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 401);
+    }
+  }
+
+  async getStatus(userId: string) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.status', { userId }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 401);
+    }
+  }
 }

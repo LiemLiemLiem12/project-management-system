@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuthStore } from "@/store/auth.store";
 import { useEffect, useRef, useState } from "react";
 
 function IconSwitch() {
@@ -120,6 +121,9 @@ export default function UserDropdown({
       .toUpperCase()
       .slice(0, 2) || "?";
 
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
   useEffect(() => {
     const handle = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node))
@@ -136,6 +140,10 @@ export default function UserDropdown({
     document.addEventListener("keydown", handle);
     return () => document.removeEventListener("keydown", handle);
   }, []);
+
+  if (!user) {
+    return <UserDropdownSkeleton />;
+  }
 
   return (
     <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
@@ -250,11 +258,15 @@ export default function UserDropdown({
           <div style={{ padding: "6px 0" }}>
             {[
               { icon: <IconSwitch />, label: "Switch account" },
-              { icon: <IconLogout />, label: "Log out" },
-            ].map(({ icon, label }) => (
+              {
+                icon: <IconLogout />,
+                label: "Log out",
+                onclick: () => logout(),
+              },
+            ].map(({ icon, label, onclick }) => (
               <button
                 key={label}
-                onClick={() => setOpen(false)}
+                onClick={onclick}
                 style={{
                   width: "100%",
                   display: "flex",
@@ -288,3 +300,30 @@ export default function UserDropdown({
     </div>
   );
 }
+
+const UserDropdownSkeleton = ({
+  variant = "full",
+}: {
+  variant?: "full" | "minimal";
+}) => {
+  return (
+    <div className="inline-block">
+      <div className="flex items-center gap-2 p-2 px-2 py-1.5 rounded-xl">
+        {variant === "full" && (
+          <div className="flex flex-col items-end gap-1.5">
+            {/* Name Skeleton */}
+            <div className="h-3.5 w-20 bg-gray-200 rounded animate-pulse" />
+            {/* Role Skeleton */}
+            <div className="h-3 w-12 bg-gray-100 rounded animate-pulse" />
+          </div>
+        )}
+        {/* Avatar Skeleton */}
+        <div
+          className={`bg-gray-200 rounded-full animate-pulse ${
+            variant === "full" ? "w-10 h-10" : "w-9 h-9"
+          }`}
+        />
+      </div>
+    </div>
+  );
+};

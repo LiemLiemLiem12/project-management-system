@@ -5,8 +5,8 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - '5672:5672' # Cổng giao tiếp của RabbitMQ
-      - '15672:15672' # Cổng giao diện quản lý (Management UI)
+      - '5672:5672'
+      - '15672:15672'
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -21,6 +21,12 @@ services:
       - '3306:3306'
     volumes:
       - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:8.6.2
+    container_name: rdb
+    ports:
+      - '6379:6379'
 
 volumes:
   mysql_data:

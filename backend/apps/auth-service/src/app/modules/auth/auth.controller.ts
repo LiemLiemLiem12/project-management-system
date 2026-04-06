@@ -48,4 +48,14 @@ export class AuthController {
       payload.birthday,
     );
   }
+
+  @MessagePattern('auth.token.refresh')
+  async refreshToken(@Payload() data: { refreshToken: string }) {
+    return this.authService.refreshToken(data.refreshToken);
+  }
+
+  @MessagePattern('auth.status')
+  async getStatus(@Payload() data: { userId: string }) {
+    return this.authService.getStatus(data.userId);
+  }
 }

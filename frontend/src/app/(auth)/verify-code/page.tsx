@@ -1,21 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import OTPInput from "@/components/Input/OTPInput";
+import { useRouter, useSearchParams } from "next/navigation";
+import IconLoader from "@/components/IconLoader";
+import toast from "react-hot-toast";
+import { useAuthService } from "@/services/auth.service";
 
 export default function VerifyCodePage() {
   const [code, setCode] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [id, setId] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const handleVerify = () => {
-    if (code.length < 6) {
-      alert("Please enter the full 6-digit code");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const { verifyLogin, verifyLoginPending } = useAuthService();
+
+  useEffect(() => {
+    const token = searchParams.get("token");
+
+    if (!token) {
+      router.push("/login");
       return;
     }
-    console.log("Xác thực với mã:", code);
-    // Gọi API của bạn ở đây
+
+    if (token) {
+      const decodedString = atob(token);
+      const [id, email] = decodedString.split(":");
+      if (id && email) {
+        setUserEmail(email);
+        setId(id);
+        setLoading(false);
+      }
+    }
+  }, [searchParams]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center p-10">
+        <IconLoader size={48} />
+      </div>
+    );
+  }
+
+  const handleVerify = async () => {
+    if (code.length < 6) {
+      toast.error("Please enter the full 6-digit code");
+      return;
+    }
+
+    if (verifyLoginPending) return;
+
+    await verifyLogin({ userId: id, otp: code });
   };
 
   return (
@@ -34,7 +75,7 @@ export default function VerifyCodePage() {
             <p className="text-gray-500 font-medium text-sm">
               Enter the code sent to{" "}
               <span className="text-dark font-bold">
-                52300041@student.tdtu.edu.vn
+                {userEmail || "your email address"}
               </span>
             </p>
           </div>
@@ -44,12 +85,22 @@ export default function VerifyCodePage() {
         <OTPInput length={6} onComplete={(value) => setCode(value)} />
 
         {/* Action Button */}
-        <button
-          onClick={handleVerify}
-          className="w-full cursor-pointer bg-primary hover:bg-primary-dark text-white py-2 rounded-full font-bold text-lg transition-all shadow-lg shadow-blue-100 active:scale-[0.98]"
-        >
-          Verify
-        </button>
+        {verifyLoginPending ? (
+          <button
+            onClick={handleVerify}
+            disabled={true}
+            className="w-full cursor-pointer bg-primary hover:bg-primary-dark text-white py-2 rounded-full font-bold text-lg transition-all shadow-lg shadow-blue-100 active:scale-[0.98]"
+          >
+            <IconLoader size={10} />
+          </button>
+        ) : (
+          <button
+            onClick={handleVerify}
+            className="w-full cursor-pointer bg-primary hover:bg-primary-dark text-white py-2 rounded-full font-bold text-lg transition-all shadow-lg shadow-blue-100 active:scale-[0.98]"
+          >
+            Verify
+          </button>
+        )}
 
         <div className="footer-group">
           <p className="text-gray-500 font-medium flex items-center gap-1 text-sm">

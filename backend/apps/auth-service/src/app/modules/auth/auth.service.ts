@@ -3,7 +3,7 @@ import { AuthPayloadDto } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import type { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { find } from 'rxjs';
+import { find, retry } from 'rxjs';
 import { MailService } from '../mail/mail.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -32,7 +32,9 @@ export class AuthService {
 
     if (findUser?.provider !== 'local') return null;
 
-    if (!findUser || findUser.passwordHash !== password) return null;
+    const isMatch = await bcrypt.compare(password, findUser.passwordHash);
+
+    if (!isMatch) return null;
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -42,6 +44,7 @@ export class AuthService {
 
     return {
       id: findUser.id,
+      email: findUser.email,
     };
   }
 
@@ -70,7 +73,10 @@ export class AuthService {
     // 2. Tạo Refresh Token (dài hạn - chuỗi ngẫu nhiên hoặc JWT)
     const refreshToken = await this.JwtService.signAsync(
       { userId: findUser.id },
-      { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN as any) || '7d' },
+      {
+        expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN as any) || '7d',
+        secret: process.env.JWT_REFRESH_SECRET || '',
+      },
     );
 
     await this.cacheManager.set(
@@ -222,5 +228,71 @@ export class AuthService {
         statusCode: error.statusCode || 500,
       });
     }
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const payload = this.JwtService.verify(refreshToken, {
+        secret: process.env.REFRESH_SECRET,
+      });
+
+      const cachedToken = await this.cacheManager.get<string>(
+        `refreshToken_${payload.userId}`,
+      );
+
+      if (cachedToken !== refreshToken) {
+        throw new RpcException({
+          message: 'Refresh token is invalid',
+          statusCode: 401,
+        });
+      }
+
+      const user = await this.userRepository.findOneBy({ id: payload.userId });
+      if (!user) {
+        throw new RpcException({ message: 'User not found', statusCode: 401 });
+      }
+
+      const newPayload = { email: user.email, userId: user.id };
+
+      const newAccessToken = await this.JwtService.sign(newPayload, {
+        secret: process.env.JWT_SECRET,
+        expiresIn: '15m',
+      });
+
+      const newRefreshToken = await this.JwtService.sign(newPayload, {
+        secret: process.env.JWT_REFRESH_SECRET,
+        expiresIn: '7d',
+      });
+
+      await this.cacheManager.set(
+        `refreshToken_${user.id}`,
+        newRefreshToken,
+        604800000,
+      );
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      };
+    } catch (error) {
+      throw new RpcException({
+        message: 'Refresh token expired or invalid',
+        statusCode: 401,
+      });
+    }
+  }
+
+  async getStatus(userId: string) {
+    const existingUser = await this.userRepository.findOneBy({ id: userId });
+    if (!existingUser) {
+      throw new RpcException({
+        message: 'User not found',
+        statusCode: 404,
+      });
+    }
+
+    const { passwordHash, ...user } = existingUser;
+
+    return user;
   }
 }
