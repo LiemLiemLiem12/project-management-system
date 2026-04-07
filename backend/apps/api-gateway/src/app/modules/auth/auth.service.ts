@@ -125,4 +125,17 @@ export class AuthService {
       throw new HttpException(error.message, error.statusCode || 400);
     }
   }
+
+  async resendOTP(email: string, type: number) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.resend_otp', {
+          email,
+          type,
+        }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
+    }
+  }
 }

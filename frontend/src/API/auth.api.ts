@@ -61,6 +61,10 @@ export const authAPI = (axiosPrivate: AxiosInstance) => ({
     return axiosPublic.post("/auth/logout");
   },
 
+  resendOTP: (email: string, type: string) => {
+    return axiosPublic.post("/auth/resend-otp", { email, type });
+  },
+
   getStatus: () => {
     return axiosPrivate.get("auth/status");
   },

@@ -13,7 +13,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
   // Danh sách các đường dẫn không cần check status
-  const publicRoutes = ["/", "/login", "/sign-up", "/verify-code"];
+  const publicRoutes = [
+    "/",
+    "/login",
+    "/sign-up",
+    "/verify-code",
+    "/forgot-password",
+    "/reset-password",
+  ];
 
   useEffect(() => {
     if (user) return;

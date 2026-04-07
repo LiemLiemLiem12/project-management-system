@@ -26,6 +26,7 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ResendOTPDto } from './dto/resend-otp.dto';
 // localhost:3000/api/auth/login
 @Controller('auth')
 export class AuthController {
@@ -182,6 +183,14 @@ export class AuthController {
     return await this.authService.resetPassword(
       resetPasswordDto.resetToken,
       resetPasswordDto.newPassword,
+    );
+  }
+
+  @Post('resend-otp')
+  async resendOTP(@Body() resendOTPDto: ResendOTPDto) {
+    return this.authService.resendOTP(
+      resendOTPDto.email,
+      Number(resendOTPDto.type),
     );
   }
 }

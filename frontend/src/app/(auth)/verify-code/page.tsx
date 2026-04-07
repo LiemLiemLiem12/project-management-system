@@ -16,15 +16,16 @@ export default function VerifyCodePage() {
   const [tokenStr, setTokenStr] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // 1. Thêm state lưu trữ thời gian đếm ngược (120 giây = 2 phút)
+  const [countdown, setCountdown] = useState(120);
+
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Lấy params
   const type = searchParams.get("type") || "0";
   const token = searchParams.get("token");
   const emailParam = searchParams.get("email");
 
-  // Lấy thêm hook cho forgot password
   const {
     verifyLogin,
     verifyLoginPending,
@@ -32,15 +33,30 @@ export default function VerifyCodePage() {
     pendingVerifySignup,
     verifyForgotPasswordOtp,
     pendingVerifyForgotPasswordOtp,
+    resendOTP,
+    pendingResetOTP,
   } = useAuthService();
 
-  // Xác định trạng thái loading dựa trên type
   const isPending =
     type === "1"
       ? pendingVerifySignup
       : type === "2"
         ? pendingVerifyForgotPasswordOtp
         : verifyLoginPending;
+
+  // 2. Hook xử lý giảm thời gian đếm ngược
+  useEffect(() => {
+    // Nếu đếm ngược đã về 0 thì dừng lại
+    if (countdown <= 0) return;
+
+    // Thiết lập bộ đếm giảm 1 mỗi giây
+    const timer = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    // Dọn dẹp interval khi component unmount hoặc countdown thay đổi
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   useEffect(() => {
     if (!token) {
@@ -49,7 +65,6 @@ export default function VerifyCodePage() {
     }
 
     if (type === "1" || type === "2") {
-      // Logic chung cho SIGNUP (1) và FORGOT PASSWORD (2)
       if (!emailParam) {
         toast.error("Invalid session.");
         router.push(type === "1" ? "/signup" : "/login");
@@ -59,7 +74,6 @@ export default function VerifyCodePage() {
       setTokenStr(token);
       setLoading(false);
     } else {
-      // Logic riêng cho LOGIN (0)
       try {
         const decodedString = atob(token);
         const [id, email] = decodedString.split(":");
@@ -77,14 +91,6 @@ export default function VerifyCodePage() {
       }
     }
   }, [searchParams, router, type, token, emailParam]);
-
-  if (loading) {
-    return (
-      <div className="h-screen flex justify-center items-center bg-gray-50/50">
-        <IconLoader size={48} />
-      </div>
-    );
-  }
 
   const handleVerify = async () => {
     if (code.length < 6) {
@@ -107,6 +113,36 @@ export default function VerifyCodePage() {
     }
   };
 
+  const handleResendOTP = async () => {
+    try {
+      if (type === "1") {
+        await resendOTP({ email: userEmail, type: "1" });
+      } else if (type === "2") {
+        await resendOTP({ email: userEmail, type: "2" });
+      } else {
+        await resendOTP({ email: userEmail, type: "0" });
+      }
+
+      setCountdown(120);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="h-screen flex justify-center items-center bg-gray-50/50">
+        <IconLoader size={48} />
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex items-center justify-center px-6 bg-gray-50/50">
       <div className="form-container flex flex-col items-center w-full max-w-[550px] gap-8 bg-white rounded-2xl px-8 md:px-12 py-12 shadow-2xl border border-gray-100">
@@ -117,7 +153,6 @@ export default function VerifyCodePage() {
             <span className="text-xl font-medium text-gray-700">Popket</span>
           </div>
           <div className="space-y-3">
-            {/* Hiển thị title tương ứng với luồng */}
             <h1 className="text-3xl md:text-4xl font-extrabold text-dark tracking-tight leading-tight">
               {type === "1"
                 ? "Verify your email"
@@ -148,13 +183,30 @@ export default function VerifyCodePage() {
         <div className="footer-group">
           <p className="text-gray-500 font-medium flex items-center gap-1 text-sm">
             Don’t receive the email?{" "}
-            <button className="text-primary hover:underline font-bold flex items-center gap-1 group cursor-pointer">
-              Resend email
-              <ArrowRight
-                size={14}
-                className="group-hover:translate-x-1 transition-transform"
-              />
-            </button>
+            {countdown > 0 ? (
+              <span className="text-gray-400 font-bold flex items-center gap-1">
+                Resend email in {formatTime(countdown)}
+              </span>
+            ) : pendingResetOTP ? (
+              <button
+                disabled={true}
+                className="text-primary h-10 font-bold flex items-center gap-2 group cursor-not-allowed opacity-70"
+              >
+                Sending...
+                <IconLoader size={12} />
+              </button>
+            ) : (
+              <button
+                onClick={handleResendOTP}
+                className="text-primary hover:underline font-bold flex items-center gap-1 group cursor-pointer"
+              >
+                Resend email
+                <ArrowRight
+                  size={14}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
+              </button>
+            )}
           </p>
         </div>
       </div>

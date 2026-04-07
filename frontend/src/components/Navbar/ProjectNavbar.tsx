@@ -50,14 +50,7 @@ export default function ProjectNavbar() {
 
           <div className="col-span-2 flex items-center justify-end gap-5">
             <NotificationDropdown />
-            <div className="h-6 w-[1px] bg-gray-200" />{" "}
-            <UserDropdown
-              name="Alex Rivera"
-              email="ducxww@gmail.com"
-              role="Project Manager"
-              avatarSrc="/avatar.jpg"
-              variant="full"
-            />
+            <div className="h-6 w-[1px] bg-gray-200" /> <UserDropdown />
           </div>
         </div>
       </div>

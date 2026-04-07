@@ -232,6 +232,25 @@ export const useAuthService = () => {
     },
   });
 
+  const handleResendOTP = useMutation({
+    mutationFn: ({ email, type }: { email: string; type: string }) =>
+      api.auth.resendOTP(email, type),
+    onSuccess: (res) => {
+      if (res.data?.success) {
+        toast.success("Resend OTP successfully");
+      }
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.message || "Resend OTP failed";
+
+      if (Array.isArray(msg)) {
+        toast.error(msg[0]);
+      } else {
+        toast.error(msg);
+      }
+    },
+  });
+
   return {
     login: handleLogin.mutateAsync,
     loginStatus: handleLogin.isPending,
@@ -258,5 +277,8 @@ export const useAuthService = () => {
 
     resetPassword: handleResetPassword.mutateAsync,
     pendingResetPassword: handleResetPassword.isPending,
+
+    resendOTP: handleResendOTP.mutateAsync,
+    pendingResetOTP: handleResendOTP.isPending,
   };
 };

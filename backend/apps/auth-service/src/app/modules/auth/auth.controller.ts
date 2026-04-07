@@ -90,4 +90,9 @@ export class AuthController {
       payload.newPassword,
     );
   }
+
+  @MessagePattern('auth.resend_otp')
+  async resendOTP(@Payload() payload: { email: string; type: string }) {
+    return this.authService.resendOtp(payload.email, Number(payload.type));
+  }
 }

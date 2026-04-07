@@ -436,4 +436,40 @@ export class AuthService {
       });
     }
   }
+
+  async resendOtp(email: string, type: number) {
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    if (type === 0) {
+      const user = await this.userRepository.findOne({ where: { email } });
+      if (!user) {
+        throw new RpcException({ message: 'User not found', statusCode: 404 });
+      }
+
+      await this.cacheManager.set(`otp_${user.id}`, newOtp, 120000);
+      this.eventEmitter.emit('sendOtpEmail', { email, otp: newOtp });
+    } else if (type === 1) {
+      await this.cacheManager.set(`signup_otp_${email}`, newOtp, 120000);
+      this.eventEmitter.emit('sendOtpEmail', {
+        email,
+        otp: newOtp,
+        appName: 'Popket',
+      });
+    } else if (type === 2) {
+      await this.cacheManager.set(`reset_otp_${email}`, newOtp, 120000);
+      this.eventEmitter.emit('sendOtpEmail', {
+        email,
+        otp: newOtp,
+        appName: 'Popket',
+        context: 'reset_password',
+      });
+    } else {
+      throw new RpcException({ message: 'Invalid OTP type', statusCode: 400 });
+    }
+
+    return {
+      success: true,
+      message: 'A new OTP has been sent to your email.',
+    };
+  }
 }

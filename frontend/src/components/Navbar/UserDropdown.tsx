@@ -109,16 +109,19 @@ export default function UserDropdown({}) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
-  const initials =
-    user?.fullname
-      .split(" ")
-      .filter(Boolean)
-      .map((w) => w[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) ||
-    "?" ||
-    "";
+  let initials = "";
+  // if (user) {
+  //   initials =
+  //     user?.fullname
+  //       .split(" ")
+  //       .filter(Boolean)
+  //       .map((w) => w[0])
+  //       .join("")
+  //       .toUpperCase()
+  //       .slice(0, 2) ||
+  //     "?" ||
+  //     "";
+  // }
 
   useEffect(() => {
     const handle = (e: MouseEvent) => {
