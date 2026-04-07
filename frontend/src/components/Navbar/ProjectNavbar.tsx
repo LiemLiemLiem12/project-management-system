@@ -24,13 +24,7 @@ export default function ProjectNavbar() {
               <button className="flex items-center justify-center p-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors">
                 <Plus size={20} />
               </button>
-              <UserDropdown
-                name="Alex Rivera"
-                email="ducxww@gmail.com"
-                role="Project Manager"
-                avatarSrc="/avatar.jpg"
-                variant="avatar"
-              />
+              <UserDropdown />
             </div>
           </div>
         </div>

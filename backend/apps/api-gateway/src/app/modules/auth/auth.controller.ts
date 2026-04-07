@@ -23,6 +23,9 @@ import { VerifyOtpSignupDto } from './dto/verify-signup.dto';
 import { CompleteSignupDto } from './dto/complete-signup.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 // localhost:3000/api/auth/login
 @Controller('auth')
 export class AuthController {
@@ -83,6 +86,7 @@ export class AuthController {
     return await this.authService.verifyOtpSignup(
       verifyOtpSignupDto.email,
       verifyOtpSignupDto.otp,
+      verifyOtpSignupDto.token,
     );
   }
 
@@ -155,5 +159,29 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   getStatus(@Req() req: any) {
     return this.authService.getStatus(req.user.userId);
+  }
+
+  // ... các route cũ (login, signup, v.v.)
+
+  @Post('forgot-password/init')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return await this.authService.forgotPasswordInit(forgotPasswordDto.email);
+  }
+
+  @Post('forgot-password/verify-otp')
+  async verifyForgotPasswordOtp(@Body() verifyResetOtpDto: VerifyResetOtpDto) {
+    return await this.authService.verifyForgotPasswordOtp(
+      verifyResetOtpDto.email,
+      verifyResetOtpDto.otp,
+      verifyResetOtpDto.token,
+    );
+  }
+
+  @Post('forgot-password/reset')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return await this.authService.resetPassword(
+      resetPasswordDto.resetToken,
+      resetPasswordDto.newPassword,
+    );
   }
 }

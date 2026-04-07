@@ -47,10 +47,10 @@ export class AuthService {
     }
   }
 
-  async verifyOtpSignup(email: string, otp: string) {
+  async verifyOtpSignup(email: string, otp: string, token: string) {
     try {
       const result = await firstValueFrom(
-        this.authClient.send('auth.signup.verify_otp', { email, otp }),
+        this.authClient.send('auth.signup.verify_otp', { email, otp, token }),
       );
       return result;
     } catch (error: any) {
@@ -86,6 +86,43 @@ export class AuthService {
       );
     } catch (error: any) {
       throw new HttpException(error.message, error.statusCode || 401);
+    }
+  }
+
+  async forgotPasswordInit(email: string) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.forgot_password.init', { email }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
+  }
+
+  async verifyForgotPasswordOtp(email: string, otp: string, token: string) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.forgot_password.verify_otp', {
+          email,
+          otp,
+          token,
+        }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
+    }
+  }
+
+  async resetPassword(resetToken: string, newPassword: string) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.forgot_password.reset', {
+          resetToken,
+          newPassword,
+        }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
     }
   }
 }

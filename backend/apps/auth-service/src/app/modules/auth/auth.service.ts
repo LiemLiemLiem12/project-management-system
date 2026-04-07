@@ -11,6 +11,7 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { RpcException } from '@nestjs/microservices/exceptions/rpc-exception';
 import * as bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AuthService {
@@ -107,9 +108,11 @@ export class AuthService {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const token = uuidv4();
 
     try {
       await this.cacheManager.set(`signup_otp_${email}`, otp, 120000);
+      await this.cacheManager.set(`signup_init_token_${email}`, token, 900000);
 
       this.eventEmitter.emit('sendOtpEmail', { email, otp, appName: 'Popket' });
 
@@ -117,6 +120,7 @@ export class AuthService {
         success: true,
         message: 'OTP sent to email',
         expiresIn: '2 minutes',
+        token,
       };
     } catch (error) {
       throw new RpcException({
@@ -126,8 +130,18 @@ export class AuthService {
     }
   }
 
-  async verifyOtpSignup(email: string, otp: string) {
+  async verifyOtpSignup(email: string, otp: string, token: string) {
     const savedOtp = await this.cacheManager.get(`signup_otp_${email}`);
+    const savedToken = await this.cacheManager.get(
+      `signup_init_token_${email}`,
+    );
+
+    if (!savedToken || savedToken !== token) {
+      throw new RpcException({
+        message: 'Sesssion expired',
+        statusCode: 400,
+      });
+    }
 
     if (!savedOtp || savedOtp !== otp) {
       throw new RpcException({
@@ -137,6 +151,7 @@ export class AuthService {
     }
 
     await this.cacheManager.del(`signup_otp_${email}`);
+    await this.cacheManager.del(`signup_init_token_${email}`);
 
     const verificationToken = this.JwtService.sign(
       {
@@ -294,5 +309,131 @@ export class AuthService {
     const { passwordHash, ...user } = existingUser;
 
     return user;
+  }
+
+  async forgotPasswordInit(email: string) {
+    const user = await this.userRepository.findOne({ where: { email } });
+
+    if (!user) {
+      throw new RpcException({
+        message: 'Account with this email does not exist',
+        statusCode: 404,
+      });
+    }
+
+    if (user.provider !== 'local') {
+      throw new RpcException({
+        message: `This account uses ${user.provider} login. Password reset is not allowed.`,
+        statusCode: 400,
+      });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const token = uuidv4(); // Tạo token định danh phiên
+
+    try {
+      // Lưu cả OTP và Token vào Redis (hết hạn 2 phút)
+      await this.cacheManager.set(`reset_otp_${email}`, otp, 120000);
+      await this.cacheManager.set(`reset_init_token_${email}`, token, 120000);
+
+      this.eventEmitter.emit('sendOtpEmail', {
+        email,
+        otp,
+        appName: 'Popket',
+        context: 'reset_password',
+      });
+
+      return {
+        success: true,
+        message: 'Password reset OTP sent to email',
+        token, // Trả token về cho Frontend để Frontend đính kèm vào URL (giống signup)
+      };
+    } catch (error) {
+      throw new RpcException({
+        message: 'Failed to initialize password reset',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async verifyForgotPasswordOtp(email: string, otp: string, token: string) {
+    const savedToken = await this.cacheManager.get(`reset_init_token_${email}`);
+    const savedOtp = await this.cacheManager.get(`reset_otp_${email}`);
+
+    if (!savedToken || savedToken !== token) {
+      throw new RpcException({
+        message: 'Session expired or invalid verification token',
+        statusCode: 400,
+      });
+    }
+
+    // 3. Validate OTP
+    if (!savedOtp || savedOtp !== otp) {
+      throw new RpcException({
+        message: 'OTP is invalid or has expired',
+        statusCode: 400,
+      });
+    }
+
+    await this.cacheManager.del(`reset_otp_${email}`);
+    await this.cacheManager.del(`reset_init_token_${email}`);
+
+    const resetToken = this.JwtService.sign(
+      {
+        email,
+        type: 'RESET_PASSWORD',
+      },
+      {
+        expiresIn: '5m',
+        secret: process.env.RESET_PASSWORD_SECRET || 'popket_reset_secret',
+      },
+    );
+
+    return {
+      success: true,
+      resetToken,
+      message: 'OTP verified. Please submit your new password.',
+    };
+  }
+
+  async resetPassword(resetToken: string, newPassword: string) {
+    try {
+      const payload = this.JwtService.verify(resetToken, {
+        secret: process.env.RESET_PASSWORD_SECRET || 'popket_reset_secret',
+      });
+
+      if (payload.type !== 'RESET_PASSWORD') {
+        throw new Error('Invalid token type');
+      }
+
+      const user = await this.userRepository.findOneBy({
+        email: payload.email,
+      });
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      const salt = await bcrypt.genSalt();
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+      user.passwordHash = hashedPassword;
+      await this.userRepository.save(user);
+
+      return {
+        success: true,
+        message: 'Password has been reset successfully. You can now login.',
+      };
+    } catch (error: any) {
+      if (error.name === 'TokenExpiredError') {
+        throw new RpcException({
+          message: 'Reset password session expired. Please request a new OTP.',
+          statusCode: 400,
+        });
+      }
+      throw new RpcException({
+        message: error.message || 'Invalid or expired reset token',
+        statusCode: 400,
+      });
+    }
   }
 }

@@ -1,6 +1,14 @@
 export type InputTypeProps = {
   id: string;
-  type: "text" | "email" | "password" | "number" | "search" | "tel" | "url";
+  type:
+    | "text"
+    | "email"
+    | "password"
+    | "number"
+    | "search"
+    | "tel"
+    | "url"
+    | "date";
   label?: string;
   placeholder?: string;
   value?: string | number;

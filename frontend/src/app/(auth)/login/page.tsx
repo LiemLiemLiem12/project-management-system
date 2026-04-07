@@ -109,7 +109,7 @@ export default function LoginPage() {
             You can't login?
           </a>
           <span className="w-1 h-1 bg-black rounded-full"></span>
-          <a href="" className="underline text-primary">
+          <a href="/sign-up" className="underline text-primary">
             Create account
           </a>
         </div>

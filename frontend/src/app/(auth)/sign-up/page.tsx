@@ -1,9 +1,22 @@
+"use client";
+
 import ButtonSocial from "@/components/Button/ButtonSocial";
+import IconLoader from "@/components/IconLoader";
 import TextInput from "@/components/Input/TextInput";
+import { useAuthService } from "@/services/auth.service";
 import Image from "next/image";
 import Link from "next/link";
+import { Dispatch, useState } from "react";
 
 export default function SignupPage() {
+  const [email, setEmail] = useState<string>("");
+
+  const { initSignup, pendingInitSignup } = useAuthService();
+
+  const handleSignup = async () => {
+    await initSignup(email);
+  };
+
   return (
     <div className="h-screen flex items-center justify-center px-6 bg-gray-50/50">
       <div className="form-container flex flex-col items-center w-full max-w-[550px] gap-8 bg-white rounded-2xl px-8 md:px-12 py-12 shadow-2xl border border-gray-100">
@@ -33,14 +46,29 @@ export default function SignupPage() {
             <div className="flex-grow">
               <TextInput
                 id="email"
+                value={email}
                 type="email"
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="youremail@email.com"
                 compulsory={false} // Label đã tự viết ở trên để tùy chỉnh layout
               />
             </div>
-            <button className="bg-primary hover:bg-primary-dark cursor-pointer text-white px-8 rounded-2xl font-bold transition-all whitespace-nowrap shadow-lg shadow-blue-100">
-              Sign up
-            </button>
+            {pendingInitSignup ? (
+              <button
+                disabled={false}
+                onClick={handleSignup}
+                className="bg-gray-300 flex justify-center items-center cursor-pointer text-white px-8 rounded-2xl font-bold transition-all whitespace-nowrap shadow-lg shadow-blue-100"
+              >
+                <IconLoader size={10} />
+              </button>
+            ) : (
+              <button
+                onClick={handleSignup}
+                className="bg-primary h-10 hover:bg-primary-dark cursor-pointer text-white px-8 rounded-2xl font-bold transition-all whitespace-nowrap shadow-lg shadow-blue-100"
+              >
+                Sign up
+              </button>
+            )}
           </div>
         </div>
 

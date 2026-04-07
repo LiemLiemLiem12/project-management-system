@@ -25,8 +25,14 @@ export class AuthController {
   }
 
   @MessagePattern('auth.signup.verify_otp')
-  async verifyOtpSignup(@Payload() payload: { email: string; otp: string }) {
-    return this.authService.verifyOtpSignup(payload.email, payload.otp);
+  async verifyOtpSignup(
+    @Payload() payload: { email: string; otp: string; token: string },
+  ) {
+    return this.authService.verifyOtpSignup(
+      payload.email,
+      payload.otp,
+      payload.token,
+    );
   }
 
   @MessagePattern('auth.signup.complete')
@@ -57,5 +63,31 @@ export class AuthController {
   @MessagePattern('auth.status')
   async getStatus(@Payload() data: { userId: string }) {
     return this.authService.getStatus(data.userId);
+  }
+
+  @MessagePattern('auth.forgot_password.init')
+  async forgotPasswordInit(@Payload() payload: { email: string }) {
+    return this.authService.forgotPasswordInit(payload.email);
+  }
+
+  @MessagePattern('auth.forgot_password.verify_otp')
+  async verifyForgotPasswordOtp(
+    @Payload() payload: { email: string; otp: string; token: string },
+  ) {
+    return this.authService.verifyForgotPasswordOtp(
+      payload.email,
+      payload.otp,
+      payload.token,
+    );
+  }
+
+  @MessagePattern('auth.forgot_password.reset')
+  async resetPassword(
+    @Payload() payload: { resetToken: string; newPassword: string },
+  ) {
+    return this.authService.resetPassword(
+      payload.resetToken,
+      payload.newPassword,
+    );
   }
 }

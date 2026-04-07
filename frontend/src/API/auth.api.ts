@@ -11,11 +11,46 @@ export const authAPI = (axiosPrivate: AxiosInstance) => ({
   },
 
   initSignup: (email: string) => {
-    return axiosPublic.post("/auth/init-signup", { email });
+    return axiosPublic.post("/auth/signup/init", { email });
   },
 
-  verifySignupOtp: (email: string, otp: string) => {
-    return axiosPublic.post("/auth/verify-signup-otp", { email, otp });
+  verifySignupOtp: (email: string, otp: string, token: string) => {
+    return axiosPublic.post("/auth/signup/verify-otp", { email, otp, token });
+  },
+
+  completeSignup: (
+    verificationToken: string,
+    password: string,
+    username: string,
+    fullName: string,
+    birthday: string,
+  ) => {
+    return axiosPublic.post("/auth/signup/complete", {
+      verificationToken,
+      password,
+      username,
+      fullName,
+      birthday,
+    });
+  },
+
+  initForgotPassword: (email: string) => {
+    return axiosPublic.post("/auth/forgot-password/init", { email });
+  },
+
+  verifyForgotPasswordOtp: (email: string, otp: string, token: string) => {
+    return axiosPublic.post("/auth/forgot-password/verify-otp", {
+      email,
+      otp,
+      token,
+    });
+  },
+
+  resetPassword: (resetToken: string, newPassword: string) => {
+    return axiosPublic.post("/auth/forgot-password/reset", {
+      resetToken,
+      newPassword,
+    });
   },
 
   refreshToken: () => {

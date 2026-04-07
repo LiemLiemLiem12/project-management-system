@@ -7,4 +7,7 @@ export class VerifyOtpSignupDto {
 
   @IsNotEmpty({ message: 'OTP cannot be empty' })
   otp!: string;
+
+  @IsNotEmpty({ message: 'Token is required' })
+  token!: string;
 }

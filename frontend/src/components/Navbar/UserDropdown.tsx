@@ -102,27 +102,23 @@ interface UserDropdownProps {
   variant?: "full" | "avatar";
 }
 
-export default function UserDropdown({
-  name = "Alex Rivera",
-  email = "ducxww@gmail.com",
-  role = "Project Manager",
-  avatarSrc,
-  variant = "full",
-}: UserDropdownProps) {
+export default function UserDropdown({}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
   const initials =
-    name
+    user?.fullname
       .split(" ")
       .filter(Boolean)
       .map((w) => w[0])
       .join("")
       .toUpperCase()
-      .slice(0, 2) || "?";
-
-  const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+      .slice(0, 2) ||
+    "?" ||
+    "";
 
   useEffect(() => {
     const handle = (e: MouseEvent) => {
@@ -164,37 +160,31 @@ export default function UserDropdown({
         onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
       >
-        {variant === "full" && (
-          <div
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            lineHeight: 1.3,
+          }}
+        >
+          <span
             style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              lineHeight: 1.3,
+              fontWeight: 600,
+              fontSize: 14,
+              color: "#111827",
+              whiteSpace: "nowrap",
             }}
           >
-            <span
-              style={{
-                fontWeight: 600,
-                fontSize: 14,
-                color: "#111827",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {name}
-            </span>
-            <span
-              style={{ fontSize: 12, color: "#6B7280", whiteSpace: "nowrap" }}
-            >
-              {role}
-            </span>
-          </div>
-        )}
-        <AvatarCircle
-          src={avatarSrc}
-          initials={initials}
-          size={variant === "full" ? 40 : 36}
-        />
+            {user?.fullname || ""}
+          </span>
+          <span
+            style={{ fontSize: 12, color: "#6B7280", whiteSpace: "nowrap" }}
+          >
+            Role
+          </span>
+        </div>
+        <AvatarCircle src={user?.avatarUrl} initials={initials} size={36} />
       </button>
 
       {/* Dropdown */}
@@ -224,7 +214,11 @@ export default function UserDropdown({
               borderBottom: "1px solid #F3F4F6",
             }}
           >
-            <AvatarCircle src={avatarSrc} initials={initials} size={44} />
+            <AvatarCircle
+              src={user?.avatarUrl || ""}
+              initials={initials}
+              size={44}
+            />
             <div style={{ minWidth: 0 }}>
               <p
                 style={{
@@ -237,7 +231,7 @@ export default function UserDropdown({
                   whiteSpace: "nowrap",
                 }}
               >
-                {name}
+                {user?.fullname || ""}
               </p>
               <p
                 style={{
@@ -249,7 +243,7 @@ export default function UserDropdown({
                   whiteSpace: "nowrap",
                 }}
               >
-                {email}
+                {user?.email || ""}
               </p>
             </div>
           </div>
