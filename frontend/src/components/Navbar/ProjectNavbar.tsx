@@ -3,15 +3,14 @@
 import { Search, Plus } from "lucide-react";
 import NotificationDropdown from "./NotificationDropdown";
 import UserDropdown from "./UserDropdown";
+import { useAuthStore } from "@/store/auth.store";
 
 export default function ProjectNavbar() {
   return (
     <>
-      {/* ── Mobile ── */}
       <div className="block lg:hidden">
         <div className="w-full px-5 py-3 border-b border-gray-100 bg-white">
           <div className="flex w-full gap-2 items-center">
-            {/* SEARCH MOBILE: Dùng Flexbox, bỏ Absolute */}
             <div className="flex items-center flex-1 bg-gray-100 rounded-xl px-3 focus-within:bg-gray-200/60 transition-all">
               <Search className="text-gray-400 flex-shrink-0" size={16} />
               <input
@@ -25,25 +24,15 @@ export default function ProjectNavbar() {
               <button className="flex items-center justify-center p-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors">
                 <Plus size={20} />
               </button>
-              {/* Mobile: chỉ avatar */}
-              <UserDropdown
-                name="Alex Rivera"
-                email="ducxww@gmail.com"
-                role="Project Manager"
-                avatarSrc="/avatar.jpg"
-                variant="avatar"
-              />
+              <UserDropdown />
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Desktop ── */}
       <div className="hidden lg:block border-b border-gray-100 bg-white">
         <div className="w-full grid grid-cols-5 gap-4 px-5 py-3">
-          {/* Left */}
           <div className="col-span-3 flex items-center gap-4">
-            {/* SEARCH DESKTOP: Dùng Flexbox, bỏ Absolute */}
             <div className="flex items-center w-full max-w-md bg-gray-100 rounded-xl px-3 focus-within:bg-gray-200/60 transition-all">
               <Search className="text-gray-400 flex-shrink-0" size={16} />
               <input
@@ -59,19 +48,9 @@ export default function ProjectNavbar() {
             </button>
           </div>
 
-          {/* Right */}
           <div className="col-span-2 flex items-center justify-end gap-5">
             <NotificationDropdown />
-            <div className="h-6 w-[1px] bg-gray-200" />{" "}
-            {/* Vạch chia mờ cho đẹp */}
-            {/* Desktop: tên + role + avatar */}
-            <UserDropdown
-              name="Alex Rivera"
-              email="ducxww@gmail.com"
-              role="Project Manager"
-              avatarSrc="/avatar.jpg"
-              variant="full"
-            />
+            <div className="h-6 w-[1px] bg-gray-200" /> <UserDropdown />
           </div>
         </div>
       </div>

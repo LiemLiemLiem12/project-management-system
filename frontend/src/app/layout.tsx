@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider, QueryProvider } from "@/components/Provider";
+import MyContextProvider from "@/contexts/MyContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,7 +22,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable}`}>{children}</body>
+      <body className={`${inter.variable}`}>
+        <MyContextProvider>
+          <QueryProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </QueryProvider>
+        </MyContextProvider>
+      </body>
     </html>
   );
 }

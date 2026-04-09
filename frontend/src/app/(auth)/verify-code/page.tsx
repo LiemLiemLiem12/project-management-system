@@ -1,22 +1,147 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import OTPInput from "@/components/Input/OTPInput";
+import { useRouter, useSearchParams } from "next/navigation";
+import IconLoader from "@/components/IconLoader";
+import toast from "react-hot-toast";
+import { useAuthService } from "@/services/auth.service";
 
 export default function VerifyCodePage() {
   const [code, setCode] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [userId, setUserId] = useState("");
+  const [tokenStr, setTokenStr] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const handleVerify = () => {
-    if (code.length < 6) {
-      alert("Please enter the full 6-digit code");
+  // 1. Thêm state lưu trữ thời gian đếm ngược (120 giây = 2 phút)
+  const [countdown, setCountdown] = useState(120);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const type = searchParams.get("type") || "0";
+  const token = searchParams.get("token");
+  const emailParam = searchParams.get("email");
+
+  const {
+    verifyLogin,
+    verifyLoginPending,
+    verifySignup,
+    pendingVerifySignup,
+    verifyForgotPasswordOtp,
+    pendingVerifyForgotPasswordOtp,
+    resendOTP,
+    pendingResetOTP,
+  } = useAuthService();
+
+  const isPending =
+    type === "1"
+      ? pendingVerifySignup
+      : type === "2"
+        ? pendingVerifyForgotPasswordOtp
+        : verifyLoginPending;
+
+  // 2. Hook xử lý giảm thời gian đếm ngược
+  useEffect(() => {
+    // Nếu đếm ngược đã về 0 thì dừng lại
+    if (countdown <= 0) return;
+
+    // Thiết lập bộ đếm giảm 1 mỗi giây
+    const timer = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    // Dọn dẹp interval khi component unmount hoặc countdown thay đổi
+    return () => clearInterval(timer);
+  }, [countdown]);
+
+  useEffect(() => {
+    if (!token) {
+      router.push("/login");
       return;
     }
-    console.log("Xác thực với mã:", code);
-    // Gọi API của bạn ở đây
+
+    if (type === "1" || type === "2") {
+      if (!emailParam) {
+        toast.error("Invalid session.");
+        router.push(type === "1" ? "/signup" : "/login");
+        return;
+      }
+      setUserEmail(decodeURIComponent(emailParam));
+      setTokenStr(token);
+      setLoading(false);
+    } else {
+      try {
+        const decodedString = atob(token);
+        const [id, email] = decodedString.split(":");
+        if (id && email) {
+          setUserEmail(email);
+          setUserId(id);
+          setTokenStr(token);
+          setLoading(false);
+        } else {
+          throw new Error("Invalid token format");
+        }
+      } catch (error) {
+        toast.error("Invalid verification link.");
+        router.push("/login");
+      }
+    }
+  }, [searchParams, router, type, token, emailParam]);
+
+  const handleVerify = async () => {
+    if (code.length < 6) {
+      toast.error("Please enter the full 6-digit code");
+      return;
+    }
+
+    if (isPending) return;
+
+    if (type === "1") {
+      await verifySignup({ email: userEmail, otp: code, token: tokenStr });
+    } else if (type === "2") {
+      await verifyForgotPasswordOtp({
+        email: userEmail,
+        otp: code,
+        token: tokenStr,
+      });
+    } else {
+      await verifyLogin({ userId: userId, otp: code });
+    }
   };
+
+  const handleResendOTP = async () => {
+    try {
+      if (type === "1") {
+        await resendOTP({ email: userEmail, type: "1" });
+      } else if (type === "2") {
+        await resendOTP({ email: userEmail, type: "2" });
+      } else {
+        await resendOTP({ email: userEmail, type: "0" });
+      }
+
+      setCountdown(120);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="h-screen flex justify-center items-center bg-gray-50/50">
+        <IconLoader size={48} />
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex items-center justify-center px-6 bg-gray-50/50">
@@ -29,38 +154,59 @@ export default function VerifyCodePage() {
           </div>
           <div className="space-y-3">
             <h1 className="text-3xl md:text-4xl font-extrabold text-dark tracking-tight leading-tight">
-              Verify your email
+              {type === "1"
+                ? "Verify your email"
+                : type === "2"
+                  ? "Reset Password"
+                  : "Verify login"}
             </h1>
             <p className="text-gray-500 font-medium text-sm">
               Enter the code sent to{" "}
               <span className="text-dark font-bold">
-                52300041@student.tdtu.edu.vn
+                {userEmail || "your email address"}
               </span>
             </p>
           </div>
         </div>
 
-        {/* Sử dụng Component OTP đã tách */}
         <OTPInput length={6} onComplete={(value) => setCode(value)} />
 
         {/* Action Button */}
         <button
           onClick={handleVerify}
-          className="w-full cursor-pointer bg-primary hover:bg-primary-dark text-white py-2 rounded-full font-bold text-lg transition-all shadow-lg shadow-blue-100 active:scale-[0.98]"
+          disabled={isPending}
+          className="w-full cursor-pointer flex justify-center items-center bg-primary hover:bg-primary-dark text-white py-3 rounded-full font-bold text-lg transition-all shadow-lg shadow-blue-100 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          Verify
+          {isPending ? <IconLoader size={10} /> : "Verify"}
         </button>
 
         <div className="footer-group">
           <p className="text-gray-500 font-medium flex items-center gap-1 text-sm">
             Don’t receive the email?{" "}
-            <button className="text-primary hover:underline font-bold flex items-center gap-1 group">
-              Resend email
-              <ArrowRight
-                size={14}
-                className="group-hover:translate-x-1 transition-transform"
-              />
-            </button>
+            {countdown > 0 ? (
+              <span className="text-gray-400 font-bold flex items-center gap-1">
+                Resend email in {formatTime(countdown)}
+              </span>
+            ) : pendingResetOTP ? (
+              <button
+                disabled={true}
+                className="text-primary h-10 font-bold flex items-center gap-2 group cursor-not-allowed opacity-70"
+              >
+                Sending...
+                <IconLoader size={12} />
+              </button>
+            ) : (
+              <button
+                onClick={handleResendOTP}
+                className="text-primary hover:underline font-bold flex items-center gap-1 group cursor-pointer"
+              >
+                Resend email
+                <ArrowRight
+                  size={14}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
+              </button>
+            )}
           </p>
         </div>
       </div>

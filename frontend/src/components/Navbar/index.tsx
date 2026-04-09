@@ -22,7 +22,7 @@ export default function Navbar() {
             <span>Login</span>
           </a>
           <a
-            href="/register"
+            href="/sign-up"
             className="bg-primary hover:bg-primary-dark font-bold text-white px-4 py-2 rounded-lg"
           >
             <span>Get Started</span>

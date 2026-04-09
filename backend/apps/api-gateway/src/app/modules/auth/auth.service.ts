@@ -1,0 +1,141 @@
+import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices/client/client-proxy';
+import { firstValueFrom } from 'rxjs';
+import { CompleteSignupDto } from './dto/complete-signup.dto';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    @Inject(process.env.AUTH_SERVICE_NAME || 'AUTH_SERVICE')
+    private readonly authClient: ClientProxy,
+  ) {}
+
+  async login(email: string, password: string) {
+    const result = await firstValueFrom(
+      this.authClient.send('auth.login', {
+        email,
+        password,
+      }),
+    );
+    return result;
+  }
+
+  async verifyOtp(userId: string, otp: string) {
+    try {
+      const result = await firstValueFrom(
+        this.authClient.send('auth.verify', {
+          userId,
+          otp,
+        }),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
+  }
+
+  async initSignup(email: string) {
+    try {
+      const result = await firstValueFrom(
+        this.authClient.send('auth.signup.init', {
+          email,
+        }),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
+  }
+
+  async verifyOtpSignup(email: string, otp: string, token: string) {
+    try {
+      const result = await firstValueFrom(
+        this.authClient.send('auth.signup.verify_otp', { email, otp, token }),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
+    }
+  }
+
+  async completeSignup(dto: CompleteSignupDto) {
+    try {
+      const result = await firstValueFrom(
+        this.authClient.send('auth.signup.complete', dto),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
+    }
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.token.refresh', { refreshToken }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 401);
+    }
+  }
+
+  async getStatus(userId: string) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.status', { userId }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 401);
+    }
+  }
+
+  async forgotPasswordInit(email: string) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.forgot_password.init', { email }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
+  }
+
+  async verifyForgotPasswordOtp(email: string, otp: string, token: string) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.forgot_password.verify_otp', {
+          email,
+          otp,
+          token,
+        }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
+    }
+  }
+
+  async resetPassword(resetToken: string, newPassword: string) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.forgot_password.reset', {
+          resetToken,
+          newPassword,
+        }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
+    }
+  }
+
+  async resendOTP(email: string, type: number) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.resend_otp', {
+          email,
+          type,
+        }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
+    }
+  }
+}

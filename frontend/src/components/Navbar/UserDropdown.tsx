@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuthStore } from "@/store/auth.store";
 import { useEffect, useRef, useState } from "react";
 
 function IconSwitch() {
@@ -98,24 +99,26 @@ interface UserDropdownProps {
   variant?: "full" | "avatar";
 }
 
-export default function UserDropdown({
-  name = "Alex Rivera",
-  email = "ducxww@gmail.com",
-  role = "Project Manager",
-  avatarSrc,
-  variant = "full",
-}: UserDropdownProps) {
+export default function UserDropdown({}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const initials =
-    name
-      .split(" ")
-      .filter(Boolean)
-      .map((w) => w[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "?";
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  let initials = "";
+  // if (user) {
+  //   initials =
+  //     user?.fullname
+  //       .split(" ")
+  //       .filter(Boolean)
+  //       .map((w) => w[0])
+  //       .join("")
+  //       .toUpperCase()
+  //       .slice(0, 2) ||
+  //     "?" ||
+  //     "";
+  // }
 
   useEffect(() => {
     const handle = (e: MouseEvent) => {
@@ -134,6 +137,10 @@ export default function UserDropdown({
     return () => document.removeEventListener("keydown", handle);
   }, []);
 
+  if (!user) {
+    return <UserDropdownSkeleton />;
+  }
+
   return (
     <div ref={ref} className="relative inline-block">
       {/* Trigger */}
@@ -141,35 +148,77 @@ export default function UserDropdown({
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2 px-2 py-1.5 rounded-xl border-none bg-transparent cursor-pointer transition-colors duration-150 hover:bg-gray-100"
       >
-        {variant === "full" && (
-          <div className="flex flex-col items-end leading-tight">
-            <span className="font-semibold text-sm text-gray-900 whitespace-nowrap">
-              {name}
-            </span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">
-              {role}
-            </span>
-          </div>
-        )}
-        <AvatarCircle
-          src={avatarSrc}
-          initials={initials}
-          size={variant === "full" ? 40 : 36}
-        />
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            lineHeight: 1.3,
+          }}
+        >
+          <span
+            style={{
+              fontWeight: 600,
+              fontSize: 14,
+              color: "#111827",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {user?.fullname || ""}
+          </span>
+          <span
+            style={{ fontSize: 12, color: "#6B7280", whiteSpace: "nowrap" }}
+          >
+            Role
+          </span>
+        </div>
+        <AvatarCircle src={user?.avatarUrl} initials={initials} size={36} />
       </button>
 
       {/* Dropdown */}
       {open && (
         <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[280px] bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border border-gray-100 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3.5 bg-gray-50 border-b border-gray-100">
-            <AvatarCircle src={avatarSrc} initials={initials} size={44} />
-            <div className="min-w-0">
-              <p className="font-semibold text-sm text-gray-900 m-0 truncate">
-                {name}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "14px 16px",
+              background: "#F9FAFB",
+              borderBottom: "1px solid #F3F4F6",
+            }}
+          >
+            <AvatarCircle
+              src={user?.avatarUrl || ""}
+              initials={initials}
+              size={44}
+            />
+            <div style={{ minWidth: 0 }}>
+              <p
+                style={{
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: "#111827",
+                  margin: 0,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {user?.fullname || ""}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5 mb-0 truncate">
-                {email}
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "#9CA3AF",
+                  margin: "2px 0 0",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {user?.email || ""}
               </p>
             </div>
           </div>
@@ -178,12 +227,35 @@ export default function UserDropdown({
           <div className="py-1.5">
             {[
               { icon: <IconSwitch />, label: "Switch account" },
-              { icon: <IconLogout />, label: "Log out" },
-            ].map(({ icon, label }) => (
+              {
+                icon: <IconLogout />,
+                label: "Log out",
+                onclick: () => logout(),
+              },
+            ].map(({ icon, label, onclick }) => (
               <button
                 key={label}
-                onClick={() => setOpen(false)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 bg-transparent border-none cursor-pointer text-left transition-colors duration-100 hover:bg-gray-50"
+                onClick={onclick}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "10px 16px",
+                  fontSize: 14,
+                  color: "#374151",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "background 0.1s",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "#F9FAFB")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
               >
                 <span className="text-gray-400 flex">{icon}</span>
                 {label}
@@ -195,3 +267,30 @@ export default function UserDropdown({
     </div>
   );
 }
+
+const UserDropdownSkeleton = ({
+  variant = "full",
+}: {
+  variant?: "full" | "minimal";
+}) => {
+  return (
+    <div className="inline-block">
+      <div className="flex items-center gap-2 p-2 px-2 py-1.5 rounded-xl">
+        {variant === "full" && (
+          <div className="flex flex-col items-end gap-1.5">
+            {/* Name Skeleton */}
+            <div className="h-3.5 w-20 bg-gray-200 rounded animate-pulse" />
+            {/* Role Skeleton */}
+            <div className="h-3 w-12 bg-gray-100 rounded animate-pulse" />
+          </div>
+        )}
+        {/* Avatar Skeleton */}
+        <div
+          className={`bg-gray-200 rounded-full animate-pulse ${
+            variant === "full" ? "w-10 h-10" : "w-9 h-9"
+          }`}
+        />
+      </div>
+    </div>
+  );
+};
