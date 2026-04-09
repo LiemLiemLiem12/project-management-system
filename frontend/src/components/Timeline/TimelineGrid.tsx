@@ -47,7 +47,6 @@ function getColumns(anchor: Date, mode: ViewMode): ColDef[] {
     }));
   }
   if (mode === "Months") {
-    // Show 12 weeks — 3 months
     const cols: ColDef[] = [];
     const start = startOfWeek(startOfMonth(anchor));
     for (let i = 0; i < 12; i++) {
@@ -57,7 +56,6 @@ function getColumns(anchor: Date, mode: ViewMode): ColDef[] {
     }
     return cols;
   }
-  // Quarters — 12 months
   const cols: ColDef[] = [];
   const start = startOfQuarter(anchor);
   for (let i = 0; i < 12; i++) {
@@ -91,7 +89,6 @@ function getBarStyle(
   }
 
   if (mode === "Months") {
-    // each col = 7 days
     const totalWidth = cols.reduce((a, c) => a + c.width, 0);
     const rangeStart = cols[0].date;
     const rangeEnd = addDays(cols[cols.length - 1].date, 6);
@@ -110,7 +107,6 @@ function getBarStyle(
     return { left, width };
   }
 
-  // Quarters — each col = 1 month
   const rangeStart = cols[0].date;
   const lastCol = cols[cols.length - 1];
   const rangeEnd = new Date(
@@ -152,7 +148,6 @@ function getTodayX(cols: ColDef[], mode: ViewMode): number | null {
     const dayPx = cols[0].width / 7;
     return ((today.getTime() - range.getTime()) / 86400000) * dayPx;
   }
-  // Quarters
   const rangeStart = cols[0].date;
   const lastCol = cols[cols.length - 1];
   const rangeEnd = new Date(
@@ -214,46 +209,15 @@ export default function TimelineGrid({
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100%",
-        overflow: "hidden",
-        fontFamily: "'Plus Jakarta Sans','Segoe UI',sans-serif",
-      }}
-    >
+    <div className="flex h-full overflow-hidden font-sans">
       {/* ── Sidebar ── */}
       <div
-        style={{
-          width: SIDEBAR_W,
-          flexShrink: 0,
-          borderRight: "1px solid #E5E7EB",
-          overflowY: "auto",
-          background: "white",
-        }}
+        className="shrink-0 border-r border-gray-200 overflow-y-auto bg-white"
+        style={{ width: SIDEBAR_W }}
       >
         {/* header cell */}
-        <div
-          style={{
-            height: 56,
-            borderBottom: "1px solid #E5E7EB",
-            display: "flex",
-            alignItems: "center",
-            paddingLeft: 20,
-            position: "sticky",
-            top: 0,
-            background: "white",
-            zIndex: 5,
-          }}
-        >
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: "#9CA3AF",
-              letterSpacing: "0.07em",
-            }}
-          >
+        <div className="h-14 border-b border-gray-200 flex items-center pl-5 sticky top-0 bg-white z-[5]">
+          <span className="text-[11px] font-semibold text-gray-400 tracking-[0.07em]">
             CATEGORIES
           </span>
         </div>
@@ -261,43 +225,19 @@ export default function TimelineGrid({
         {filteredGroups.map((g) => (
           <div
             key={g.id}
-            style={{
-              height: ROW_H,
-              borderBottom: "1px solid #F3F4F6",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              padding: "0 20px",
-            }}
+            className="border-b border-gray-100 flex flex-col justify-center px-5"
+            style={{ height: ROW_H }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <div className="flex items-center gap-[7px]">
               <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: g.color,
-                  flexShrink: 0,
-                }}
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ background: g.color }}
               />
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
+              <span className="text-[13px] font-semibold text-gray-900">
                 {g.name}
               </span>
             </div>
-            <button
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                textAlign: "left",
-                fontSize: 12,
-                color: "#3B82F6",
-                fontWeight: 500,
-                marginTop: 4,
-                padding: 0,
-                fontFamily: "inherit",
-              }}
-            >
+            <button className="bg-transparent border-none cursor-pointer text-left text-xs text-blue-500 font-medium mt-1 p-0 font-inherit">
               + Add
             </button>
           </div>
@@ -305,42 +245,24 @@ export default function TimelineGrid({
       </div>
 
       {/* ── Scroll area ── */}
-      <div style={{ flex: 1, overflow: "auto", position: "relative" }}>
+      <div className="flex-1 overflow-auto relative">
         {/* Day / period header — sticky */}
         <div
-          style={{
-            display: "flex",
-            height: 56,
-            borderBottom: "1px solid #E5E7EB",
-            position: "sticky",
-            top: 0,
-            zIndex: 10,
-            background: "white",
-            width: totalW,
-          }}
+          className="flex h-14 border-b border-gray-200 sticky top-0 z-10 bg-white"
+          style={{ width: totalW }}
         >
           {cols.map((col, i) => (
             <div
               key={i}
-              style={{
-                width: col.width,
-                flexShrink: 0,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRight: "1px solid #F3F4F6",
-                background: col.isWeekend ? "#F9FAFB" : "white",
-                gap: 1,
-              }}
+              className={`shrink-0 flex flex-col items-center justify-center border-r border-gray-100 gap-[1px] ${
+                col.isWeekend ? "bg-gray-50" : "bg-white"
+              }`}
+              style={{ width: col.width }}
             >
               <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  color: col.isWeekend ? "#9CA3AF" : "#6B7280",
-                  letterSpacing: "0.06em",
-                }}
+                className={`text-[10px] font-semibold tracking-[0.06em] ${
+                  col.isWeekend ? "text-gray-400" : "text-gray-500"
+                }`}
               >
                 {col.label}
               </span>
@@ -349,26 +271,18 @@ export default function TimelineGrid({
                   const isT = viewMode === "Weeks" && isToday(col.date);
                   return (
                     <div
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: "50%",
-                        background: isT ? "#2563EB" : "transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center ${
+                        isT ? "bg-blue-600" : "bg-transparent"
+                      }`}
                     >
                       <span
-                        style={{
-                          fontSize: 15,
-                          fontWeight: 700,
-                          color: isT
-                            ? "white"
+                        className={`text-[15px] font-bold ${
+                          isT
+                            ? "text-white"
                             : col.isWeekend
-                              ? "#9CA3AF"
-                              : "#111827",
-                        }}
+                              ? "text-gray-400"
+                              : "text-gray-900"
+                        }`}
                       >
                         {col.sublabel}
                       </span>
@@ -392,33 +306,23 @@ export default function TimelineGrid({
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    style={{
-                      position: "relative",
-                      height: ROW_H,
-                      borderBottom: "1px solid #F3F4F6",
-                      background: snapshot.isDraggingOver
-                        ? "#EFF6FF"
-                        : "transparent",
-                      transition: "background 0.15s",
-                    }}
+                    className={`relative border-b border-gray-100 transition-colors duration-150 ${
+                      snapshot.isDraggingOver ? "bg-blue-50" : "bg-transparent"
+                    }`}
+                    style={{ height: ROW_H }}
                   >
                     {/* Column stripes */}
                     {cols.map((col, i) => (
                       <div
                         key={i}
+                        className={`absolute top-0 h-full border-r border-gray-100 pointer-events-none ${
+                          col.isWeekend ? "bg-gray-50/80" : "bg-transparent"
+                        }`}
                         style={{
-                          position: "absolute",
                           left: cols
                             .slice(0, i)
                             .reduce((a, c) => a + c.width, 0),
-                          top: 0,
                           width: col.width,
-                          height: "100%",
-                          borderRight: "1px solid #F3F4F6",
-                          background: col.isWeekend
-                            ? "rgba(249,250,251,0.8)"
-                            : "transparent",
-                          pointerEvents: "none",
                         }}
                       />
                     ))}
@@ -426,16 +330,8 @@ export default function TimelineGrid({
                     {/* Today line */}
                     {todayX !== null && (
                       <div
-                        style={{
-                          position: "absolute",
-                          left: todayX,
-                          top: 0,
-                          bottom: 0,
-                          width: 2,
-                          background: "#2563EB",
-                          zIndex: 4,
-                          pointerEvents: "none",
-                        }}
+                        className="absolute top-0 bottom-0 w-[2px] bg-blue-600 z-[4] pointer-events-none"
+                        style={{ left: todayX }}
                       />
                     )}
 
@@ -453,57 +349,27 @@ export default function TimelineGrid({
                               ref={drag.innerRef}
                               {...drag.draggableProps}
                               {...drag.dragHandleProps}
+                              className={`absolute top-[10px] min-h-[56px] rounded-lg py-[7px] px-[10px] select-none ${
+                                dragSnap.isDragging
+                                  ? "cursor-grabbing shadow-2xl z-50"
+                                  : "cursor-grab shadow-sm z-[2]"
+                              } ${
+                                task.color === "#F3F4F6"
+                                  ? "border border-gray-200"
+                                  : "border-none"
+                              } ${bar ? "visible" : "invisible"}`}
                               style={{
-                                position: "absolute",
                                 left: bar ? bar.left : -9999,
-                                top: 10,
                                 width: bar ? bar.width : 120,
-                                minHeight: 56,
                                 background: task.color,
-                                borderRadius: 8,
-                                padding: "7px 10px",
-                                cursor: dragSnap.isDragging
-                                  ? "grabbing"
-                                  : "grab",
-                                boxShadow: dragSnap.isDragging
-                                  ? "0 10px 30px rgba(0,0,0,0.2)"
-                                  : "0 1px 4px rgba(0,0,0,0.08)",
-                                border:
-                                  task.color === "#F3F4F6"
-                                    ? "1px solid #E5E7EB"
-                                    : "none",
-                                zIndex: dragSnap.isDragging ? 50 : 2,
-                                visibility: bar ? "visible" : "hidden",
-                                userSelect: "none",
                                 ...drag.draggableProps.style,
                               }}
                             >
                               {/* Status */}
                               {task.status && (
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 4,
-                                    marginBottom: 2,
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      width: 6,
-                                      height: 6,
-                                      borderRadius: "50%",
-                                      background: "#9CA3AF",
-                                    }}
-                                  />
-                                  <span
-                                    style={{
-                                      fontSize: 9,
-                                      fontWeight: 700,
-                                      color: "#6B7280",
-                                      letterSpacing: "0.05em",
-                                    }}
-                                  >
+                                <div className="flex items-center gap-1 mb-[2px]">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                                  <span className="text-[9px] font-bold text-gray-500 tracking-[0.05em]">
                                     {task.status}
                                   </span>
                                 </div>
@@ -511,18 +377,8 @@ export default function TimelineGrid({
 
                               {/* Title */}
                               <p
-                                style={{
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  color: task.textColor,
-                                  margin: 0,
-                                  lineHeight: 1.35,
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  display: "-webkit-box",
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: "vertical" as const,
-                                }}
+                                className="text-xs font-semibold m-0 leading-[1.35] line-clamp-2"
+                                style={{ color: task.textColor }}
                               >
                                 {task.title}
                               </p>
@@ -530,12 +386,8 @@ export default function TimelineGrid({
                               {/* Time */}
                               {task.timeLabel && (
                                 <p
-                                  style={{
-                                    fontSize: 10,
-                                    color: task.textColor,
-                                    opacity: 0.75,
-                                    margin: "2px 0 0",
-                                  }}
+                                  className="text-[10px] opacity-75 mt-[2px] mb-0"
+                                  style={{ color: task.textColor }}
                                 >
                                   {task.timeLabel}
                                 </p>
@@ -543,43 +395,20 @@ export default function TimelineGrid({
 
                               {/* Members */}
                               {task.members && task.members.length > 0 && (
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    marginTop: 5,
-                                  }}
-                                >
+                                <div className="flex items-center mt-[5px]">
                                   {task.members.map((m, mi) => (
                                     <div
                                       key={mi}
-                                      style={{
-                                        width: 18,
-                                        height: 18,
-                                        borderRadius: "50%",
-                                        background: "rgba(255,255,255,0.35)",
-                                        border:
-                                          "1.5px solid rgba(255,255,255,0.7)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        fontSize: 7,
-                                        fontWeight: 700,
-                                        color: "white",
-                                        marginLeft: mi > 0 ? -4 : 0,
-                                        flexShrink: 0,
-                                      }}
+                                      className={`w-[18px] h-[18px] rounded-full bg-white/35 border-[1.5px] border-white/70 flex items-center justify-center text-[7px] font-bold text-white shrink-0 ${
+                                        mi > 0 ? "-ml-1" : ""
+                                      }`}
                                     >
                                       {m[0]}
                                     </div>
                                   ))}
                                   <span
-                                    style={{
-                                      fontSize: 10,
-                                      color: task.textColor,
-                                      opacity: 0.8,
-                                      marginLeft: 5,
-                                    }}
+                                    className="text-[10px] opacity-80 ml-[5px]"
+                                    style={{ color: task.textColor }}
                                   >
                                     {task.members.length} Team Members
                                   </span>
@@ -588,14 +417,7 @@ export default function TimelineGrid({
 
                               {/* Attachments */}
                               {task.attachments && (
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 3,
-                                    marginTop: 4,
-                                  }}
-                                >
+                                <div className="flex items-center gap-[3px] mt-1">
                                   <svg
                                     width="10"
                                     height="10"
@@ -609,13 +431,7 @@ export default function TimelineGrid({
                                       strokeLinecap="round"
                                     />
                                   </svg>
-                                  <span
-                                    style={{
-                                      fontSize: 10,
-                                      color: "rgba(255,255,255,0.9)",
-                                      fontWeight: 500,
-                                    }}
-                                  >
+                                  <span className="text-[10px] text-white/90 font-medium">
                                     {task.attachments} Docs
                                   </span>
                                 </div>
@@ -623,13 +439,8 @@ export default function TimelineGrid({
 
                               {/* ⋯ menu icon */}
                               <div
-                                style={{
-                                  position: "absolute",
-                                  top: 6,
-                                  right: 6,
-                                  color: task.textColor,
-                                  opacity: 0.6,
-                                }}
+                                className="absolute top-[6px] right-[6px] opacity-60"
+                                style={{ color: task.textColor }}
                               >
                                 <svg
                                   width="13"
