@@ -61,35 +61,32 @@ function AvatarCircle({
 }) {
   const [imgError, setImgError] = useState(false);
 
-  const style: React.CSSProperties = {
-    width: size,
-    height: size,
-    borderRadius: "50%",
-    flexShrink: 0,
-    background: "#1B2A4A",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "white",
-    fontWeight: 700,
-    fontSize: size * 0.33,
-    overflow: "hidden",
-  };
-
+  // Giữ lại width, height và fontSize dạng inline style vì đây là giá trị động
   if (src && !imgError) {
     return (
-      <div style={style}>
+      <div
+        className="rounded-full shrink-0 bg-[#1B2A4A] flex items-center justify-center text-white font-bold overflow-hidden"
+        style={{ width: size, height: size }}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
           alt="avatar"
           onError={() => setImgError(true)}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          className="w-full h-full object-cover"
         />
       </div>
     );
   }
-  return <div style={style}>{initials}</div>;
+
+  return (
+    <div
+      className="rounded-full shrink-0 bg-[#1B2A4A] flex items-center justify-center text-white font-bold overflow-hidden"
+      style={{ width: size, height: size, fontSize: size * 0.33 }}
+    >
+      {initials}
+    </div>
+  );
 }
 
 interface UserDropdownProps {
@@ -138,46 +135,18 @@ export default function UserDropdown({
   }, []);
 
   return (
-    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+    <div ref={ref} className="relative inline-block">
       {/* Trigger */}
       <button
         onClick={() => setOpen((o) => !o)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "6px 8px",
-          borderRadius: 12,
-          border: "none",
-          background: "transparent",
-          cursor: "pointer",
-          transition: "background 0.15s",
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+        className="flex items-center gap-2 px-2 py-1.5 rounded-xl border-none bg-transparent cursor-pointer transition-colors duration-150 hover:bg-gray-100"
       >
         {variant === "full" && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              lineHeight: 1.3,
-            }}
-          >
-            <span
-              style={{
-                fontWeight: 600,
-                fontSize: 14,
-                color: "#111827",
-                whiteSpace: "nowrap",
-              }}
-            >
+          <div className="flex flex-col items-end leading-tight">
+            <span className="font-semibold text-sm text-gray-900 whitespace-nowrap">
               {name}
             </span>
-            <span
-              style={{ fontSize: 12, color: "#6B7280", whiteSpace: "nowrap" }}
-            >
+            <span className="text-xs text-gray-500 whitespace-nowrap">
               {role}
             </span>
           </div>
@@ -191,63 +160,22 @@ export default function UserDropdown({
 
       {/* Dropdown */}
       {open && (
-        <div
-          style={{
-            position: "absolute",
-            right: 0,
-            top: "calc(100% + 8px)",
-            zIndex: 50,
-            width: 280,
-            background: "white",
-            borderRadius: 16,
-            boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
-            border: "1px solid #F3F4F6",
-            overflow: "hidden",
-          }}
-        >
+        <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[280px] bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border border-gray-100 overflow-hidden">
           {/* Header */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "14px 16px",
-              background: "#F9FAFB",
-              borderBottom: "1px solid #F3F4F6",
-            }}
-          >
+          <div className="flex items-center gap-3 px-4 py-3.5 bg-gray-50 border-b border-gray-100">
             <AvatarCircle src={avatarSrc} initials={initials} size={44} />
-            <div style={{ minWidth: 0 }}>
-              <p
-                style={{
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: "#111827",
-                  margin: 0,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
+            <div className="min-w-0">
+              <p className="font-semibold text-sm text-gray-900 m-0 truncate">
                 {name}
               </p>
-              <p
-                style={{
-                  fontSize: 12,
-                  color: "#9CA3AF",
-                  margin: "2px 0 0",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
+              <p className="text-xs text-gray-400 mt-0.5 mb-0 truncate">
                 {email}
               </p>
             </div>
           </div>
 
           {/* Menu items */}
-          <div style={{ padding: "6px 0" }}>
+          <div className="py-1.5">
             {[
               { icon: <IconSwitch />, label: "Switch account" },
               { icon: <IconLogout />, label: "Log out" },
@@ -255,30 +183,9 @@ export default function UserDropdown({
               <button
                 key={label}
                 onClick={() => setOpen(false)}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "10px 16px",
-                  fontSize: 14,
-                  color: "#374151",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  transition: "background 0.1s",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "#F9FAFB")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 bg-transparent border-none cursor-pointer text-left transition-colors duration-100 hover:bg-gray-50"
               >
-                <span style={{ color: "#9CA3AF", display: "flex" }}>
-                  {icon}
-                </span>
+                <span className="text-gray-400 flex">{icon}</span>
                 {label}
               </button>
             ))}
