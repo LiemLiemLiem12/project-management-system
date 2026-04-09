@@ -4,6 +4,11 @@ import { AuthController } from './auth.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { ConfigModule } from '@nestjs/config';
+import googleOauthConfig from './config/google-oauth.config';
+import facebookOauthConfig from './config/facebook-oauth.config';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { FacebookStrategy } from './strategies/facebook.strategy';
 
 @Module({
   imports: [
@@ -20,8 +25,17 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         },
       },
     ]),
+
+    ConfigModule.forFeature(googleOauthConfig),
+    ConfigModule.forFeature(facebookOauthConfig),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    GoogleStrategy,
+    FacebookStrategy,
+  ],
 })
 export class AuthModule {}

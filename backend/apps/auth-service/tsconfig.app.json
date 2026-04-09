@@ -9,7 +9,11 @@
     "emitDecoratorMetadata": true,
     "target": "es2021"
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../api-gateway/src/app/modules/auth/guard/google-auth.guard.ts",
+    "../api-gateway/src/app/modules/auth/strategies/google.strategy.ts"
+  ],
   "exclude": [
     "out-tsc",
     "dist",

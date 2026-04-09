@@ -138,4 +138,28 @@ export class AuthService {
       throw new HttpException(error.message, error.statusCode || 400);
     }
   }
+
+  async googleLogin(profile: any) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.google', {
+          profile,
+        }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
+    }
+  }
+
+  async facebookLogin(profile: any) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('auth.facebook', {
+          profile,
+        }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
+    }
+  }
 }

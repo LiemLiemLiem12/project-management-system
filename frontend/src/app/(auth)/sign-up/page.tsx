@@ -82,25 +82,18 @@ export default function SignupPage() {
         </div>
 
         {/* Social Buttons Row */}
-        <div className="grid grid-cols-3 gap-3 w-full">
+        <div className="grid grid-cols-2 gap-3 w-full">
           <ButtonSocial
             platform="Google"
             alt="Google"
             src="/google-icon.png"
-            href="/auth/google"
+            href="http://localhost:4000/api/auth/google"
           />
           <ButtonSocial
             platform="Facebook"
             alt="Facebook"
             src="/facebook-icon.png"
-            href="/auth/facebook"
-          />
-          {/* Nút thứ 3 thường là Apple hoặc một tài khoản Google khác */}
-          <ButtonSocial
-            platform="Google"
-            alt="Google"
-            src="/google-icon.png"
-            href="/auth/google-alt"
+            href="http://localhost:4000/api/auth/facebook"
           />
         </div>
 

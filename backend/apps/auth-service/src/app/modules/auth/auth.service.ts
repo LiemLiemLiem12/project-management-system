@@ -472,4 +472,78 @@ export class AuthService {
       message: 'A new OTP has been sent to your email.',
     };
   }
+
+  async getAuth(user: User) {
+    const accessToken = await this.JwtService.sign(
+      { userId: user.id, email: user.email },
+      { expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN as any) || '15m' },
+    );
+
+    // 2. Tạo Refresh Token (dài hạn - chuỗi ngẫu nhiên hoặc JWT)
+    const refreshToken = await this.JwtService.signAsync(
+      { userId: user.id },
+      {
+        expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN as any) || '7d',
+        secret: process.env.JWT_REFRESH_SECRET || '',
+      },
+    );
+
+    await this.cacheManager.set(
+      `refreshToken_${user.id}`,
+      refreshToken,
+      604800000,
+    );
+
+    const { passwordHash, ...newUser } = user;
+
+    return {
+      newUser,
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async googleLogin(profile: any) {
+    let existingUser = await this.userRepository.findOneBy({
+      email: profile?._json?.email,
+    });
+
+    if (!existingUser) {
+      const user = {
+        email: profile?._json?.email,
+        passwordHash: '',
+        username: profile?._json?.given_name,
+        fullName: profile?._json?.name,
+        provider: 'google',
+        avatarUrl: profile?._json?.picture,
+        birthday: new Date(),
+      };
+
+      existingUser = await this.userRepository.save(user);
+    }
+
+    return this.getAuth(existingUser);
+  }
+
+  async facebookLogin(profile: any) {
+    let existingUser = await this.userRepository.findOneBy({
+      email: profile?._json?.email,
+    });
+
+    if (!existingUser) {
+      const user = {
+        email: profile?._json?.email,
+        passwordHash: '',
+        username: profile?._json?.last_name + profile?._json?.first_name,
+        fullName: profile?._json?.name,
+        provider: 'facebook',
+        avatarUrl: profile?.photos[0]?.value,
+        birthday: new Date(),
+      };
+
+      existingUser = await this.userRepository.save(user);
+    }
+
+    return this.getAuth(existingUser);
+  }
 }

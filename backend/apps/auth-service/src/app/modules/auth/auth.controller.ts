@@ -1,7 +1,8 @@
-import { Controller, HttpException } from '@nestjs/common';
+import { Controller, HttpException, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AuthPayloadDto } from './dto/auth.dto';
+import { profile } from 'console';
 
 @Controller()
 export class AuthController {
@@ -94,5 +95,15 @@ export class AuthController {
   @MessagePattern('auth.resend_otp')
   async resendOTP(@Payload() payload: { email: string; type: string }) {
     return this.authService.resendOtp(payload.email, Number(payload.type));
+  }
+
+  @MessagePattern('auth.google')
+  async googleLogin(@Payload() payload: { profile: any }) {
+    return this.authService.googleLogin(payload.profile);
+  }
+
+  @MessagePattern('auth.facebook')
+  async facebookLogin(@Payload() payload: { profile: any }) {
+    return this.authService.facebookLogin(payload.profile);
   }
 }

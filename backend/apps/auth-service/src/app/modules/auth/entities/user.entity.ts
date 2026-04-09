@@ -21,7 +21,7 @@ export class User {
   @Column({ name: 'full_name', nullable: true })
   fullName!: string;
 
-  @Column({ name: 'avatar_url', nullable: true })
+  @Column({ name: 'avatar_url', type: 'text', nullable: true })
   avatarUrl!: string;
 
   @Column({ default: 'local' })

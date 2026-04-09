@@ -95,13 +95,13 @@ export default function LoginPage() {
           platform="Facebook"
           alt="Facebook Image"
           src="/facebook-icon.png"
-          href="/facebook"
+          href="http://localhost:4000/api/auth/facebook"
         />
         <ButtonSocial
           platform="Google"
           alt="Google Image"
           src="/google-icon.png"
-          href="/google"
+          href="http://localhost:4000/api/auth/google"
         />
 
         <div className="other-option-group flex items-center justify-center gap-2">

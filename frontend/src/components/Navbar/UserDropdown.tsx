@@ -84,6 +84,7 @@ function AvatarCircle({
         <img
           src={src}
           alt="avatar"
+          referrerPolicy="no-referrer"
           onError={() => setImgError(true)}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
@@ -109,19 +110,15 @@ export default function UserDropdown({}) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
-  let initials = "";
-  // if (user) {
-  //   initials =
-  //     user?.fullname
-  //       .split(" ")
-  //       .filter(Boolean)
-  //       .map((w) => w[0])
-  //       .join("")
-  //       .toUpperCase()
-  //       .slice(0, 2) ||
-  //     "?" ||
-  //     "";
-  // }
+  const initials = user?.fullname
+    ? user.fullname
+        .split(" ")
+        .filter(Boolean)
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "??"; // Fallback nếu không có tên
 
   useEffect(() => {
     const handle = (e: MouseEvent) => {
@@ -139,6 +136,10 @@ export default function UserDropdown({}) {
     document.addEventListener("keydown", handle);
     return () => document.removeEventListener("keydown", handle);
   }, []);
+
+  useEffect(() => {
+    console.log(user);
+  }, [user]);
 
   if (!user) {
     return <UserDropdownSkeleton />;

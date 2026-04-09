@@ -5,15 +5,10 @@ import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './modules/auth/auth.module';
+import googleOauthConfig from './modules/auth/config/google-oauth.config';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-
-    AuthModule,
-  ],
+  imports: [ConfigModule.forRoot(), AuthModule],
   controllers: [AppController],
   providers: [AppService],
 })

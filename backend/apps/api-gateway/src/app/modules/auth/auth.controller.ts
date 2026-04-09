@@ -15,7 +15,7 @@ import { AuthService } from './auth.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { LocalGuard } from './guard/local.guard';
 import { JwtAuthGuard } from './guard/jwt.guard';
-import type { Request, Request } from 'express';
+import type { Request, Request, Request } from 'express';
 import type { Response } from 'express';
 import { verifyOtpDto } from './dto/verify.dto';
 import { InitSignupDto } from './dto/init-signup.dto';
@@ -27,6 +27,8 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResendOTPDto } from './dto/resend-otp.dto';
+import { GoogleAuthGuard } from './guard/google-auth.guard';
+import { FacebookAuthGuard } from './guard/facebook-auth.guard';
 // localhost:3000/api/auth/login
 @Controller('auth')
 export class AuthController {
@@ -192,5 +194,57 @@ export class AuthController {
       resendOTPDto.email,
       Number(resendOTPDto.type),
     );
+  }
+
+  @UseGuards(GoogleAuthGuard)
+  @Get('google')
+  async google() {}
+
+  @UseGuards(GoogleAuthGuard)
+  @Get('google/callback')
+  async googleLogin(@Req() req: Request, @Res() res: Response) {
+    const { user, accessToken, refreshToken } = req.user;
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
+    });
+
+    return res.redirect('http://localhost:3000/for-you');
+  }
+
+  @UseGuards(FacebookAuthGuard)
+  @Get('facebook')
+  async facebook() {}
+
+  @UseGuards(FacebookAuthGuard)
+  @Get('facebook/callback')
+  async facebookLogin(@Req() req: Request, @Res() res: Response) {
+    const { user, accessToken, refreshToken } = req.user;
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
+    });
+
+    return res.redirect('http://localhost:3000/for-you');
   }
 }
