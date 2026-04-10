@@ -18,7 +18,7 @@ async function bootstrap() {
     configService.get<string>('RABBIT_MQ') ||
     'amqp://guest:guest@localhost:5672';
 
-  const QUEUE_NAME = configService.get<string>('QUEUE_NAME') || 'AUTH_QUEUE';
+  const QUEUE_NAME = configService.get<string>('QUEUE_NAME') || 'PROJECT_QUEUE';
 
   const app = await NestFactory.createMicroservice(AppModule, {
     transport: Transport.RMQ,
@@ -34,7 +34,7 @@ async function bootstrap() {
   await app.listen();
 
   Logger.log(
-    `[Auth Service] is running and connected to RabbitMQ at: ${RABBIT_MQ}, listening on queue: ${QUEUE_NAME}`,
+    `[Project Service] is running and connected to RabbitMQ at: ${RABBIT_MQ}, listening on queue: ${QUEUE_NAME}`,
   );
 }
 
