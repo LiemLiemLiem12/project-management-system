@@ -32,4 +32,14 @@ export class ProjectController {
   remove(@Payload() id: number) {
     return this.projectService.remove(id);
   }
+
+  @MessagePattern('project.checkRole')
+  checkRole(@Payload() payload: { userId: string; projectId: string }) {
+    return this.projectService.checkRole(payload.userId, payload.projectId);
+  }
+
+  @MessagePattern('project.find-one')
+  findOneProject(@Payload() payload: { id: string }) {
+    return this.projectService.findOne(payload.id);
+  }
 }

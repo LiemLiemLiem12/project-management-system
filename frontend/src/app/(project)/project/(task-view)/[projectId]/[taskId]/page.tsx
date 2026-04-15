@@ -1,0 +1,46 @@
+"use client";
+import TaskMainContent from "@/components/TaskDetail/TaskMainContent";
+import TaskSidebar from "@/components/TaskDetail/TaskSidebar";
+import { useTaskStore } from "@/store/task.store";
+import { useParams } from "next/navigation";
+import { useEffect } from "react";
+
+export default function TaskDetailPage() {
+  const param = useParams();
+  const setCurrentTask = useTaskStore((state: any) => state.setCurrentTask);
+
+  useEffect(() => {
+    if (param.taskId) {
+      setCurrentTask(param.taskId);
+      console.log("Current Task ID set to:", param.taskId);
+    }
+  }, [param]);
+  return (
+    <div className="flex flex-col h-full bg-white text-slate-900 ">
+      {/* Thanh Header trên cùng */}
+      <div className="flex gap-2 px-8 py-2 w-full justify-start items-center">
+        <a href="">Workspace</a>
+        <span>/</span>
+        <a href="">Project Name</a>
+        <span>/</span>
+
+        <a className="text-primary" href="">
+          Task-2
+        </a>
+      </div>
+
+      {/* Khu vực nội dung chia 2 cột */}
+      <div className="flex flex-1 h-full overflow-hidden border-slate-200">
+        {/* Cột trái: Nội dung chính (Title, Description, Checklist) */}
+        <div className="flex-1 h-full overflow-y-auto p-8 lg:px-12">
+          <TaskMainContent />
+        </div>
+
+        {/* Cột phải: Sidebar thông tin (Assignee, Labels, Automation) */}
+        <div className="hidden lg:block w-[380px] h-full overflow-y-auto border-l p-8 border-slate-100 bg-slate-50/30">
+          <TaskSidebar />
+        </div>
+      </div>
+    </div>
+  );
+}

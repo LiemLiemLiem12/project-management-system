@@ -6,7 +6,7 @@ import ProjectDeadlineCard from "@/components/Dashboard/ProjectDeadlineCard";
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+    <div className="h-full overflow-y-auto bg-gray-50 p-6 md:p-10">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           <div className="flex-1 min-w-0 flex flex-col gap-8">

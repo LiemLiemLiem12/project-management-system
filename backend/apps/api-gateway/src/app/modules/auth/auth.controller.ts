@@ -29,6 +29,9 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResendOTPDto } from './dto/resend-otp.dto';
 import { GoogleAuthGuard } from './guard/google-auth.guard';
 import { FacebookAuthGuard } from './guard/facebook-auth.guard';
+import { Roles } from './decorators/role.decorator';
+import { Role } from './enums/role.enum';
+import { RoleGuard } from './guard/role.guard';
 // localhost:3000/api/auth/login
 @Controller('auth')
 export class AuthController {
@@ -164,8 +167,6 @@ export class AuthController {
     return this.authService.getStatus(req.user.userId);
   }
 
-  // ... các route cũ (login, signup, v.v.)
-
   @Post('forgot-password/init')
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return await this.authService.forgotPasswordInit(forgotPasswordDto.email);
@@ -246,5 +247,13 @@ export class AuthController {
     });
 
     return res.redirect('http://localhost:3000/for-you');
+  }
+
+  @Roles(Role.MEMBER, Role.LEADER)
+  @UseGuards(RoleGuard)
+  @UseGuards(JwtAuthGuard)
+  @Get('rbac/:projectId')
+  async RBAC() {
+    console.log('In');
   }
 }

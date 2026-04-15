@@ -8,6 +8,9 @@ export class AuthService {
   constructor(
     @Inject(process.env.AUTH_SERVICE_NAME || 'AUTH_SERVICE')
     private readonly authClient: ClientProxy,
+
+    @Inject(process.env.PROJECT_SERVICE_NAME || 'PROJECT_SERVICE')
+    private readonly projectClient: ClientProxy,
   ) {}
 
   async login(email: string, password: string) {
@@ -156,6 +159,19 @@ export class AuthService {
       return await firstValueFrom(
         this.authClient.send('auth.facebook', {
           profile,
+        }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
+    }
+  }
+
+  async checkRole(userId: string, projectId: string) {
+    try {
+      return await firstValueFrom(
+        this.projectClient.send('project.checkRole', {
+          userId,
+          projectId,
         }),
       );
     } catch (error: any) {

@@ -1,6 +1,7 @@
 import { useAxiosPrivate } from "@/hooks";
 import { authAPI } from "./auth.api";
 import { useMemo } from "react";
+import { projectAPI } from "./project.api";
 
 export const useAPI = () => {
   const api = useAxiosPrivate();
@@ -8,6 +9,7 @@ export const useAPI = () => {
   return useMemo(
     () => ({
       auth: authAPI(api),
+      project: projectAPI(api),
     }),
     [api],
   );

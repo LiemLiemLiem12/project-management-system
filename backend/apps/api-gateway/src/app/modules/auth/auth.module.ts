@@ -9,6 +9,7 @@ import googleOauthConfig from './config/google-oauth.config';
 import facebookOauthConfig from './config/facebook-oauth.config';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
@@ -19,6 +20,20 @@ import { FacebookStrategy } from './strategies/facebook.strategy';
         options: {
           urls: [process.env.RABBIT_MQ || 'amqp://localhost:5672'],
           queue: process.env.AUTH_QUEUE_NAME || 'auth_queue',
+          queueOptions: {
+            durable: false,
+          },
+        },
+      },
+    ]),
+
+    ClientsModule.register([
+      {
+        name: process.env.PROJECT_SERVICE_NAME || 'PROJECT_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBIT_MQ || 'amqp://localhost:5672'],
+          queue: process.env.PROJECT_QUEUE_NAME || 'PROJECT_QUEUE',
           queueOptions: {
             durable: false,
           },
@@ -37,5 +52,6 @@ import { FacebookStrategy } from './strategies/facebook.strategy';
     GoogleStrategy,
     FacebookStrategy,
   ],
+  exports: [AuthService],
 })
 export class AuthModule {}

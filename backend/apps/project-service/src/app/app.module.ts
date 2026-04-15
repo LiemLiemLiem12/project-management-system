@@ -22,7 +22,9 @@ import { Task } from './modules/task/entities/task.entity';
     TaskModule,
     CommentModule,
 
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      envFilePath: '.env.local',
+    }),
 
     TypeOrmModule.forRoot({
       type: 'mysql',

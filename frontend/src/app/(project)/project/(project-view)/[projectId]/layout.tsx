@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { ReactNode } from "react";
 
 export default function ProjectLayout({ children }: { children: ReactNode }) {
-  const { id }: any = useParams();
+  const { projectId }: any = useParams();
 
   return (
     <div className="flex flex-col h-full">

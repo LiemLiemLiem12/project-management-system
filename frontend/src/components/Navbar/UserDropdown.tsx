@@ -134,10 +134,6 @@ export default function UserDropdown({}) {
     return () => document.removeEventListener("keydown", handle);
   }, []);
 
-  useEffect(() => {
-    console.log(user);
-  }, [user]);
-
   if (!user) {
     return <UserDropdownSkeleton />;
   }

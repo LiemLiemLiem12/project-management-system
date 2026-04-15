@@ -23,6 +23,9 @@ export class GroupTask {
   @Column()
   order!: number;
 
+  @Column()
+  isSuccess!: boolean;
+
   @ManyToOne(() => Project, (p) => p.groupTasks)
   @JoinColumn({ name: 'project_id' })
   project!: Project;

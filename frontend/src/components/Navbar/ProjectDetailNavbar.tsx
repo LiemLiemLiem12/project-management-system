@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 const ProjectDetailNavbar = () => {
-  const { id } = useParams() || "";
+  const { projectId } = useParams() || "";
 
   const [activeTab, setActiveTab]: [string, Dispatch<SetStateAction<string>>] =
     useState("Dashboard");
@@ -21,27 +21,27 @@ const ProjectDetailNavbar = () => {
     {
       name: "Dashboard",
       icon: <Gauge size={18} />,
-      link: `/project/${id}/dashboard`,
+      link: `/project/${projectId}/dashboard`,
     },
     {
       name: "Timeline",
       icon: <GitBranch size={18} />,
-      link: `/project/${id}/timeline`,
+      link: `/project/${projectId}/timeline`,
     },
     {
       name: "Kanban",
       icon: <Layout size={18} />,
-      link: `/project/${id}/kanban`,
+      link: `/project/${projectId}/kanban`,
     },
     {
       name: "Spreadsheet",
       icon: <Table size={18} />,
-      link: `/project/${id}/spreadsheet`,
+      link: `/project/${projectId}/spreadsheet`,
     },
     {
       name: "Storage",
       icon: <Archive size={18} />,
-      link: `/project/${id}/storage`,
+      link: `/project/${projectId}/storage`,
     },
   ];
 
