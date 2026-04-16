@@ -14,11 +14,13 @@ export default function TaskDetailPage() {
 
   if (!data) {
     return (
-      <div className="flex flex-col justify-center items-center h-full bg-white ">
-        <IconLoader size={100} />
+      <div className="flex flex-col justify-center items-center h-full ">
+        <IconLoader size={50} />
       </div>
     );
   }
+
+  console.log("Current Task:", data);
 
   return (
     <div className="flex flex-col h-full bg-white text-slate-900 ">

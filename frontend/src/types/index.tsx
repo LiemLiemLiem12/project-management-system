@@ -8,3 +8,9 @@ export interface User {
   birthday: string;
   createdAt: string;
 }
+
+//Task Detail Page
+export interface TaskSearchItem {
+  id: string;
+  title: string;
+}

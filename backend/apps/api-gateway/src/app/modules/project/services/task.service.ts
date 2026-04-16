@@ -19,4 +19,33 @@ export class TaskService {
       throw new HttpException(error.message, error.statusCode || 500);
     }
   }
+
+  async findTaskForSubtask(keyword: string, projectId: string, taskId: string) {
+    try {
+      const result = await firstValueFrom(
+        this.projectClient.send('task.find-for-subtask', {
+          keyword,
+          projectId,
+          taskId,
+        }),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
+  }
+
+  async addExistingSubtask(taskId: string, subtaskId: string) {
+    try {
+      const result = await firstValueFrom(
+        this.projectClient.send('task.add-existing-subtask', {
+          taskId,
+          subtaskId,
+        }),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
+  }
 }
