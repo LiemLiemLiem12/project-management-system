@@ -31,7 +31,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {/* Nếu đang ở trang Project VÀ dữ liệu đang tải -> Hiện loading */}
           {isProjectPage && (isLoading || !data) ? (
             <div className="p-10 text-center text-slate-500 font-medium animate-pulse">
-              Loading project data...
+              Loading data...
             </div>
           ) : (
             children

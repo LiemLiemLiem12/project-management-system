@@ -1,20 +1,25 @@
 "use client";
+import IconLoader from "@/components/IconLoader";
 import TaskMainContent from "@/components/TaskDetail/TaskMainContent";
 import TaskSidebar from "@/components/TaskDetail/TaskSidebar";
+import { useGetCurrentTask } from "@/services/task.service";
 import { useTaskStore } from "@/store/task.store";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 
 export default function TaskDetailPage() {
   const param = useParams();
-  const setCurrentTask = useTaskStore((state: any) => state.setCurrentTask);
+  const { projectId, taskId } = param;
+  const { data } = useGetCurrentTask(projectId! as string, taskId! as string);
 
-  useEffect(() => {
-    if (param.taskId) {
-      setCurrentTask(param.taskId);
-      console.log("Current Task ID set to:", param.taskId);
-    }
-  }, [param]);
+  if (!data) {
+    return (
+      <div className="flex flex-col justify-center items-center h-full bg-white ">
+        <IconLoader size={100} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-white text-slate-900 ">
       {/* Thanh Header trên cùng */}
@@ -24,8 +29,8 @@ export default function TaskDetailPage() {
         <a href="">Project Name</a>
         <span>/</span>
 
-        <a className="text-primary" href="">
-          Task-2
+        <a className="text-primary hover:text-blue-600" href="">
+          {data?.id || "Task Title"}
         </a>
       </div>
 

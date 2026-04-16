@@ -1,6 +1,6 @@
 import { HttpException, Inject, Injectable } from '@nestjs/common';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
+import { CreateProjectDto } from '../dto/create-project.dto';
+import { UpdateProjectDto } from '../dto/update-project.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
@@ -19,10 +19,21 @@ export class ProjectService {
     return `This action returns all project`;
   }
 
-  async findOne(id: string) {
+  async findProject(id: string) {
     try {
       const result = await firstValueFrom(
         this.projectClient.send('project.find-one', { id }),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
+  }
+
+  async findTask(projectId: string, taskId: string) {
+    try {
+      const result = await firstValueFrom(
+        this.projectClient.send('task.get-one', { projectId, taskId }),
       );
       return result;
     } catch (error: any) {

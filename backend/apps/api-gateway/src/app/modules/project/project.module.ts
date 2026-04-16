@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ProjectService } from './project.service';
-import { ProjectController } from './project.controller';
+import { ProjectService } from './services/project.service';
+import { ProjectController } from './controllers/project.controller';
 import { Transport } from '@nestjs/microservices/enums/transport.enum';
 import { ClientsModule } from '@nestjs/microservices/module/clients.module';
 import { AuthModule } from '../auth/auth.module';
+import { TaskController } from './controllers/task.controller';
+import { TaskService } from './services/task.service';
 
 @Module({
   imports: [
@@ -22,7 +24,7 @@ import { AuthModule } from '../auth/auth.module';
       },
     ]),
   ],
-  controllers: [ProjectController],
-  providers: [ProjectService],
+  controllers: [ProjectController, TaskController],
+  providers: [ProjectService, TaskService],
 })
 export class ProjectModule {}

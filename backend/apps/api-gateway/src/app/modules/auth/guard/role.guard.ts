@@ -24,15 +24,14 @@ export class RoleGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    console.log(requiredRoles);
-
     const request = context.switchToHttp().getRequest();
 
     const user = request.user;
 
     if (!user) return false;
 
-    const projectId = request.params.projectId;
+    const projectId =
+      request.cookies?.['projectId'] || request.params?.['projectId'];
 
     if (projectId) {
       const member = await this.authService.checkRole(user.userId, projectId);

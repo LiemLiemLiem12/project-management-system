@@ -18,9 +18,9 @@ export class TaskController {
     return this.taskService.findAll();
   }
 
-  @MessagePattern('findOneTask')
-  findOne(@Payload() id: number) {
-    return this.taskService.findOne(id);
+  @MessagePattern('task.get-one')
+  findOneTask(@Payload() payload: { projectId: string; taskId: string }) {
+    return this.taskService.findOne(payload.projectId, payload.taskId);
   }
 
   @MessagePattern('updateTask')

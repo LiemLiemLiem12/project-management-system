@@ -15,9 +15,6 @@ export class Task {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column()
-  project_id!: string;
-
   @Column({ nullable: true })
   parent_id!: string;
 
