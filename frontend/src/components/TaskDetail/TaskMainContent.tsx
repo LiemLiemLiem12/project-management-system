@@ -8,9 +8,11 @@ import TaskAttachments from "./TaskAttachments";
 import TaskActivity from "./TaskActivity";
 import Tiptap from "../Tiptap";
 import { SimpleEditor } from "../tiptap-templates/simple/simple-editor";
+import { useTaskStore } from "@/store/task.store";
 
 export default function TaskMainContent() {
-  // Hàm xử lý cuộn mượt mà đến component tương ứng
+  const currentTask = useTaskStore((s) => s.currentTask);
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -20,6 +22,11 @@ export default function TaskMainContent() {
 
   return (
     <div className="flex flex-col max-w-4xl gap-8 pb-20">
+      <input
+        type="text"
+        className="w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl font-bold border-b border-slate-300 mb-4 bg-transparent"
+        value={currentTask?.title || ""}
+      />
       {/* 1. Thanh Toolbar điều hướng nội bộ */}
       <div className="flex items-center gap-4 text-sm font-medium text-slate-600 border-b border-slate-100 pb-4">
         <button
@@ -55,7 +62,7 @@ export default function TaskMainContent() {
         </div>
         {/* <input className=" w-full border-2 border-gray-300 focus:outline-none focus:border-primary p-4 bg-slate-50/50 text-slate-700 space-y-3"></input> */}
         <div className="w-full">
-          <SimpleEditor />
+          <SimpleEditor initialContent={currentTask?.description} />
         </div>
       </section>
 

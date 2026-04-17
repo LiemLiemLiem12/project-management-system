@@ -1,16 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Repository, Brackets } from 'typeorm';
 import { RpcException } from '@nestjs/microservices/exceptions/rpc-exception';
-
-// Entities
 import { Task } from './entities/task.entity';
 import { GroupTask } from './entities/group-task.entity';
 import { Label } from './entities/label.entity';
-
-// DTOs (Bạn có thể bỏ comment nếu cần dùng)
-// import { CreateTaskDto } from './dto/create-task.dto';
-// import { UpdateTaskDto } from './dto/update-task.dto';
 
 @Injectable()
 export class TaskService {
@@ -35,7 +29,7 @@ export class TaskService {
           project_id: projectId,
         },
       },
-      relations: ['groupTask', 'labels'],
+      relations: ['groupTask', 'labels', 'subtasks', 'checklists'],
     });
 
     if (!task) {
@@ -62,6 +56,39 @@ export class TaskService {
       });
     return task;
   }
+  async findTaskForSubtask(keyword: string, projectId: string, taskId: string) {
+    return await this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoin('task.groupTask', 'groupTask')
+
+      .where('task.id != :taskId', { taskId })
+
+      .andWhere('groupTask.project_id = :projectId', { projectId })
+
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where('task.title LIKE :keyword', {
+            keyword: `%${keyword}%`,
+          }).orWhere('task.id LIKE :keyword', { keyword: `%${keyword}%` });
+        }),
+      )
+
+      .select(['task.id', 'task.title'])
+      .limit(10)
+      .getMany();
+  }
+
+  async addExistingSubtask(taskId: string, subtaskId: string) {
+    const result = await this.taskRepository.update(subtaskId, {
+      parent_id: taskId,
+    });
+
+    return result;
+  }
+
+  // update(id: number, updateTaskDto: UpdateTaskDto) {
+  //   return `This action updates a #${id} task`;
+  // }
 
   // ─── KANBAN BOARD ─────────────────────────────────────────────────────────
 

@@ -94,4 +94,19 @@ export const taskApi = (axiosPrivate: AxiosInstance) => ({
       `/project/${projectId}/task/group/reorder`,
       { ordered_ids },
     ),
+ 
+
+  searchTaskForSubtask: (
+    keyword: string,
+    projectId: string,
+    taskId: string,
+  ) => {
+    return axiosPrivate.get(`/task/${projectId}/${taskId}/subtasks/search`, {
+      params: { keyword },
+    });
+  },
+
+  addExistingSubtask: (taskId: string, subtaskId: string) => {
+    return axiosPrivate.post(`/task/${taskId}/subtasks`, { subtaskId });
+  },
 });

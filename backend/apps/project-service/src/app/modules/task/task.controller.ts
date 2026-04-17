@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -26,6 +26,47 @@ export class TaskController {
   createTask(@Payload() payload: any) {
     return this.taskService.create(payload);
   }
+  @MessagePattern('task.find-for-subtask')
+  findTaskForSubtask(
+    @Payload() payload: { keyword: string; projectId: string; taskId: string },
+  ) {
+    return this.taskService.findTaskForSubtask(
+      payload.keyword,
+      payload.projectId,
+      payload.taskId,
+    );
+  }
+
+  @MessagePattern('task.add-existing-subtask')
+  async addExistingSubtask(
+    @Payload() payload: { taskId: string; subtaskId: string },
+  ) {
+    const result = await this.taskService.addExistingSubtask(
+      payload.taskId,
+      payload.subtaskId,
+    );
+
+    if (result.affected === 0) {
+      throw new RpcException({
+        message: 'Failed to add existing subtask',
+        statusCode: 404,
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Subtask added successfully',
+      data: {
+        taskId: payload.taskId,
+        subtaskId: payload.subtaskId,
+      },
+    };
+  }
+
+  // @MessagePattern('updateTask')
+  // update(@Payload() updateTaskDto: UpdateTaskDto) {
+  //   return this.taskService.update(updateTaskDto.id, updateTaskDto);
+  // }
 
   @MessagePattern('task.update')
   updateTask(@Payload() payload: { id: string; [key: string]: any }) {

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Plus,
   Search,
@@ -8,38 +8,23 @@ import {
   ChevronDown,
   Copy,
 } from "lucide-react";
-
-// Mock data để test tính năng search
-const mockExistingTasks = [
-  { id: "DC-15", title: "Sidebar" },
-  { id: "DC-16", title: "Header Navigation" },
-  { id: "DC-20", title: "Search functionality" },
-  { id: "DC-22", title: "User Settings UI" },
-];
+import { useTaskSubtask } from "@/hooks/use-task-subtask";
 
 export default function TaskSubtasks() {
-  const [subtasks, setSubtasks] = useState<{ id: string; title: string }[]>([]);
-
-  // Quản lý trạng thái hiển thị khu vực thêm mới
-  const [isAdding, setIsAdding] = useState(true); // Mặc định mở nếu list trống
-
-  // Quản lý chế độ: 'create' (tạo mới) hoặc 'search' (tìm task có sẵn)
-  const [mode, setMode] = useState<"create" | "search">("create");
-  const [inputValue, setInputValue] = useState("");
-
-  // Lọc task có sẵn dựa trên text đang gõ
-  const matchedTasks = mockExistingTasks.filter((task) =>
-    task.title.toLowerCase().includes(inputValue.toLowerCase()),
-  );
-
-  // Hàm xử lý thêm subtask vào list
-  const handleAddSubtask = (id: string, title: string) => {
-    setSubtasks([...subtasks, { id, title }]);
-    setInputValue("");
-    setMode("create");
-    setIsAdding(false);
-  };
-
+  const {
+    subtasks,
+    isAdding,
+    setIsAdding,
+    mode,
+    setMode,
+    inputValue,
+    setInputValue,
+    matchedTasks,
+    isSearching,
+    handleAddSubtask,
+    handleAddExistingSubtask,
+    isPendingAddExistingSubtask,
+  } = useTaskSubtask();
   return (
     <section id="section-subtasks" className="scroll-mt-6">
       <div className="flex items-center justify-between mb-3">
@@ -135,7 +120,7 @@ export default function TaskSubtasks() {
               {/* Dropdown Gợi ý */}
               {inputValue && (
                 <div className="absolute top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg z-10 overflow-hidden">
-                  {matchedTasks.length > 0 && (
+                  {matchedTasks.length > 0 ? (
                     <div className="py-2">
                       <div className="px-3 pb-1 text-xs font-bold text-slate-500">
                         Matching work items
@@ -143,7 +128,7 @@ export default function TaskSubtasks() {
                       {matchedTasks.map((task) => (
                         <div
                           key={task.id}
-                          onClick={() => handleAddSubtask(task.id, task.title)}
+                          onClick={() => handleAddExistingSubtask(task.id)}
                           className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 cursor-pointer"
                         >
                           <Copy size={14} className="text-blue-500" />
@@ -151,6 +136,10 @@ export default function TaskSubtasks() {
                           <span className="text-slate-900">{task.title}</span>
                         </div>
                       ))}
+                    </div>
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-slate-500">
+                      No matching task items found.
                     </div>
                   )}
 
@@ -175,7 +164,7 @@ export default function TaskSubtasks() {
       )}
 
       {subtasks.length > 0 && (
-        <div className="border border-gray-200 overflow-hidden mb-3">
+        <div className="border border-gray-200 overflow-hidden mb-3 mt-3">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-200 text-slate-500 border-b border-gray-200">
               <tr>
@@ -212,7 +201,7 @@ export default function TaskSubtasks() {
                         AR
                       </div>
                       <span className="text-slate-600 text-sm font-medium">
-                        Alex R.
+                        Alex R
                       </span>
                     </div>
                   </td>

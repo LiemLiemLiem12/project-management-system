@@ -2,9 +2,11 @@
 import { useAPI } from "@/API/useAPI";
 import { useTaskStore } from "@/store/task.store";
 import { CreateTaskPayload } from "@/API/task.api";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation"; // Import từ file cũ
-import { useEffect } from "react"; // Import từ file cũ
+import { useRouter } from "next/navigation"; 
+import { useEffect } from "react"; 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+
 
 // ─── Fetch board — gọi ở component ngoài cùng (KanbanBoard) ──────────────────
 
@@ -137,4 +139,55 @@ export const useGetCurrentTask = (projectId: string, taskId: string) => {
   }, [query.data, query.error]);
 
   return query;
+};
+
+export const useSearchTaskForSubtask = (
+  keyword: string,
+  projectId: string,
+  taskId: string,
+) => {
+  const api = useAPI();
+
+  const query = useQuery({
+    queryKey: ["searchTaskForSubtask", keyword, projectId, taskId],
+    queryFn: () => api.task.searchTaskForSubtask(keyword, projectId, taskId),
+    enabled: !!keyword && !!projectId && !!taskId,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  return {
+    data: query.data?.data || [],
+    isPending: query.isLoading,
+  };
+};
+
+export const useAddExistingSubtask = () => {
+  const api = useAPI();
+  const queryClient = useQueryClient(); // 1. Khởi tạo queryClient
+
+  const mutation = useMutation({
+    mutationFn: ({
+      taskId,
+      subtaskId,
+    }: {
+      taskId: string;
+      subtaskId: string;
+    }) => api.task.addExistingSubtask(taskId, subtaskId),
+
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["currentTask", variables.taskId],
+      });
+    },
+
+    onError: (error) => {
+      console.error("Add subtask failed:", error);
+    },
+  });
+
+  return {
+    addExistingSubtask: mutation.mutate,
+    isPending: mutation.isPending,
+  };
 };

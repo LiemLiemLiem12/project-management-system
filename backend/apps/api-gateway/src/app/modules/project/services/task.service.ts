@@ -66,4 +66,32 @@ export class TaskService {
   reorderGroups(projectId: string, ordered_ids: string[]) {
     return this.send('task.group.reorder', { projectId, ordered_ids });
   }
+  async findTaskForSubtask(keyword: string, projectId: string, taskId: string) {
+    try {
+      const result = await firstValueFrom(
+        this.projectClient.send('task.find-for-subtask', {
+          keyword,
+          projectId,
+          taskId,
+        }),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
+  }
+
+  async addExistingSubtask(taskId: string, subtaskId: string) {
+    try {
+      const result = await firstValueFrom(
+        this.projectClient.send('task.add-existing-subtask', {
+          taskId,
+          subtaskId,
+        }),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
+  }
 }

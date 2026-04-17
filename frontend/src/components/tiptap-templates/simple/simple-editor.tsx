@@ -73,8 +73,6 @@ import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils";
 // --- Styles ---
 import "@/components/tiptap-templates/simple/simple-editor.scss";
 
-import content from "@/components/tiptap-templates/simple/data/content.json";
-
 const MainToolbarContent = ({
   onHighlighterClick,
   onLinkClick,
@@ -183,7 +181,11 @@ const MobileToolbarContent = ({
   </>
 );
 
-export function SimpleEditor() {
+interface SimpleEditorProps {
+  initialContent?: any;
+}
+
+export function SimpleEditor({ initialContent }: SimpleEditorProps) {
   const isMobile = useIsBreakpoint();
   const { height } = useWindowSize();
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">(
@@ -193,6 +195,7 @@ export function SimpleEditor() {
 
   const editor = useEditor({
     immediatelyRender: false,
+    content: initialContent || "<p></p>",
     editorProps: {
       attributes: {
         autocomplete: "off",
@@ -240,6 +243,12 @@ export function SimpleEditor() {
       setMobileView("main");
     }
   }, [isMobile, mobileView]);
+
+  useEffect(() => {
+    if (editor && initialContent) {
+      editor.commands.setContent(initialContent);
+    }
+  }, [initialContent, editor]);
 
   return (
     <div className="simple-editor-wrapper">

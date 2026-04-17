@@ -8,19 +8,31 @@ import {
   Param,
   Req,
   UseGuards,
+  Query,
 } from '@nestjs/common';
-import type { Request } from 'express';
 import { TaskService } from '../services/task.service';
 import { JwtAuthGuard } from '../../auth/guard/jwt.guard';
 import { RoleGuard } from '../../auth/guard/role.guard';
 import { Role } from '../../auth/enums/role.enum';
 import { Roles } from '../../auth/decorators/role.decorator';
+import { TaskParamsDto } from '../dto/task-params.dto';
+import { SearchSubtaskQueryDto } from '../dto/search-subtask.dto';
 
 @Controller('project')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
   // ── Kanban Board ────────────────────────────────────────────────────────────
+  @Post('/:taskId/subtasks')
+  addExistingSubtask(
+    @Param() params: { taskId: string },
+    @Body() body: { subtaskId: string },
+  ) {
+    const { taskId } = params;
+    const { subtaskId } = body;
+
+    return this.taskService.addExistingSubtask(taskId, subtaskId);
+  }
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
   @UseGuards(RoleGuard)
@@ -145,5 +157,16 @@ export class TaskController {
     @Param('taskId') taskId: string,
   ) {
     return this.taskService.deleteTask(taskId);
+  }
+
+  @Get('/:projectId/:taskId/subtasks/search')
+  findTaskForSubtask(
+    @Param() params: TaskParamsDto,
+    @Query() query: SearchSubtaskQueryDto,
+  ) {
+    const { projectId, taskId } = params;
+    const { keyword } = query;
+
+    return this.taskService.findTaskForSubtask(keyword, projectId, taskId);
   }
 }

@@ -5,10 +5,12 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { GroupTask } from './group-task.entity';
 import { Label } from './label.entity';
+import { Checklist } from './checklist.entity';
 
 @Entity('tasks')
 export class Task {
@@ -53,4 +55,16 @@ export class Task {
     inverseJoinColumn: { name: 'label_id', referencedColumnName: 'id' },
   })
   labels!: Label[];
+
+  @ManyToOne(() => Task, (task) => task.subtasks, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'parent_id' })
+  parent!: Task;
+
+  @OneToMany(() => Task, (task) => task.parent)
+  subtasks!: Task[];
+
+  @OneToMany(() => Checklist, (checklist) => checklist.task)
+  checklists!: Checklist[];
 }

@@ -3,6 +3,7 @@
 import ProjectNavbar from "@/components/Navbar/ProjectNavbar";
 import Sidebar from "@/components/Sidebar";
 import { useGetCurrentProject } from "@/services/project.service";
+import { useProjectStore } from "@/store/project.store";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 
@@ -13,6 +14,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const projectId = params?.projectId as string;
 
   const { isLoading, data } = useGetCurrentProject(projectId);
+
+  const currentProject = useProjectStore((state: any) => state.currentProject);
 
   const isProjectPage = !!projectId && !RESERVED_ROUTES.includes(projectId);
 
@@ -30,7 +33,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex-1 mt-5 min-h-0 bg-gray-50">
           {/* Nếu đang ở trang Project VÀ dữ liệu đang tải -> Hiện loading */}
           {isProjectPage && (isLoading || !data) ? (
-            <div className="p-10 text-center text-slate-500 font-medium animate-pulse">
+            <div className="p-10 w-full h-full flex items-center justify-center text-center text-slate-500 font-medium animate-pulse">
               Loading data...
             </div>
           ) : (

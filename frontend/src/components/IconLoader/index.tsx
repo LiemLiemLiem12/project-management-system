@@ -5,7 +5,8 @@ type IconLoaderProps = {
 export default function IconLoader({ size }: IconLoaderProps) {
   return (
     <div
-      className={`animate-spin h-${size} w-${size} border-2 border-white border-t-transparent rounded-full`}
+      style={{ width: `${size}px`, height: `${size}px` }}
+      className="animate-spin border-4 border-blue-600 border-t-transparent rounded-full"
     ></div>
   );
 }
