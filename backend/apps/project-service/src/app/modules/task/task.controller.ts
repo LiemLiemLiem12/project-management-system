@@ -8,28 +8,72 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
-  @MessagePattern('createTask')
-  create(@Payload() createTaskDto: CreateTaskDto) {
-    return this.taskService.create(createTaskDto);
+  // ─── KANBAN BOARD ─────────────────────────────────────────────────────────
+
+  @MessagePattern('task.get-kanban-board')
+  getKanbanBoard(@Payload() payload: { projectId: string }) {
+    return this.taskService.getKanbanBoard(payload.projectId);
   }
 
-  @MessagePattern('findAllTask')
-  findAll() {
-    return this.taskService.findAll();
-  }
+  // ─── TASKS ────────────────────────────────────────────────────────────────
 
   @MessagePattern('task.get-one')
   findOneTask(@Payload() payload: { projectId: string; taskId: string }) {
     return this.taskService.findOne(payload.projectId, payload.taskId);
   }
 
-  @MessagePattern('updateTask')
-  update(@Payload() updateTaskDto: UpdateTaskDto) {
-    return this.taskService.update(updateTaskDto.id, updateTaskDto);
+  @MessagePattern('task.create')
+  createTask(@Payload() payload: any) {
+    return this.taskService.create(payload);
   }
 
-  @MessagePattern('removeTask')
-  remove(@Payload() id: number) {
-    return this.taskService.remove(id);
+  @MessagePattern('task.update')
+  updateTask(@Payload() payload: { id: string; [key: string]: any }) {
+    const { id, ...data } = payload;
+    return this.taskService.update(id, data);
+  }
+
+  @MessagePattern('task.move')
+  moveTask(
+    @Payload() payload: { id: string; group_task_id: string; position: number },
+  ) {
+    return this.taskService.moveTask(payload);
+  }
+
+  @MessagePattern('task.remove')
+  removeTask(@Payload() payload: { id: string }) {
+    return this.taskService.remove(payload.id);
+  }
+
+  @MessagePattern('task.archive')
+  archiveTask(@Payload() payload: { id: string }) {
+    return this.taskService.archive(payload.id);
+  }
+
+  // ─── GROUP TASKS (CÁC CỘT TRONG BẢNG) ─────────────────────────────────────
+
+  @MessagePattern('task.group.create')
+  createGroup(@Payload() payload: { project_id: string; title: string }) {
+    return this.taskService.createGroup(payload);
+  }
+
+  @MessagePattern('task.group.update')
+  updateGroup(@Payload() payload: { id: string; title: string }) {
+    return this.taskService.updateGroup(payload.id, payload.title);
+  }
+
+  @MessagePattern('task.group.remove')
+  removeGroup(@Payload() payload: { id: string }) {
+    return this.taskService.removeGroup(payload.id);
+  }
+
+  @MessagePattern('task.group.reorder')
+  reorderGroups(
+    @Payload() payload: { projectId: string; ordered_ids: string[] },
+  ) {
+    return this.taskService.reorderGroups(
+      payload.projectId,
+      payload.ordered_ids,
+    );
   }
 }

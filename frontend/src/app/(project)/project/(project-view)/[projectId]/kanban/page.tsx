@@ -3,7 +3,15 @@ import KanbanBoard from "@/components/Dashboard/KanbanBoard";
 import { Search } from "lucide-react";
 import GroupButton from "@/components/Kanban/GroupButton";
 
-export default function KanbanPage() {
+// 1. Khai báo hàm async và params là một Promise
+export default async function KanbanPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  // 2. Dùng await để lấy projectId ra khỏi Promise
+  const { projectId } = await params;
+
   return (
     <>
       <div className="size-full gap-3 flex flex-col">
@@ -28,7 +36,8 @@ export default function KanbanPage() {
           </div>
         </div>
         <div className="flex-1 h-full overflow-auto px-10 pb-10">
-          <KanbanBoard />
+          {/* 3. Truyền ID xuống bình thường */}
+          <KanbanBoard projectId={projectId} />
         </div>
       </div>
     </>

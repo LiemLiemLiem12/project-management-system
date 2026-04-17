@@ -1,58 +1,32 @@
 "use client";
 
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
-import { useEffect, useState } from "react";
 import KanbanGroup from "./KanbanGroup";
+import { useTaskStore } from "@/store/task.store";
+import {
+  useGetKanbanBoard,
+  useMoveTask,
+  useReorderGroups,
+  useCreateGroup,
+} from "@/services/task.service";
 
-const INITIAL_DATA = [
-  {
-    id: "col-1",
-    title: "Backlog",
-    tasks: Array.from({ length: 6 }).map((_, i) => ({
-      id: `T-0${i + 1}`,
-      title: "Design new landing page",
-      labels: ["Label", "Label"],
-      date: "Feb 07",
-      avatar: "https://i.pravatar.cc/150?img=47",
-    })),
-  },
-  {
-    id: "col-2",
-    title: "In Progress",
-    tasks: Array.from({ length: 2 }).map((_, i) => ({
-      id: `T-1${i + 1}`,
-      title: "Design new landing page",
-      labels: ["Label", "Label"],
-      date: "Feb 07",
-      avatar: "https://i.pravatar.cc/150?img=47",
-    })),
-  },
-  {
-    id: "col-3",
-    title: "Review",
-    tasks: Array.from({ length: 4 }).map((_, i) => ({
-      id: `T-2${i + 1}`,
-      title: "Design new landing page",
-      labels: ["Label", "Label"],
-      date: "Feb 07",
-      avatar: "https://i.pravatar.cc/150?img=47",
-    })),
-  },
-];
+interface KanbanBoardProps {
+  projectId: string;
+}
 
-export default function KanbanBoard() {
-  const [data, setData] = useState(INITIAL_DATA);
-  const [isMounted, setIsMounted] = useState(false);
+export default function KanbanBoard({ projectId }: KanbanBoardProps) {
+  const groups = useTaskStore((s) => s.groups);
+  const isLoading = useTaskStore((s) => s.isLoading);
+  const error = useTaskStore((s) => s.error);
 
-  // Fix lỗi Hydration của Next.js khi dùng DnD
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  // Hooks gọi ở ngoài cùng — gắn data vào store
+  useGetKanbanBoard(projectId);
+  const moveTask = useMoveTask(projectId);
+  const reorderGroups = useReorderGroups(projectId);
+  const { mutate: createGroup } = useCreateGroup(projectId);
 
   const onDragEnd = (result: DropResult) => {
-    const { source, destination, type } = result;
-
-    // Nếu thả ra ngoài vùng cho phép hoặc thả lại vị trí cũ
+    const { source, destination, type, draggableId } = result;
     if (!destination) return;
     if (
       source.droppableId === destination.droppableId &&
@@ -61,79 +35,76 @@ export default function KanbanBoard() {
       return;
 
     if (type === "COLUMN") {
-      const newData = [...data];
-      const [removeColumn] = newData.splice(source.index, 1);
-      newData.splice(destination.index, 0, removeColumn);
-      setData(newData);
+      const ordered_ids = groups.map((g) => g.id);
+      const [removed] = ordered_ids.splice(source.index, 1);
+      ordered_ids.splice(destination.index, 0, removed);
+      reorderGroups(ordered_ids);
+      return;
     }
 
     if (type === "TASK") {
-      const newData = [...data];
-      const sourceColIndex = newData.findIndex(
-        (col) => col.id === source.droppableId,
-      );
-      const destColIndex = newData.findIndex(
-        (col) => col.id === destination.droppableId,
-      );
-
-      const sourceCol = newData[sourceColIndex];
-      const destCol = newData[destColIndex];
-
-      const sourceTasks = [...sourceCol.tasks];
-      const destTasks =
-        source.droppableId === destination.droppableId
-          ? sourceTasks
-          : [...destCol.tasks];
-
-      // Cắt task khỏi cột nguồn và chèn vào cột đích
-      const [removedTask] = sourceTasks.splice(source.index, 1);
-      destTasks.splice(destination.index, 0, removedTask);
-
-      newData[sourceColIndex] = { ...sourceCol, tasks: sourceTasks };
-      if (source.droppableId !== destination.droppableId) {
-        newData[destColIndex] = { ...destCol, tasks: destTasks };
-      }
-
-      // Cập nhật lại state
-      setData(newData);
+      moveTask({
+        taskId: draggableId,
+        fromGroupId: source.droppableId,
+        toGroupId: destination.droppableId,
+        fromIndex: source.index,
+        toIndex: destination.index,
+      });
     }
   };
 
-  if (!isMounted) return null; // Hoặc trả về giao diện skeleton loading
+  if (isLoading) {
+    return (
+      <div className="flex gap-6 h-full items-start">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="bg-[#F1F2F4] rounded-xl w-[320px] h-48 shrink-0 animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full text-red-500 text-sm">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="h-screen w-full">
-        <div className="flex gap-6 h-full ">
+        <div className="flex gap-6 h-full">
           <Droppable droppableId="board" type="COLUMN" direction="horizontal">
-            {(provided: any) => (
+            {(provided) => (
               <div
                 className="flex gap-6 h-full items-start"
                 ref={provided.innerRef}
                 {...provided.droppableProps}
               >
-                {data.map((column, index) => (
-                  <KanbanGroup key={column.id} column={column} index={index} />
+                {groups.map((group, index) => (
+                  <KanbanGroup
+                    key={group.id}
+                    column={group}
+                    index={index}
+                    projectId={projectId}
+                  />
                 ))}
                 {provided.placeholder}
               </div>
             )}
           </Droppable>
+
           <button
-            onClick={() => {
-              setData((prev) => [
-                ...prev,
-                {
-                  id: Math.random().toString(),
-                  title: "Review",
-                  tasks: [],
-                },
-              ]);
-            }}
-            className="size-15 shrink-0 py-3 bg-[#F1F2F4]/50 hover:bg-[#F1F2F4]  text-gray-600 rounded-xl flex items-center justify-center font-semibold transition-colors focus:outline-none"
+            onClick={() => createGroup("New Group")}
+            className="size-15 shrink-0 py-3 bg-[#F1F2F4]/50 hover:bg-[#F1F2F4] text-gray-600 rounded-xl flex items-center justify-center transition-colors focus:outline-none"
+            title="Add column"
           >
             <svg
-              className="w-5 h-5 mr-1"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
