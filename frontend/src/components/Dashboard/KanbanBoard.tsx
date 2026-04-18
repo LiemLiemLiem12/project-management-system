@@ -9,6 +9,8 @@ import {
   useReorderGroups,
   useCreateGroup,
 } from "@/services/task.service";
+import { useGetProjectMembers } from "@/services/project.service";
+import { useAuthStore } from "@/store/auth.store";
 
 interface KanbanBoardProps {
   projectId: string;
@@ -19,8 +21,13 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
   const isLoading = useTaskStore((s) => s.isLoading);
   const error = useTaskStore((s) => s.error);
 
-  // Hooks gọi ở ngoài cùng — gắn data vào store
+  const myUserId = useAuthStore((s) => s.user?.id);
+
+  // Fetch board data
   useGetKanbanBoard(projectId);
+  // Fetch members + currentUserRole → gắn vào project.store
+  useGetProjectMembers(projectId, myUserId);
+
   const moveTask = useMoveTask(projectId);
   const reorderGroups = useReorderGroups(projectId);
   const { mutate: createGroup } = useCreateGroup(projectId);
@@ -59,7 +66,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="bg-[#F1F2F4] rounded-xl w-[320px] h-48 shrink-0 animate-pulse"
+            className="bg-[#F1F2F4] rounded-xl w-[300px] h-48 shrink-0 animate-pulse"
           />
         ))}
       </div>

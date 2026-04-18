@@ -42,4 +42,8 @@ export class ProjectController {
   findOneProject(@Payload() payload: { id: string }) {
     return this.projectService.findOne(payload.id);
   }
+  @MessagePattern('project.get-members')
+  getMembers(@Payload() payload: { projectId: string; userId: string }) {
+    return this.projectService.getMembers(payload.projectId, payload.userId);
+  }
 }

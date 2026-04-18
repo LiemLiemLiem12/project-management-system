@@ -106,4 +106,8 @@ export class AuthController {
   async facebookLogin(@Payload() payload: { profile: any }) {
     return this.authService.facebookLogin(payload.profile);
   }
+  @MessagePattern('auth.get-users-by-ids')
+  async getUsersByIds(@Payload() userIds: string[]) {
+    return this.authService.getUsersByIds(userIds);
+  }
 }
