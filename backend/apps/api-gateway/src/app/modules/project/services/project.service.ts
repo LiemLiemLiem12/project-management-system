@@ -30,6 +30,13 @@ export class ProjectService {
     }
   }
 
+  getProjectMembers(projectId: string, userId: string) {
+    return this.projectClient.send('project.get-members', {
+      projectId,
+      userId,
+    });
+  }
+
   async findTask(projectId: string, taskId: string) {
     try {
       const result = await firstValueFrom(

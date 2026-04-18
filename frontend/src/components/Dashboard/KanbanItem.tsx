@@ -1,6 +1,19 @@
 import { Draggable } from "@hello-pangea/dnd";
+import { Task } from "@/API/task.api";
 
-const KanbanItem = ({ task, index }: { task: any; index: number }) => {
+interface KanbanItemProps {
+  task: Task;
+  index: number;
+}
+
+const KanbanItem = ({ task, index }: KanbanItemProps) => {
+  const formattedDate = task.due_date
+    ? new Date(task.due_date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+      })
+    : null;
+
   return (
     <Draggable draggableId={task.id} index={index}>
       {(provided, snapshot) => (
@@ -28,45 +41,50 @@ const KanbanItem = ({ task, index }: { task: any; index: number }) => {
           </div>
 
           {/* Labels */}
-          <div className="flex gap-2 mb-4">
-            {task.labels.map((label: string, idx: number) => (
-              <span
-                key={idx}
-                className="bg-[#7FF736] text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-sm"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
+          {task.labels?.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {task.labels.map((label) => (
+                <span
+                  key={label.id}
+                  className="text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-sm"
+                  style={{ backgroundColor: label.color_code }}
+                >
+                  {label.name}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Footer */}
           <div className="flex justify-between items-end text-[11px] text-gray-500 font-medium">
             <div className="flex gap-3 items-center">
-              <span>#{task.id}</span>
-              <span className="flex items-center gap-1">
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                {task.date}
-              </span>
+              <span>#{task.id.slice(0, 6)}</span>
+              {formattedDate && (
+                <span className="flex items-center gap-1">
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  {formattedDate}
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-2">
+            {task.assignee_id && (
               <img
-                src={task.avatar}
+                src={`https://i.pravatar.cc/150?u=${task.assignee_id}`}
                 alt="Assignee"
                 className="w-6 h-6 rounded-full object-cover border border-gray-200"
               />
-            </div>
+            )}
           </div>
         </div>
       )}

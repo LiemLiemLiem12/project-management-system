@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Res,
+  Req,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ProjectService } from '../services/project.service';
@@ -57,6 +58,15 @@ export class ProjectController {
     @Param('taskId') taskId: string,
   ) {
     return this.projectService.findTask(projectId, taskId);
+  }
+
+  @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
+  @UseGuards(RoleGuard)
+  @UseGuards(JwtAuthGuard)
+  @Get(':projectId/members')
+  getMembers(@Param('projectId') projectId: string, @Req() req: Request) {
+    const userId = (req as any).user?.userId;
+    return this.projectService.getProjectMembers(projectId, userId);
   }
 
   @Patch(':id')

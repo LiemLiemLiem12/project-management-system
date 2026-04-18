@@ -8,7 +8,7 @@ import { MailService } from '../mail/mail.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { RpcException } from '@nestjs/microservices/exceptions/rpc-exception';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
@@ -47,6 +47,22 @@ export class AuthService {
       id: findUser.id,
       email: findUser.email,
     };
+  }
+
+  async getUsersByIds(userIds: string[]) {
+    if (!userIds || userIds.length === 0) {
+      return [];
+    }
+
+    const users = await this.userRepository.find({
+      where: {
+        id: In(userIds),
+      },
+
+      select: ['id', 'fullName', 'avatarUrl'],
+    });
+
+    return users;
   }
 
   async verifyOtp(userId: string, userOtp: string) {

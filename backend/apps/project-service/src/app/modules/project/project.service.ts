@@ -1,12 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Project } from './entities/project.entity';
 import { Repository } from 'typeorm';
 import { ProjectMember } from './entities/project-member.entity';
-import { find } from 'rxjs';
-import { RpcException } from '@nestjs/microservices';
+import { RpcException, ClientProxy } from '@nestjs/microservices';
+
+import { firstValueFrom, timeout, catchError, of } from 'rxjs';
 
 @Injectable()
 export class ProjectService {
@@ -16,6 +17,9 @@ export class ProjectService {
 
     @InjectRepository(ProjectMember)
     private readonly projectMemberRepository: Repository<ProjectMember>,
+
+    @Inject('AUTH_SERVICE')
+    private readonly authClient: ClientProxy,
   ) {}
 
   create(createProjectDto: CreateProjectDto) {
@@ -36,6 +40,40 @@ export class ProjectService {
     }
 
     return project;
+  }
+
+  async getMembers(projectId: string, userId: string) {
+    try {
+      const members = await this.projectMemberRepository.find({
+        where: { project_id: projectId },
+      });
+
+      if (!members.length) return [];
+
+      const userIds = members.map((m) => m.user_id);
+
+      const usersDetail = await firstValueFrom(
+        this.authClient.send('auth.get-users-by-ids', userIds).pipe(
+          timeout(3000),
+          catchError((err) => {
+            return of([]);
+          }),
+        ),
+      );
+
+      const enrichedMembers = members.map((member) => {
+        const userInfo = usersDetail.find((u: any) => u.id === member.user_id);
+        return {
+          ...member,
+          full_name: userInfo?.fullName || member.user_id,
+          avatar_url: userInfo?.avatarUrl || '',
+        };
+      });
+
+      return enrichedMembers;
+    } catch (error) {
+      throw error;
+    }
   }
 
   update(id: number, updateProjectDto: UpdateProjectDto) {
