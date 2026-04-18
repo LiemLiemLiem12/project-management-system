@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
+import toast from "react-hot-toast";
 
 // ─── Fetch board — gọi ở component ngoài cùng (KanbanBoard) ──────────────────
 
@@ -32,11 +33,21 @@ export const useCreateTask = (projectId: string) => {
   const api = useAPI();
   const { appendTask } = useTaskStore();
 
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: (payload: CreateTaskPayload) =>
-      api.task.createTask(projectId, payload),
-    onSuccess: (res) => {
+    mutationFn: (payload: CreateTaskPayload) => {
+      const res = api.task.createTask(projectId, payload);
+
+      return res;
+    },
+    onSuccess: (res, variables) => {
       appendTask(res.data.group_task_id, res.data);
+      if (variables.parent_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["currentTask", variables.parent_id],
+        });
+      }
     },
   });
 };
@@ -115,7 +126,7 @@ export const useGetCurrentTask = (projectId: string, taskId: string) => {
   const query = useQuery({
     queryKey: ["currentTask", taskId],
     queryFn: async () => {
-      const res = await api.task.getTask(taskId);
+      const res = await api.task.getTask(projectId, taskId);
       return res.data;
     },
     enabled: !!projectId && !!taskId,
@@ -236,6 +247,44 @@ export const useUpdateTaskGroupTask = () => {
 
   return {
     updateTaskGroupTask: mutation.mutate,
+    isPending: mutation.isPending,
+  };
+};
+
+export const useUpdateTask = () => {
+  const api = useAPI();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: ({
+      projectId,
+      taskId,
+      payload,
+    }: {
+      projectId: string;
+      taskId: string;
+      payload: Partial<CreateTaskPayload>;
+    }) => api.task.updateTask(projectId, taskId, payload),
+
+    onSuccess: (res, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["currentTask", variables.taskId],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["kanbanBoard", variables.projectId],
+      });
+    },
+
+    onError: (error: AxiosError) => {
+      console.error("Failed to update task:", error.message);
+      toast.error("Failed to update task. Please try again.");
+    },
+  });
+
+  return {
+    updateTask: mutation.mutate,
+    updateTaskAsync: mutation.mutateAsync, // Dành cho trường hợp bạn cần await
     isPending: mutation.isPending,
   };
 };

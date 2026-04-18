@@ -183,9 +183,10 @@ const MobileToolbarContent = ({
 
 interface SimpleEditorProps {
   initialContent?: any;
+  onChange?: (content: string) => void;
 }
 
-export function SimpleEditor({ initialContent }: SimpleEditorProps) {
+export function SimpleEditor({ initialContent, onChange }: SimpleEditorProps) {
   const isMobile = useIsBreakpoint();
   const { height } = useWindowSize();
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">(
@@ -196,6 +197,11 @@ export function SimpleEditor({ initialContent }: SimpleEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
     content: initialContent || "<p></p>",
+    onUpdate: ({ editor }) => {
+      if (onChange) {
+        onChange(editor.getHTML()); // Trả HTML ra ngoài mỗi khi có thay đổi
+      }
+    },
     editorProps: {
       attributes: {
         autocomplete: "off",

@@ -8,6 +8,7 @@ import {
   Param,
   UseGuards,
   Query,
+  Req,
 } from '@nestjs/common';
 import { TaskService } from '../services/task.service';
 import { JwtAuthGuard } from '../../auth/guard/jwt.guard';
@@ -15,22 +16,32 @@ import { RoleGuard } from '../../auth/guard/role.guard';
 import { Role } from '../../auth/enums/role.enum';
 import { Roles } from '../../auth/decorators/role.decorator';
 import { SearchSubtaskQueryDto } from '../dto/search-subtask.dto';
+import { title } from 'process';
 
 @Controller('tasks')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
+  @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Get('group')
   getGroupTaskByProjectId(@Query('projectId') projectId: string) {
     return this.taskService.getGroupTaskByProjectId(projectId);
   }
 
+  // @Patch(':taskId')
+  // updateTaskGroupTask(
+  //   @Param('taskId') taskId: string,
+  //   @Body('groupTaskId') groupTaskId: string,
+  // ) {
+  //   return this.taskService.updateTaskGroupTask(taskId, groupTaskId);
+  // }
+
+  @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Patch(':taskId')
-  updateTaskGroupTask(
-    @Param('taskId') taskId: string,
-    @Body('groupTaskId') groupTaskId: string,
-  ) {
-    return this.taskService.updateTaskGroupTask(taskId, groupTaskId);
+  updateTaskData(@Param('taskId') taskId: string, @Body() body: any) {
+    return this.taskService.updateTask(taskId, body);
   }
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
@@ -168,13 +179,12 @@ export class TaskController {
     return this.taskService.deleteTask(taskId);
   }
 
-  @Get('/:projectId/:taskId/subtasks/search')
+  @Get(':taskId/subtasks')
   findTaskForSubtask(
     @Param('taskId') taskId: string,
-    @Query() query: SearchSubtaskQueryDto,
     @Query('projectId') projectId: string,
+    @Query('keyword') keyword: string,
   ) {
-    const { keyword } = query;
     return this.taskService.findTaskForSubtask(keyword, projectId, taskId);
   }
 }

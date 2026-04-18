@@ -12,6 +12,7 @@ import { useTaskSubtask } from "@/hooks/use-task-subtask";
 import { mock } from "node:test";
 import IconLoader from "../IconLoader";
 import { TaskBase } from "@/types";
+import { redirect, useParams, useRouter } from "next/navigation";
 
 export default function TaskSubtasks() {
   const {
@@ -35,7 +36,12 @@ export default function TaskSubtasks() {
     isPendingUpdateTaskGroupTask,
     assigneeData,
     isAssigneesPending,
+    isPendingCreatingTask,
   } = useTaskSubtask();
+
+  const router = useRouter();
+
+  const { projectId, taskId } = useParams();
 
   const activeRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -94,15 +100,14 @@ export default function TaskSubtasks() {
                 />
 
                 {/* Nút giả lập chọn loại hình Task bên phải */}
-                <div className="flex items-center gap-1 px-2 py-1 mr-1 text-xs font-medium text-slate-500 bg-slate-50 border border-slate-200 rounded cursor-pointer hover:bg-slate-100">
-                  <Copy size={12} className="text-blue-500" />
-                  Subtask
-                  <ChevronDown size={12} />
-                </div>
 
-                <button className="p-1.5 text-slate-400 hover:bg-slate-100 rounded">
-                  <CornerDownLeft size={14} />
-                </button>
+                {!isPendingCreatingTask ? (
+                  <button className="p-1.5 text-slate-400 hover:bg-slate-100 rounded">
+                    <CornerDownLeft size={14} />
+                  </button>
+                ) : (
+                  <IconLoader size={24} />
+                )}
               </div>
 
               <div className="flex items-center justify-between px-1">
@@ -211,7 +216,7 @@ export default function TaskSubtasks() {
               {subtasks.map((task: TaskBase, index) => (
                 <tr
                   key={index}
-                  className="bg-white hover:bg-slate-50 transition-colors group"
+                  className="bg-white hover:bg-slate-50 transition-colors group cursor-pointer"
                 >
                   <td className="p-3 w-1/2 border-r border-gray-200">
                     <div className="flex items-center gap-2">
@@ -219,9 +224,15 @@ export default function TaskSubtasks() {
                       <span className="font-medium text-slate-500 whitespace-nowrap">
                         {task.id}
                       </span>
-                      <span className="text-slate-900 truncate max-w-[200px] lg:max-w-md">
+                      <a
+                        className="text-slate-900 truncate max-w-[200px] hover:text-blue-500 hover:underline lg:max-w-md"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/project/${projectId}/${task.id}`);
+                        }}
+                      >
                         {task.title}
-                      </span>
+                      </a>
                     </div>
                   </td>
 
@@ -233,6 +244,7 @@ export default function TaskSubtasks() {
                           const user = assigneeData.find(
                             (a: any) => a?.id === task.assignee_id,
                           );
+
                           return (
                             <>
                               <div className="w-6 h-6 rounded-full bg-slate-800 text-white flex-shrink-0 flex items-center justify-center text-[10px] font-bold overflow-hidden">
@@ -248,7 +260,7 @@ export default function TaskSubtasks() {
                                 )}
                               </div>
                               <span className="text-slate-600 text-sm font-medium">
-                                {user?.name || "Unassigned"}
+                                {user?.username || "Unassigned"}
                               </span>
                             </>
                           );

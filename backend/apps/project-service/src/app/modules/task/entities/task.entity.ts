@@ -6,6 +6,7 @@ import {
   ManyToMany,
   ManyToOne,
   OneToMany,
+  PrimaryColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { GroupTask } from './group-task.entity';
@@ -14,7 +15,7 @@ import { Checklist } from './checklist.entity';
 
 @Entity('tasks')
 export class Task {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn()
   id!: string;
 
   @Column({ nullable: true })
@@ -32,7 +33,7 @@ export class Task {
   @Column({ type: 'timestamp', nullable: true })
   due_date!: Date;
 
-  @Column()
+  @Column({ nullable: true })
   assignee_id!: string;
 
   @Column()

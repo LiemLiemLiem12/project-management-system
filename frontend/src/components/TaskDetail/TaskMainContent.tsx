@@ -9,9 +9,28 @@ import TaskActivity from "./TaskActivity";
 import Tiptap from "../Tiptap";
 import { SimpleEditor } from "../tiptap-templates/simple/simple-editor";
 import { useTaskStore } from "@/store/task.store";
+import { useProjectStore } from "@/store/project.store";
+import { useAutoSaveTaskField } from "@/hooks/use-autosave-task-field";
 
 export default function TaskMainContent() {
   const currentTask = useTaskStore((s) => s.currentTask);
+
+  const currentProject = useProjectStore((s: any) => s.currentProject?.id);
+
+  // Hook cho
+  const [title, setTitle] = useAutoSaveTaskField({
+    projectId: currentProject,
+    taskId: currentTask?.id,
+    field: "title",
+    initialValue: currentTask?.title || "",
+  });
+
+  const [description, setDescription] = useAutoSaveTaskField({
+    projectId: currentProject,
+    taskId: currentTask?.id,
+    field: "description",
+    initialValue: currentTask?.description || "",
+  });
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -24,8 +43,9 @@ export default function TaskMainContent() {
     <div className="flex flex-col max-w-4xl gap-8 pb-20">
       <input
         type="text"
+        onChange={(e) => setTitle(e.target.value)}
         className="w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl font-bold border-b border-slate-300 mb-4 bg-transparent"
-        value={currentTask?.title || ""}
+        value={title}
       />
       {/* 1. Thanh Toolbar điều hướng nội bộ */}
       <div className="flex items-center gap-4 text-sm font-medium text-slate-600 border-b border-slate-100 pb-4">
@@ -56,13 +76,15 @@ export default function TaskMainContent() {
       <section>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold">Description</h2>
-          <button className="text-sm font-medium text-blue-600 hover:underline">
-            Edit
-          </button>
         </div>
         {/* <input className=" w-full border-2 border-gray-300 focus:outline-none focus:border-primary p-4 bg-slate-50/50 text-slate-700 space-y-3"></input> */}
         <div className="w-full">
-          <SimpleEditor initialContent={currentTask?.description} />
+          <SimpleEditor
+            onChange={(htmlContent: string) => {
+              setDescription(htmlContent);
+            }}
+            initialContent={currentTask?.description}
+          />
         </div>
       </section>
 

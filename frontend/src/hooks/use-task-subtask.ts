@@ -1,5 +1,6 @@
 import {
   useAddExistingSubtask,
+  useCreateTask,
   useGetGroupTaskByProjectId,
   useSearchTaskForSubtask,
   useUpdateTaskGroupTask,
@@ -58,12 +59,21 @@ export function useTaskSubtask() {
   const { updateTaskGroupTask, isPending: isPendingUpdateTaskGroupTask } =
     useUpdateTaskGroupTask();
 
+  const { mutate: createTask, isPending: isPendingCreatingTask } =
+    useCreateTask(currentProject);
+
   const handleAddSubtask = (id: string, title: string) => {
     setSubtasks([...subtasks, { id, title, status: "pending" }]);
     setInputValue("");
     setDebouncedKeyword("");
     setMode("create");
     setIsAdding(false);
+    createTask({
+      title: inputValue,
+      group_task_id: currentTask?.group_task_id,
+      description: "",
+      parent_id: currentTask?.id,
+    });
   };
 
   const handleAddExistingSubtask = (subtaskId: string) => {
@@ -130,5 +140,6 @@ export function useTaskSubtask() {
     isPendingUpdateTaskGroupTask,
     assigneeData,
     isAssigneesPending,
+    isPendingCreatingTask,
   };
 }

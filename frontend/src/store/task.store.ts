@@ -25,8 +25,8 @@ interface TaskState {
   appendTask: (groupId: string, task: Task) => void;
 
   // ─── Phần Current Task (Cũ - Giữ y nguyên) ───
-  currentTask: string | null;
-  setCurrentTask: (id: string) => void;
+  currentTask: any;
+  setCurrentTask: (task: any) => void;
 }
 
 // 2. Triển khai kho dữ liệu

@@ -14,7 +14,7 @@ export interface Task {
   parent_id?: string;
   title: string;
   description?: string;
-  position: number;
+  position?: number;
   due_date?: string;
   assignee_id?: string;
   created_by: string;
@@ -37,6 +37,7 @@ export interface CreateTaskPayload {
   due_date?: string;
   assignee_id?: string;
   label_ids?: string[];
+  parent_id?: string;
 }
 
 export interface MoveTaskPayload {
@@ -46,15 +47,17 @@ export interface MoveTaskPayload {
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 export const taskApi = (axiosPrivate: AxiosInstance) => ({
-  getTask: (taskId: string) => axiosPrivate.get<Task>(`/tasks/${taskId}`),
+  getTask: (projectId: string, taskId: string) =>
+    axiosPrivate.get<Task>(`/tasks/${projectId}/task/${taskId}`),
 
   // Kanban board
   getBoard: (projectId: string) =>
     axiosPrivate.get<GroupTask[]>(`/tasks/${projectId}/kanban`),
 
   // Task
-  createTask: (projectId: string, payload: CreateTaskPayload) =>
-    axiosPrivate.post<Task>(`/tasks/${projectId}/task`, payload),
+  createTask: (projectId: string, payload: CreateTaskPayload) => {
+    return axiosPrivate.post<Task>(`/tasks/${projectId}/task`, payload);
+  },
 
   updateTask: (
     projectId: string,
@@ -97,7 +100,7 @@ export const taskApi = (axiosPrivate: AxiosInstance) => ({
     taskId: string,
   ) => {
     return axiosPrivate.get(`/tasks/${taskId}/subtasks`, {
-      params: { keyword },
+      params: { keyword, projectId },
     });
   },
 
@@ -111,7 +114,7 @@ export const taskApi = (axiosPrivate: AxiosInstance) => ({
     });
   },
 
-  updateTaskGroupTask: (taskId: string, groupTaskId: string) => {
-    return axiosPrivate.patch(`/tasks/${taskId}`, { groupTaskId });
+  updateTaskGroupTask: (taskId: string, group_task_id: string) => {
+    return axiosPrivate.patch(`/tasks/${taskId}`, { group_task_id });
   },
 });

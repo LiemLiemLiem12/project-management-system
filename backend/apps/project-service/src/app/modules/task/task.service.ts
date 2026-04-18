@@ -84,7 +84,7 @@ export class TaskService {
   }
 
   async getGroupTaskByProjectId(projectId: string) {
-    return await this.groupTaskRepository.find({
+    return await this.groupTaskRepo.find({
       where: {
         project_id: projectId,
       },
@@ -130,6 +130,7 @@ export class TaskService {
     due_date?: Date;
     assignee_id?: string;
     label_ids?: string[];
+    parent_id?: string;
   }) {
     const maxPos = await this.taskRepository.findOne({
       where: { group_task_id: payload.group_task_id },
@@ -137,18 +138,29 @@ export class TaskService {
     });
     const position = maxPos ? maxPos.position + 1 : 0;
 
+    let nextIdValue: string;
+    if (!position) {
+      nextIdValue = '1';
+    } else {
+      nextIdValue = 'task-' + position.toString();
+    }
     let labels: Label[] = [];
     if (payload.label_ids?.length) {
       labels = await this.labelRepo.findBy({ id: In(payload.label_ids) });
     }
 
-    const task = this.taskRepository.create({ ...payload, position, labels });
+    const task = this.taskRepository.create({
+      ...payload,
+      id: nextIdValue,
+      position,
+      labels,
+    });
+
     return this.taskRepository.save(task);
   }
 
   async update(id: string, data: any) {
     const task = await this.findTaskById(id); // Dùng hàm nội bộ thay vì findOne
-
     if (data.label_ids !== undefined) {
       task.labels = data.label_ids?.length
         ? await this.labelRepo.findBy({ id: In(data.label_ids) })
@@ -156,8 +168,25 @@ export class TaskService {
       delete data.label_ids;
     }
 
+    if (data.group_task_id) {
+      const groupTask = await this.groupTaskRepo.findOne({
+        where: { id: data.group_task_id },
+      });
+
+      if (!groupTask) {
+        throw new RpcException({
+          message: 'Group task not found',
+          statusCode: 404,
+        });
+      }
+
+      task.groupTask = groupTask;
+
+      delete data.group_task_id;
+    }
+
     Object.assign(task, data);
-    return this.taskRepository.save(task);
+    return await this.taskRepository.save(task);
   }
 
   async moveTask(payload: {
