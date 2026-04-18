@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Plus,
   Search,
@@ -9,6 +9,9 @@ import {
   Copy,
 } from "lucide-react";
 import { useTaskSubtask } from "@/hooks/use-task-subtask";
+import { mock } from "node:test";
+import IconLoader from "../IconLoader";
+import { TaskBase } from "@/types";
 
 export default function TaskSubtasks() {
   const {
@@ -24,7 +27,33 @@ export default function TaskSubtasks() {
     handleAddSubtask,
     handleAddExistingSubtask,
     isPendingAddExistingSubtask,
+    activeStatus,
+    setActiveStatus,
+    groupTaskData,
+    isGroupTasksPending,
+    handleGroupTaskChange,
+    isPendingUpdateTaskGroupTask,
+    assigneeData,
+    isAssigneesPending,
   } = useTaskSubtask();
+
+  const activeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        activeRef.current &&
+        !activeRef.current.contains(event.target as Node)
+      ) {
+        setActiveStatus("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
     <section id="section-subtasks" className="scroll-mt-6">
       <div className="flex items-center justify-between mb-3">
@@ -164,20 +193,22 @@ export default function TaskSubtasks() {
       )}
 
       {subtasks.length > 0 && (
-        <div className="border border-gray-200 overflow-hidden mb-3 mt-3">
-          <table className="w-full text-sm text-left">
+        <div className="border border-gray-200 mb-3 mt-3">
+          <table className="w-full text-sm text-left table-fixed">
             <thead className="bg-gray-200 text-slate-500 border-b border-gray-200">
               <tr>
                 <th className="p-3 font-semibold w-1/2">Task</th>
                 <th className="p-3 font-semibold w-1/2 whitespace-nowrap">
                   Assignee
                 </th>
-                <th className="p-3 font-semibold whitespace-nowrap">Status</th>
+                <th className="p-3 font-semibold whitespace-nowrap w-[200px]">
+                  Status
+                </th>
               </tr>
             </thead>
 
             <tbody className="divide-x divide-y divide-gray-200 border-b border-gray-200">
-              {subtasks.map((task, index) => (
+              {subtasks.map((task: TaskBase, index) => (
                 <tr
                   key={index}
                   className="bg-white hover:bg-slate-50 transition-colors group"
@@ -197,21 +228,87 @@ export default function TaskSubtasks() {
                   {/* Cột Assignee: Co lại vừa vặn nội dung */}
                   <td className="p-3 w-1/2 whitespace-nowrap border-r border-gray-200">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-slate-800 text-white flex-shrink-0 flex items-center justify-center text-[10px] font-bold">
-                        AR
-                      </div>
-                      <span className="text-slate-600 text-sm font-medium">
-                        Alex R
-                      </span>
+                      {assigneeData && assigneeData.length > 0 ? (
+                        (() => {
+                          const user = assigneeData.find(
+                            (a: any) => a?.id === task.assignee_id,
+                          );
+                          return (
+                            <>
+                              <div className="w-6 h-6 rounded-full bg-slate-800 text-white flex-shrink-0 flex items-center justify-center text-[10px] font-bold overflow-hidden">
+                                {user?.avatarUrl ? (
+                                  <img
+                                    src={user.avatarUrl}
+                                    alt="avatar"
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  // Lấy chữ cái đầu của tên, nếu không có hiện "?"
+                                  user?.name?.charAt(0).toUpperCase() || "?"
+                                )}
+                              </div>
+                              <span className="text-slate-600 text-sm font-medium">
+                                {user?.name || "Unassigned"}
+                              </span>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <div className="flex items-center gap-2 animate-pulse">
+                          {/* Vòng tròn đại diện cho Avatar */}
+                          <div className="w-6 h-6 rounded-full bg-slate-200 flex-shrink-0" />
+
+                          {/* Thanh ngang đại diện cho Tên người dùng */}
+                          <div className="h-3 w-16 bg-slate-200 rounded" />
+                        </div>
+                      )}
                     </div>
                   </td>
 
                   {/* Cột Status: Co lại vừa vặn nội dung */}
-                  <td className="p-3 whitespace-nowrap">
-                    <div className="flex justify-center">
-                      <span className="px-2.5 py-1 text-xs font-semibold border border-gray-200 rounded-md bg-white text-slate-600 flex items-center gap-1.5 shadow-sm">
-                        To Do
+                  <td className="p-3 w-[200px] cursor-pointer whitespace-nowrap">
+                    <div className="relative w-full">
+                      <span
+                        onClick={() => setActiveStatus(task.id)}
+                        className="px-2.5 py-1 text-xs font-semibold border border-gray-200 rounded-md bg-white text-slate-600 flex items-center gap-1.5 shadow-sm"
+                      >
+                        {groupTaskData.find(
+                          (groupTask: any) =>
+                            groupTask.id === task.group_task_id,
+                        )?.title || "No group task"}
                       </span>
+                      {activeStatus === task.id && (
+                        <div
+                          ref={activeRef}
+                          className="absolute z-20 top-full left-1/2 transform -translate-x-1/2  mt-1 w-max bg-white border border-gray-200 rounded-md shadow-lg z-10"
+                        >
+                          {isGroupTasksPending ? (
+                            <div className="px-3 py-2 flex w-20 flex justify-center items-center text-sm text-slate-500">
+                              <IconLoader size={20} />
+                            </div>
+                          ) : (
+                            <>
+                              {groupTaskData.length > 0 ? (
+                                groupTaskData.map((status: any) => (
+                                  <div
+                                    key={status.id}
+                                    className="px-3 py-2 text-sm hover:bg-slate-50 cursor-pointer "
+                                    onClick={() =>
+                                      handleGroupTaskChange(task.id, status.id)
+                                    }
+                                  >
+                                    {status.title}
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="px-4 py-2 text-sm text-slate-400 italic">
+                                  Group task empty
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>

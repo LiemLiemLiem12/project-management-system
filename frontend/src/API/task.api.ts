@@ -1,8 +1,8 @@
 import { AxiosInstance } from "axios";
 
 export const taskApi = (axiosPrivate: AxiosInstance) => ({
-  getTask: (projectId: string, taskId: string) => {
-    return axiosPrivate.get(`/task/${projectId}/${taskId}`);
+  getTask: (taskId: string) => {
+    return axiosPrivate.get(`/tasks/${taskId}`);
   },
 
   searchTaskForSubtask: (
@@ -10,12 +10,22 @@ export const taskApi = (axiosPrivate: AxiosInstance) => ({
     projectId: string,
     taskId: string,
   ) => {
-    return axiosPrivate.get(`/task/${projectId}/${taskId}/subtasks/search`, {
+    return axiosPrivate.get(`/tasks/${taskId}/subtasks`, {
       params: { keyword },
     });
   },
 
   addExistingSubtask: (taskId: string, subtaskId: string) => {
-    return axiosPrivate.post(`/task/${taskId}/subtasks`, { subtaskId });
+    return axiosPrivate.post(`/tasks/${taskId}/subtasks`, { subtaskId });
+  },
+
+  getGroupTaskByProjectId: (projectId: string) => {
+    return axiosPrivate.get(`/tasks/group`, {
+      params: { projectId },
+    });
+  },
+
+  updateTaskGroupTask: (taskId: string, groupTaskId: string) => {
+    return axiosPrivate.patch(`/tasks/${taskId}`, { groupTaskId });
   },
 });

@@ -1,8 +1,10 @@
 import { useAPI } from "@/API/useAPI";
 import { useTaskStore } from "@/store/task.store";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 
 export const useGetCurrentTask = (projectId: string, taskId: string) => {
   const api = useAPI();
@@ -11,7 +13,7 @@ export const useGetCurrentTask = (projectId: string, taskId: string) => {
   const query = useQuery({
     queryKey: ["currentTask", taskId],
     queryFn: async () => {
-      const res = await api.task.getTask(projectId, taskId);
+      const res = await api.task.getTask(taskId);
       return res.data;
     },
     enabled: !!projectId && !!taskId,
@@ -82,6 +84,56 @@ export const useAddExistingSubtask = () => {
 
   return {
     addExistingSubtask: mutation.mutate,
+    isPending: mutation.isPending,
+  };
+};
+
+export const useGetGroupTaskByProjectId = (projectId: string) => {
+  const api = useAPI();
+
+  const query = useQuery({
+    queryKey: ["groupTasks", projectId],
+    queryFn: () => api.task.getGroupTaskByProjectId(projectId),
+    enabled: !!projectId,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  return {
+    data: query.data?.data || [],
+    isPending: query.isLoading,
+  };
+};
+
+export const useUpdateTaskGroupTask = () => {
+  const api = useAPI();
+  const queryClient = useQueryClient();
+  const currentTask = useTaskStore((s: any) => s.currentTask);
+
+  const mutation = useMutation({
+    mutationFn: ({
+      taskId,
+      groupTaskId,
+    }: {
+      taskId: string;
+      groupTaskId: string;
+    }) => api.task.updateTaskGroupTask(taskId, groupTaskId),
+
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["currentTask", currentTask?.id],
+      });
+    },
+
+    onError: (error) => {
+      // const msg = error.response?.data?.message || error.message;
+      console.error("Failed to update group task:", error.message);
+      toast.error("Failed to update group task. Please try again.");
+    },
+  });
+
+  return {
+    updateTaskGroupTask: mutation.mutate,
     isPending: mutation.isPending,
   };
 };

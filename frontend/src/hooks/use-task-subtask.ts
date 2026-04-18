@@ -1,12 +1,39 @@
 import {
   useAddExistingSubtask,
+  useGetGroupTaskByProjectId,
   useSearchTaskForSubtask,
+  useUpdateTaskGroupTask,
 } from "@/services/task.service";
 import { useTaskStore } from "@/store/task.store";
 import { useEffect, useState } from "react";
-import { TaskSearchItem } from "@/types";
+import { TaskBase, TaskSearchItem } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProjectStore } from "@/store/project.store";
+import { useGetUsersById } from "@/services/user.service";
+
+const mockGroupTask = [
+  {
+    id: "group-1",
+    project_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    title: "To Do",
+    order: 1,
+    isSuccess: false,
+  },
+  {
+    id: "group-2",
+    project_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    title: "In Progress",
+    order: 2,
+    isSuccess: false,
+  },
+  {
+    id: "group-3",
+    project_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    title: "Done",
+    order: 3,
+    isSuccess: true,
+  },
+];
 
 export function useTaskSubtask() {
   const currentProject = useProjectStore(
@@ -14,9 +41,10 @@ export function useTaskSubtask() {
   );
   const currentTask = useTaskStore((state: any) => state.currentTask);
 
-  const [subtasks, setSubtasks] = useState<{ id: string; title: string }[]>([]);
+  const [subtasks, setSubtasks] = useState<TaskBase[]>([]);
   const [isAdding, setIsAdding] = useState(true);
   const [mode, setMode] = useState<"create" | "search">("create");
+  const [activeStatus, setActiveStatus] = useState("");
 
   // State 1: Cập nhật ngay lập tức khi user gõ (để UI mượt)
   const [inputValue, setInputValue] = useState("");
@@ -27,8 +55,11 @@ export function useTaskSubtask() {
   const { addExistingSubtask, isPending: isPendingAddExistingSubtask } =
     useAddExistingSubtask();
 
+  const { updateTaskGroupTask, isPending: isPendingUpdateTaskGroupTask } =
+    useUpdateTaskGroupTask();
+
   const handleAddSubtask = (id: string, title: string) => {
-    setSubtasks([...subtasks, { id, title }]);
+    setSubtasks([...subtasks, { id, title, status: "pending" }]);
     setInputValue("");
     setDebouncedKeyword("");
     setMode("create");
@@ -36,12 +67,16 @@ export function useTaskSubtask() {
   };
 
   const handleAddExistingSubtask = (subtaskId: string) => {
-    // setSubtasks([...subtasks, { id, title }]);
+    // setSubtasks([...subtasks, {  id, title }]);
     setInputValue("");
     setDebouncedKeyword("");
     setMode("create");
     setIsAdding(false);
     addExistingSubtask({ taskId: currentTask?.id, subtaskId: subtaskId });
+  };
+
+  const handleGroupTaskChange = (taskId: string, groupTaskId: string) => {
+    updateTaskGroupTask({ taskId, groupTaskId });
   };
 
   useEffect(() => {
@@ -65,6 +100,15 @@ export function useTaskSubtask() {
     setSubtasks(currentTask.subtasks || []);
   }, [currentTask]);
 
+  const { data: groupTaskData, isPending: isGroupTasksPending } =
+    useGetGroupTaskByProjectId(currentProject);
+
+  const { data: assigneeData, isPending: isAssigneesPending } = useGetUsersById(
+    currentTask?.subtasks?.map((s: any) => s.assignee_id) || [],
+  );
+
+  console.log("Assignee Data:", assigneeData);
+
   return {
     subtasks,
     isAdding,
@@ -78,5 +122,13 @@ export function useTaskSubtask() {
     handleAddSubtask,
     handleAddExistingSubtask,
     isPendingAddExistingSubtask,
+    activeStatus,
+    setActiveStatus,
+    groupTaskData,
+    isGroupTasksPending,
+    handleGroupTaskChange,
+    isPendingUpdateTaskGroupTask,
+    assigneeData,
+    isAssigneesPending,
   };
 }

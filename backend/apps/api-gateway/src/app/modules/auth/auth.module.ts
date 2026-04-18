@@ -10,6 +10,8 @@ import facebookOauthConfig from './config/facebook-oauth.config';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
 import { PassportModule } from '@nestjs/passport';
+import { UserController } from './user.controller';
+import { UserService } from './user.service';
 
 @Module({
   imports: [
@@ -44,13 +46,14 @@ import { PassportModule } from '@nestjs/passport';
     ConfigModule.forFeature(googleOauthConfig),
     ConfigModule.forFeature(facebookOauthConfig),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, UserController],
   providers: [
     AuthService,
     LocalStrategy,
     JwtStrategy,
     GoogleStrategy,
     FacebookStrategy,
+    UserService,
   ],
   exports: [AuthService],
 })

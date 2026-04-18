@@ -5,12 +5,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from './entities/task.entity';
 import { RpcException } from '@nestjs/microservices/exceptions/rpc-exception';
 import { Brackets, Repository } from 'typeorm';
+import { GroupTask } from './entities/group-task.entity';
 
 @Injectable()
 export class TaskService {
   constructor(
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
+
+    @InjectRepository(GroupTask)
+    private readonly groupTaskRepository: Repository<GroupTask>,
   ) {}
 
   create(createTaskDto: CreateTaskDto) {
@@ -21,13 +25,10 @@ export class TaskService {
     return `This action returns all task`;
   }
 
-  async findOne(projectId: string, taskId: string) {
+  async findOne(taskId: string) {
     const task = await this.taskRepository.findOne({
       where: {
         id: taskId,
-        groupTask: {
-          project_id: projectId,
-        },
       },
       relations: ['groupTask', 'labels', 'subtasks', 'checklists'],
     });
@@ -68,6 +69,21 @@ export class TaskService {
       parent_id: taskId,
     });
 
+    return result;
+  }
+
+  async getGroupTaskByProjectId(projectId: string) {
+    return await this.groupTaskRepository.find({
+      where: {
+        project_id: projectId,
+      },
+    });
+  }
+
+  async updateTaskGroupTask(taskId: string, groupTaskId: string) {
+    const result = await this.taskRepository.update(taskId, {
+      group_task_id: groupTaskId,
+    });
     return result;
   }
 

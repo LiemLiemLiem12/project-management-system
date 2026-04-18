@@ -19,8 +19,8 @@ export class TaskController {
   }
 
   @MessagePattern('task.get-one')
-  findOneTask(@Payload() payload: { projectId: string; taskId: string }) {
-    return this.taskService.findOne(payload.projectId, payload.taskId);
+  findOneTask(@Payload() payload: { taskId: string }) {
+    return this.taskService.findOne(payload.taskId);
   }
 
   @MessagePattern('task.find-for-subtask')
@@ -56,6 +56,37 @@ export class TaskController {
       data: {
         taskId: payload.taskId,
         subtaskId: payload.subtaskId,
+      },
+    };
+  }
+
+  @MessagePattern('task.get-group-task-by-project-id')
+  getGroupTaskByProjectId(@Payload() payload: { projectId: string }) {
+    return this.taskService.getGroupTaskByProjectId(payload.projectId);
+  }
+
+  @MessagePattern('task.update-task-group-task')
+  async updateGroupTask(
+    @Payload() payload: { taskId: string; groupTaskId: string },
+  ) {
+    const result = await this.taskService.updateTaskGroupTask(
+      payload.taskId,
+      payload.groupTaskId,
+    );
+
+    if (result.affected === 0) {
+      throw new RpcException({
+        message: 'Failed to update group task',
+        statusCode: 404,
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Group task updated successfully',
+      data: {
+        taskId: payload.taskId,
+        groupTaskId: payload.groupTaskId,
       },
     };
   }
