@@ -294,3 +294,44 @@ export const useUpdateTask = () => {
     isPending: mutation.isPending,
   };
 };
+
+export const useRenameGroup = (projectId: string) => {
+  const api = useAPI();
+  const { setGroups } = useTaskStore();
+
+  return useMutation({
+    mutationFn: ({ groupId, title }: { groupId: string; title: string }) =>
+      api.task.renameGroup(projectId, groupId, title),
+    onMutate: ({ groupId, title }) => {
+      // Optimistic update
+      useTaskStore.setState((s) => ({
+        groups: s.groups.map((g) => (g.id === groupId ? { ...g, title } : g)),
+      }));
+    },
+    onError: async () => {
+      // Rollback
+      const res = await api.task.getBoard(projectId);
+      setGroups(res.data);
+    },
+  });
+};
+
+export const useDeleteGroupWithFallback = (projectId: string) => {
+  const api = useAPI();
+  const { setGroups } = useTaskStore();
+
+  return useMutation({
+    mutationFn: ({
+      groupId,
+      fallbackGroupId,
+    }: {
+      groupId: string;
+      fallbackGroupId: string;
+    }) => api.task.deleteGroupWithFallback(projectId, groupId, fallbackGroupId),
+    onSuccess: async () => {
+      // Refetch để đảm bảo UI đồng bộ với DB sau khi chuyển task
+      const res = await api.task.getBoard(projectId);
+      setGroups(res.data);
+    },
+  });
+};

@@ -1,15 +1,26 @@
+"use client";
+
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import KanbanItem from "./KanbanItem";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { GroupTask } from "@/API/task.api";
-import { useCreateTask } from "@/services/task.service";
+import {
+  useCreateTask,
+  useRenameGroup,
+  useDeleteGroupWithFallback,
+} from "@/services/task.service";
 import { useProjectStore } from "@/store/project.store";
+import { useTaskStore } from "@/store/task.store";
 import {
   CalendarIcon,
   UserCircleIcon,
   CornerDownLeftIcon,
   XIcon,
   CheckIcon,
+  MoreVertical,
+  Trash2,
+  Edit2,
+  AlertTriangle,
 } from "lucide-react";
 
 interface KanbanGroupProps {
@@ -19,27 +30,57 @@ interface KanbanGroupProps {
 }
 
 const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
+  // ── Create task state ───────────────────────────────────────────────────────
   const [isCreating, setIsCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [showMemberPopup, setShowMemberPopup] = useState(false);
-
-  // STATE MỚI: Lưu từ khóa tìm kiếm
   const [searchQuery, setSearchQuery] = useState("");
 
-  const dateInputRef = useRef<HTMLInputElement>(null);
-  const { mutate: createTask, isPending } = useCreateTask(projectId);
+  // ── Group action state ──────────────────────────────────────────────────────
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState(column.title);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [fallbackGroupId, setFallbackGroupId] = useState("");
 
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Store ───────────────────────────────────────────────────────────────────
   const currentUserRole = useProjectStore((s) => s.currentUserRole);
   const members = useProjectStore((s) => s.members);
+  const allGroups = useTaskStore((s) => s.groups);
 
-  const canCreateTask =
+  // ── Hooks ───────────────────────────────────────────────────────────────────
+  const { mutate: createTask, isPending: isCreatingTask } =
+    useCreateTask(projectId);
+  const { mutate: renameGroup, isPending: isRenaming } =
+    useRenameGroup(projectId);
+  const { mutate: deleteGroup, isPending: isDeleting } =
+    useDeleteGroupWithFallback(projectId);
+
+  // ── Computed ────────────────────────────────────────────────────────────────
+  const canManage =
     currentUserRole === "Leader" || currentUserRole === "Moderator";
+  const isLastColumn = allGroups.length <= 1;
+  const availableGroups = allGroups.filter((g) => g.id !== column.id);
+  const selectedMemberInfo = members?.find((m) => m.user_id === selectedMember);
+  const filteredMembers = members.filter((m) => {
+    const name = (m as any).full_name || m.user_id;
+    return name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
+  // Set default fallback khi mở modal
+  useEffect(() => {
+    if (showDeleteModal && availableGroups.length > 0 && !fallbackGroupId) {
+      setFallbackGroupId(availableGroups[0].id);
+    }
+  }, [showDeleteModal]);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
   const handleCreateTask = () => {
-    if (!newTaskTitle.trim() || isPending) return;
-
+    if (!newTaskTitle.trim() || isCreatingTask) return;
     createTask(
       {
         title: newTaskTitle,
@@ -52,8 +93,8 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
           setNewTaskTitle("");
           setDueDate("");
           setSelectedMember(null);
+          setSearchQuery("");
           setIsCreating(false);
-          setSearchQuery(""); // Reset search khi tạo xong
         },
       },
     );
@@ -64,277 +105,435 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
     setDueDate("");
     setSelectedMember(null);
     setShowMemberPopup(false);
+    setSearchQuery("");
     setIsCreating(false);
-    setSearchQuery(""); // Reset search khi hủy
   };
 
-  const selectedMemberInfo = members?.find((m) => m.user_id === selectedMember);
+  const handleRenameGroup = () => {
+    const trimmed = titleValue.trim();
+    if (!trimmed || trimmed === column.title) {
+      setIsEditingTitle(false);
+      return;
+    }
+    renameGroup(
+      { groupId: column.id, title: trimmed },
+      { onSettled: () => setIsEditingTitle(false) },
+    );
+  };
 
-  // LOGIC LỌC MEMBER: Lọc theo full_name, nếu không có thì fallback sang user_id
-  const filteredMembers = members.filter((m) => {
-    const searchTarget = m.full_name || m.user_id;
-    return searchTarget.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  const handleConfirmDelete = () => {
+    if (!fallbackGroupId) return;
+    deleteGroup(
+      { groupId: column.id, fallbackGroupId },
+      { onSuccess: () => setShowDeleteModal(false) },
+    );
+  };
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <Draggable draggableId={column.id} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          className={`flex flex-col bg-[#F1F2F4] rounded-xl w-[300px] shrink-0 h-full group transition-all ${
-            snapshot.isDragging ? "shadow-2xl ring-2 ring-blue-500 z-40" : ""
-          }`}
-        >
-          {/* Header */}
+    <>
+      <Draggable draggableId={column.id} index={index}>
+        {(provided, snapshot) => (
           <div
-            className="p-4 flex items-center justify-between"
-            {...provided.dragHandleProps}
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            className={`flex flex-col bg-[#F1F2F4] rounded-xl w-[300px] shrink-0 h-full group/col transition-all relative ${
+              snapshot.isDragging ? "shadow-2xl ring-2 ring-blue-500 z-40" : ""
+            }`}
           >
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider">
-                {column.title}
-              </h3>
-              <span className="text-gray-400 text-xs font-semibold">
-                {column.tasks.length}
-              </span>
-            </div>
-          </div>
-
-          {/* Droppable body */}
-          <Droppable droppableId={column.id} type="TASK">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className={`flex-1 overflow-y-auto px-3 flex flex-col gap-3 ${
-                  showMemberPopup ? "pb-64" : "pb-4" // Nới rộng thêm một chút đề phòng popup search dài ra
-                }`}
-              >
-                {column.tasks.map((task, index) => (
-                  <KanbanItem key={task.id} task={task} index={index} />
-                ))}
-
-                {provided.placeholder}
-
-                {/* ── Add a card ── */}
-                {canCreateTask && (
+            {/* ── Header ── */}
+            <div
+              className="p-4 flex items-center justify-between"
+              {...provided.dragHandleProps}
+            >
+              <div className="flex items-center gap-2 flex-1 mr-2">
+                {isEditingTitle ? (
+                  <input
+                    autoFocus
+                    value={titleValue}
+                    onChange={(e) => setTitleValue(e.target.value)}
+                    onBlur={handleRenameGroup}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleRenameGroup();
+                      if (e.key === "Escape") {
+                        setTitleValue(column.title);
+                        setIsEditingTitle(false);
+                      }
+                    }}
+                    disabled={isRenaming}
+                    className="bg-white border border-blue-500 rounded px-2 py-0.5 text-sm w-full outline-none disabled:opacity-50"
+                  />
+                ) : (
                   <>
-                    {isCreating ? (
-                      <div className="bg-white rounded-lg shadow-sm p-3 mb-2 mt-1">
-                        <textarea
-                          autoFocus
-                          value={newTaskTitle}
-                          onChange={(e) => setNewTaskTitle(e.target.value)}
-                          placeholder="What needs to be done?"
-                          className="w-full text-sm border-none focus:ring-0 focus:outline-none resize-none p-0 min-h-[50px] placeholder:text-gray-300 text-gray-700 bg-transparent"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleCreateTask();
-                            }
-                            if (e.key === "Escape") handleCancel();
+                    <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider truncate max-w-[180px]">
+                      {column.title}
+                    </h3>
+                    <span className="text-gray-400 text-xs font-semibold">
+                      {column.tasks.length}
+                    </span>
+                    {column.isSuccess && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-600 uppercase tracking-wide">
+                        Done
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Dấu 3 chấm — chỉ Leader/Moderator mới thấy */}
+              {canManage && (
+                <div className="relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsMenuOpen((v) => !v);
+                    }}
+                    className={`p-1 rounded-md transition-all text-gray-500 ${
+                      isMenuOpen
+                        ? "opacity-100 bg-gray-200"
+                        : "opacity-0 group-hover/col:opacity-100 hover:bg-gray-200"
+                    }`}
+                  >
+                    <MoreVertical size={16} />
+                  </button>
+
+                  {isMenuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsMenuOpen(false)}
+                      />
+                      <div className="absolute right-0 mt-1 w-44 bg-white shadow-xl border border-gray-100 rounded-lg z-50 py-1 overflow-hidden">
+                        <button
+                          onClick={() => {
+                            setIsEditingTitle(true);
+                            setIsMenuOpen(false);
                           }}
-                        />
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                          <Edit2 size={13} />
+                          Rename column
+                        </button>
+                        <div className="h-px bg-gray-100 my-1" />
+                        <button
+                          onClick={() => {
+                            if (isLastColumn) return;
+                            setIsMenuOpen(false);
+                            setShowDeleteModal(true);
+                          }}
+                          disabled={isLastColumn}
+                          title={
+                            isLastColumn
+                              ? "Cannot delete the last column"
+                              : undefined
+                          }
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                        >
+                          <Trash2 size={13} />
+                          Remove column
+                          {isLastColumn && (
+                            <span className="ml-auto text-[10px] text-gray-400 font-normal">
+                              last
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
-                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 relative">
-                          <div className="flex items-center gap-2 text-gray-400">
-                            {/* Date picker */}
-                            <div className="relative flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  dateInputRef.current?.showPicker()
-                                }
-                                className={`p-1 rounded hover:bg-gray-100 transition-colors ${dueDate ? "text-blue-500" : ""}`}
-                              >
-                                <CalendarIcon size={16} />
-                              </button>
-                              <input
-                                type="date"
-                                ref={dateInputRef}
-                                className="absolute opacity-0 pointer-events-none w-0"
-                                onChange={(e) => setDueDate(e.target.value)}
-                              />
-                              {dueDate && (
-                                <span className="text-[10px] font-medium bg-blue-50 px-1.5 py-0.5 rounded text-blue-600">
-                                  {dueDate}
-                                </span>
-                              )}
-                            </div>
+            {/* ── Droppable body ── */}
+            <Droppable droppableId={column.id} type="TASK">
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`flex-1 overflow-y-auto px-3 flex flex-col gap-3 ${
+                    showMemberPopup ? "pb-64" : "pb-4"
+                  }`}
+                >
+                  {column.tasks.map((task, index) => (
+                    <KanbanItem key={task.id} task={task} index={index} />
+                  ))}
 
-                            {/* Member picker */}
-                            <div className="relative">
-                              <button
-                                onClick={() => {
-                                  setShowMemberPopup((v) => !v);
-                                  if (showMemberPopup) setSearchQuery(""); // Đóng popup thì xóa search
-                                }}
-                                className={`p-1 rounded transition-colors flex items-center gap-1 ${
-                                  selectedMember
-                                    ? "text-blue-500"
-                                    : showMemberPopup
-                                      ? "text-blue-500 bg-blue-50"
-                                      : "hover:bg-gray-100"
-                                }`}
-                              >
-                                {selectedMemberInfo ? (
-                                  selectedMemberInfo.avatar_url ? (
-                                    <img
-                                      src={selectedMemberInfo.avatar_url}
-                                      alt="avatar"
-                                      className="w-5 h-5 rounded-full object-cover"
-                                    />
-                                  ) : (
+                  {provided.placeholder}
+
+                  {/* ── Add a card — chỉ Leader/Moderator ── */}
+                  {canManage && (
+                    <>
+                      {isCreating ? (
+                        <div className="bg-white rounded-lg shadow-sm p-3 mb-2 mt-1 relative z-10">
+                          <textarea
+                            autoFocus
+                            value={newTaskTitle}
+                            onChange={(e) => setNewTaskTitle(e.target.value)}
+                            placeholder="What needs to be done?"
+                            className="w-full text-sm border-none focus:ring-0 focus:outline-none resize-none p-0 min-h-[50px] placeholder:text-gray-300 text-gray-700 bg-transparent"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleCreateTask();
+                              }
+                              if (e.key === "Escape") handleCancel();
+                            }}
+                          />
+
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 relative">
+                            <div className="flex items-center gap-2 text-gray-400">
+                              {/* Date picker */}
+                              <div className="relative flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    dateInputRef.current?.showPicker()
+                                  }
+                                  className={`p-1 rounded hover:bg-gray-100 transition-colors ${dueDate ? "text-blue-500" : ""}`}
+                                >
+                                  <CalendarIcon size={16} />
+                                </button>
+                                <input
+                                  type="date"
+                                  ref={dateInputRef}
+                                  className="absolute opacity-0 pointer-events-none w-0"
+                                  onChange={(e) => setDueDate(e.target.value)}
+                                />
+                                {dueDate && (
+                                  <span className="text-[10px] font-medium bg-blue-50 px-1.5 py-0.5 rounded text-blue-600">
+                                    {dueDate}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Member picker */}
+                              <div className="relative">
+                                <button
+                                  onClick={() => setShowMemberPopup((v) => !v)}
+                                  className={`p-1 rounded transition-colors flex items-center gap-1 ${
+                                    selectedMember
+                                      ? "text-blue-500"
+                                      : showMemberPopup
+                                        ? "text-blue-500 bg-blue-50"
+                                        : "hover:bg-gray-100"
+                                  }`}
+                                >
+                                  {selectedMemberInfo ? (
                                     <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold">
                                       {(
-                                        selectedMemberInfo.full_name ||
+                                        (selectedMemberInfo as any).full_name ||
                                         selectedMemberInfo.user_id
                                       )
-                                        .slice(0, 1)
+                                        .charAt(0)
                                         .toUpperCase()}
                                     </div>
-                                  )
-                                ) : (
-                                  <UserCircleIcon size={16} />
-                                )}
-                              </button>
+                                  ) : (
+                                    <UserCircleIcon size={16} />
+                                  )}
+                                </button>
 
-                              {showMemberPopup && (
-                                <div className="absolute top-full left-0 mt-2 w-52 bg-white shadow-xl border rounded-lg z-50 overflow-hidden flex flex-col">
-                                  <div className="p-2 border-b bg-gray-50/50">
-                                    <p className="text-[10px] font-bold text-gray-400 px-1 mb-1.5 uppercase">
+                                {showMemberPopup && (
+                                  <div className="absolute bottom-full left-0 mb-2 w-52 bg-white shadow-xl border rounded-lg z-50 p-2">
+                                    <p className="text-[10px] font-bold text-gray-400 px-2 py-1 uppercase tracking-wider">
                                       Assign to member
                                     </p>
+
+                                    {/* Search */}
                                     <input
                                       type="text"
-                                      autoFocus
-                                      placeholder="Search member..."
                                       value={searchQuery}
                                       onChange={(e) =>
                                         setSearchQuery(e.target.value)
                                       }
-                                      className="w-full text-xs px-2 py-1.5 border border-gray-200 rounded outline-none focus:border-blue-400 transition-colors bg-white text-gray-700 placeholder:text-gray-400"
-                                      onKeyDown={(e) => {
-                                        // Ngăn chặn nút Enter/Esc kích hoạt tạo task ở ngoài
-                                        e.stopPropagation();
-                                        if (e.key === "Escape")
-                                          setShowMemberPopup(false);
-                                      }}
+                                      placeholder="Search..."
+                                      className="w-full text-xs px-2 py-1.5 mb-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
                                     />
-                                  </div>
 
-                                  <div className="max-h-[160px] overflow-hidden hover:overflow-y-auto overscroll-contain p-1">
-                                    {/* Unassigned option (Chỉ hiện khi chưa search) */}
-                                    {!searchQuery && (
-                                      <div
-                                        onClick={() => {
-                                          setSelectedMember(null);
-                                          setShowMemberPopup(false);
-                                        }}
-                                        className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-md cursor-pointer mb-1"
-                                      >
-                                        <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-500">
-                                          —
-                                        </div>
-                                        <span className="text-xs text-gray-500 italic">
-                                          Unassigned
-                                        </span>
+                                    {/* Unassigned */}
+                                    <div
+                                      onClick={() => {
+                                        setSelectedMember(null);
+                                        setShowMemberPopup(false);
+                                      }}
+                                      className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                                    >
+                                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-500 font-medium">
+                                        —
                                       </div>
-                                    )}
+                                      <span className="text-xs text-gray-400 italic">
+                                        Unassigned
+                                      </span>
+                                      {!selectedMember && (
+                                        <CheckIcon
+                                          size={12}
+                                          className="ml-auto text-blue-500"
+                                        />
+                                      )}
+                                    </div>
 
-                                    {/* Filtered Members */}
-                                    {filteredMembers.map((m) => (
-                                      <div
-                                        key={m.user_id}
-                                        onClick={() => {
-                                          setSelectedMember(m.user_id);
-                                          setShowMemberPopup(false);
-                                          setSearchQuery(""); // Chọn xong thì xóa search
-                                        }}
-                                        className="flex items-center justify-between gap-2 p-2 hover:bg-blue-50 rounded-md cursor-pointer"
-                                      >
-                                        <div className="flex items-center gap-2">
-                                          {m.avatar_url ? (
-                                            <img
-                                              src={m.avatar_url}
-                                              alt="avatar"
-                                              className="w-6 h-6 rounded-full object-cover shrink-0"
-                                            />
-                                          ) : (
-                                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0">
-                                              {(m.full_name || m.user_id)
-                                                .slice(0, 1)
-                                                .toUpperCase()}
-                                            </div>
-                                          )}
-                                          <div className="overflow-hidden">
-                                            <p
-                                              className="text-xs text-gray-700 font-medium truncate w-[100px]"
-                                              title={m.full_name || m.user_id}
-                                            >
-                                              {m.full_name || m.user_id}
+                                    {/* Members */}
+                                    {filteredMembers.map((m) => {
+                                      const displayName =
+                                        (m as any).full_name || m.user_id;
+                                      return (
+                                        <div
+                                          key={m.user_id}
+                                          onClick={() => {
+                                            setSelectedMember(m.user_id);
+                                            setShowMemberPopup(false);
+                                          }}
+                                          className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-md cursor-pointer"
+                                        >
+                                          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0">
+                                            {displayName
+                                              .charAt(0)
+                                              .toUpperCase()}
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs text-gray-700 font-medium truncate">
+                                              {displayName}
                                             </p>
                                             <p className="text-[10px] text-gray-400">
                                               {m.role}
                                             </p>
                                           </div>
+                                          {selectedMember === m.user_id && (
+                                            <CheckIcon
+                                              size={12}
+                                              className="text-blue-500 shrink-0"
+                                            />
+                                          )}
                                         </div>
-                                        {selectedMember === m.user_id && (
-                                          <CheckIcon
-                                            size={12}
-                                            className="text-blue-500 shrink-0"
-                                          />
-                                        )}
-                                      </div>
-                                    ))}
-
-                                    {/* Báo lỗi nếu search không ra ai */}
-                                    {filteredMembers.length === 0 && (
-                                      <p className="text-[10px] text-center text-gray-400 py-3">
-                                        No members found
-                                      </p>
-                                    )}
+                                      );
+                                    })}
                                   </div>
-                                </div>
-                              )}
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={handleCancel}
+                                className="text-gray-400 hover:text-red-500 transition-colors"
+                              >
+                                <XIcon size={16} />
+                              </button>
+                              <button
+                                onClick={handleCreateTask}
+                                disabled={
+                                  isCreatingTask || !newTaskTitle.trim()
+                                }
+                                className="p-1 bg-gray-100 hover:bg-blue-600 hover:text-white disabled:opacity-40 text-gray-400 rounded transition-all"
+                              >
+                                <CornerDownLeftIcon size={16} />
+                              </button>
                             </div>
                           </div>
-
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={handleCancel}
-                              className="text-gray-400 hover:text-red-500 transition-colors"
-                            >
-                              <XIcon size={16} />
-                            </button>
-                            <button
-                              onClick={handleCreateTask}
-                              disabled={isPending || !newTaskTitle.trim()}
-                              className="p-1 bg-gray-100 hover:bg-blue-600 hover:text-white disabled:opacity-40 text-gray-400 rounded transition-all"
-                            >
-                              <CornerDownLeftIcon size={16} />
-                            </button>
-                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setIsCreating(true)}
-                        className="opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center gap-2 w-full py-2 px-3 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg text-sm font-medium mt-1 mb-2"
-                      >
-                        <span className="text-lg leading-none">+</span> Add a
-                        card
-                      </button>
-                    )}
-                  </>
-                )}
+                      ) : (
+                        <button
+                          onClick={() => setIsCreating(true)}
+                          className="opacity-0 group-hover/col:opacity-100 transition-all duration-200 flex items-center gap-2 w-full py-2 px-3 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg text-sm font-medium mt-1 mb-2"
+                        >
+                          <span className="text-lg leading-none">+</span> Add a
+                          card
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </Droppable>
+          </div>
+        )}
+      </Draggable>
+
+      {/* ── Delete Modal ── */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl w-[550px] p-6 text-gray-800">
+            <div className="flex items-center gap-2 text-red-600 mb-2">
+              <AlertTriangle size={20} className="fill-red-600 text-white" />
+              <h2 className="text-xl font-bold">
+                Move work from "{column.title}" column
+              </h2>
+            </div>
+            <p className="text-sm text-gray-500 mb-6">
+              Select a new home for any work in this column before deleting it.
+            </p>
+
+            {/* Warning nếu đây là cột isSuccess */}
+            {column.isSuccess && (
+              <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2.5 mb-5 text-xs text-yellow-700">
+                <AlertTriangle
+                  size={14}
+                  className="shrink-0 mt-0.5 text-yellow-500"
+                />
+                <span>
+                  This is the <strong>Done</strong> column. The "Done" status
+                  will be transferred to the column you select below.
+                </span>
               </div>
             )}
-          </Droppable>
+
+            <div className="flex items-center gap-4 mb-8">
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-gray-500 mb-1.5">
+                  This column will be deleted:
+                </p>
+                <div className="border border-gray-200 rounded px-3 py-2 bg-gray-50 text-sm font-semibold text-gray-700 uppercase">
+                  {column.title}
+                </div>
+              </div>
+
+              <div className="pt-5 text-gray-400 text-lg font-bold">→</div>
+
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-gray-500 mb-1.5">
+                  Move existing tasks to:
+                </p>
+                {availableGroups.length > 0 ? (
+                  <select
+                    value={fallbackGroupId}
+                    onChange={(e) => setFallbackGroupId(e.target.value)}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm font-medium uppercase focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    {availableGroups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.title}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="border border-red-200 rounded px-3 py-2 bg-red-50 text-xs text-red-500">
+                    No other columns available. Delete tasks first.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setFallbackGroupId("");
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={isDeleting || !fallbackGroupId}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded transition-colors"
+              >
+                {isDeleting ? "Deleting..." : "Delete column"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
-    </Draggable>
+    </>
   );
 };
 

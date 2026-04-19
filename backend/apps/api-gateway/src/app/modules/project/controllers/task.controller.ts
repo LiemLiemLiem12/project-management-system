@@ -188,5 +188,30 @@ export class TaskController {
     return this.taskService.findTaskForSubtask(keyword, projectId, taskId);
   }
 
+  @Roles(Role.LEADER, Role.MODERATOR)
+  @UseGuards(RoleGuard)
+  @UseGuards(JwtAuthGuard)
+  @Patch(':projectId/task/group/:groupId/rename')
+  renameGroup(
+    @Param('groupId') groupId: string,
+    @Body() body: { title: string },
+  ) {
+    return this.taskService.renameGroup(groupId, body.title);
+  }
+
+  @Roles(Role.LEADER, Role.MODERATOR)
+  @UseGuards(RoleGuard)
+  @UseGuards(JwtAuthGuard)
+  @Delete(':projectId/task/group/:groupId/with-fallback')
+  deleteGroupWithFallback(
+    @Param('groupId') groupId: string,
+    @Body() body: { fallbackGroupId: string },
+  ) {
+    return this.taskService.deleteGroupWithFallback(
+      groupId,
+      body.fallbackGroupId,
+    );
+  }
+
   //Checklist
 }

@@ -27,6 +27,7 @@ export interface GroupTask {
   project_id: string;
   title: string;
   order: number;
+  isSuccess: boolean;
   tasks: Task[];
 }
 
@@ -117,4 +118,21 @@ export const taskApi = (axiosPrivate: AxiosInstance) => ({
   updateTaskGroupTask: (taskId: string, group_task_id: string) => {
     return axiosPrivate.patch(`/tasks/${taskId}`, { group_task_id });
   },
+
+  renameGroup: (projectId: string, groupId: string, title: string) =>
+    axiosPrivate.patch(`/tasks/${projectId}/task/group/${groupId}/rename`, {
+      title,
+    }),
+
+  deleteGroupWithFallback: (
+    projectId: string,
+    groupId: string,
+    fallbackGroupId: string,
+  ) =>
+    axiosPrivate.delete(
+      `/tasks/${projectId}/task/group/${groupId}/with-fallback`,
+      {
+        data: { fallbackGroupId },
+      },
+    ),
 });

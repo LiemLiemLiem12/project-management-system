@@ -148,4 +148,14 @@ export class TaskController {
       payload.ordered_ids,
     );
   }
+
+  @MessagePattern('task.group.remove-with-fallback')
+  removeGroupWithFallback(
+    @Payload() payload: { id: string; fallbackGroupId: string },
+  ) {
+    return this.taskService.removeGroupWithFallback(
+      payload.id,
+      payload.fallbackGroupId,
+    );
+  }
 }

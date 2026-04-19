@@ -23,7 +23,7 @@ export class GroupTask {
   @Column()
   order!: number;
 
-  @Column()
+  @Column({ default: false })
   isSuccess!: boolean;
 
   @ManyToOne(() => Project, (p) => p.groupTasks)

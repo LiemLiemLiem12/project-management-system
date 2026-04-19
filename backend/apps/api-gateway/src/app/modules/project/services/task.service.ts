@@ -121,4 +121,15 @@ export class TaskService {
       throw new HttpException(error.message, error.statusCode || 500);
     }
   }
+
+  renameGroup(groupId: string, title: string) {
+    return this.send('task.group.update', { id: groupId, title });
+  }
+
+  deleteGroupWithFallback(groupId: string, fallbackGroupId: string) {
+    return this.send('task.group.remove-with-fallback', {
+      id: groupId,
+      fallbackGroupId,
+    });
+  }
 }

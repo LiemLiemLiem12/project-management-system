@@ -324,4 +324,65 @@ export class TaskService {
     );
     return this.getKanbanBoard(projectId);
   }
+  async removeGroupWithFallback(id: string, fallbackGroupId: string) {
+    const group = await this.groupTaskRepo.findOne({ where: { id } });
+    if (!group)
+      throw new RpcException({
+        message: `GroupTask ${id} not found`,
+        statusCode: 404,
+      });
+
+    // ── Không được xóa cột cuối cùng ──────────────────────────────────────────
+    const totalGroups = await this.groupTaskRepo.count({
+      where: { project_id: group.project_id },
+    });
+    if (totalGroups <= 1)
+      throw new RpcException({
+        message: 'Cannot delete the last column',
+        statusCode: 400,
+      });
+
+    // ── Nếu cột bị xóa là isSuccess, cột fallback phải nhận task (không block) ─
+    // Chỉ cần chuyển task sang fallback bình thường, không cần thêm điều kiện.
+    // isSuccess sẽ được gán lại cho cột fallback nếu cột hiện tại là isSuccess.
+    const fallback = await this.groupTaskRepo.findOne({
+      where: { id: fallbackGroupId },
+    });
+    if (!fallback)
+      throw new RpcException({
+        message: `Fallback GroupTask ${fallbackGroupId} not found`,
+        statusCode: 404,
+      });
+
+    // ── Chuyển toàn bộ task sang fallback ─────────────────────────────────────
+    const maxPosTask = await this.taskRepository.findOne({
+      where: { group_task_id: fallbackGroupId },
+      order: { position: 'DESC' },
+    });
+    const basePosition = maxPosTask ? maxPosTask.position + 1 : 0;
+
+    const tasksToMove = await this.taskRepository.find({
+      where: { group_task_id: id },
+      order: { position: 'ASC' },
+    });
+
+    if (tasksToMove.length > 0) {
+      await Promise.all(
+        tasksToMove.map((task, i) =>
+          this.taskRepository.update(task.id, {
+            group_task_id: fallbackGroupId,
+            position: basePosition + i,
+          }),
+        ),
+      );
+    }
+
+    // ── Nếu cột bị xóa là isSuccess → chuyển isSuccess sang fallback ──────────
+    if (group.isSuccess) {
+      await this.groupTaskRepo.update(fallbackGroupId, { isSuccess: true });
+    }
+
+    await this.groupTaskRepo.remove(group);
+    return { success: true };
+  }
 }
