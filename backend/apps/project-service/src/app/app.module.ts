@@ -15,6 +15,8 @@ import { TalentLabel } from './modules/project/entities/talent-label.entity';
 import { GroupTask } from './modules/task/entities/group-task.entity';
 import { Label } from './modules/task/entities/label.entity';
 import { Task } from './modules/task/entities/task.entity';
+import { ChecklistModule } from './modules/checklist/checklist.module';
+import { Checklist } from './modules/checklist/entities/checklist.entity';
 
 @Module({
   imports: [
@@ -43,10 +45,13 @@ import { Task } from './modules/task/entities/task.entity';
         GroupTask,
         Label,
         Task,
+        Checklist,
       ],
       synchronize: true,
       autoLoadEntities: true,
     }),
+
+    ChecklistModule,
   ],
   controllers: [AppController],
   providers: [AppService],

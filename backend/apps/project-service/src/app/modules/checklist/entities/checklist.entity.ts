@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Task } from './task.entity'; // Đường dẫn tới file task entity
+import { Task } from '../../task/entities/task.entity'; // Đường dẫn tới file task entity
 
 @Entity('checklists')
 export class Checklist {

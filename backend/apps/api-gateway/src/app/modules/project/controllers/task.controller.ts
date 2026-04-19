@@ -37,8 +37,8 @@ export class TaskController {
   //   return this.taskService.updateTaskGroupTask(taskId, groupTaskId);
   // }
 
-  @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
-  @UseGuards(JwtAuthGuard, RoleGuard)
+  // @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
+  // @UseGuards(JwtAuthGuard, RoleGuard)
   @Patch(':taskId')
   updateTaskData(@Param('taskId') taskId: string, @Body() body: any) {
     return this.taskService.updateTask(taskId, body);
@@ -187,4 +187,6 @@ export class TaskController {
   ) {
     return this.taskService.findTaskForSubtask(keyword, projectId, taskId);
   }
+
+  //Checklist
 }

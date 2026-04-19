@@ -27,6 +27,11 @@ export class TaskService {
         id: taskId,
       },
       relations: ['groupTask', 'labels', 'subtasks', 'checklists'],
+      order: {
+        checklists: {
+          position: 'ASC',
+        },
+      },
     });
 
     if (!task) {

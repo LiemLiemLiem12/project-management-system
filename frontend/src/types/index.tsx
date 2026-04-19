@@ -9,7 +9,8 @@ export interface User {
   createdAt: string;
 }
 
-//Task Detail Page
+//Task Interface
+
 export interface TaskSearchItem {
   id: string;
   title: string;
@@ -47,5 +48,25 @@ export interface Task extends TaskBase {
   groupTask: GroupTask;
   labels: Label[];
   subtasks: TaskBase[];
-  checklists: any[];
+  checklists: Checklist[];
+}
+
+//Checklist
+
+export interface Checklist {
+  id: string;
+  title: string;
+  is_completed: boolean;
+  position: number;
+  task_id: string;
+}
+
+export interface CreateChecklistPayload {
+  title: string;
+}
+
+export interface UpdateChecklistPayload {
+  title?: string;
+  is_completed?: boolean;
+  position?: number;
 }

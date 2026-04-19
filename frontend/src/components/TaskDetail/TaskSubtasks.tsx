@@ -7,12 +7,14 @@ import {
   CornerDownLeft,
   ChevronDown,
   Copy,
+  Trash2,
 } from "lucide-react";
 import { useTaskSubtask } from "@/hooks/use-task-subtask";
 import { mock } from "node:test";
 import IconLoader from "../IconLoader";
 import { TaskBase } from "@/types";
 import { redirect, useParams, useRouter } from "next/navigation";
+import { useUpdateTask } from "@/services/task.service";
 
 export default function TaskSubtasks() {
   const {
@@ -37,6 +39,8 @@ export default function TaskSubtasks() {
     assigneeData,
     isAssigneesPending,
     isPendingCreatingTask,
+    handleRemoveSubtask,
+    isUpdatingTask,
   } = useTaskSubtask();
 
   const router = useRouter();
@@ -209,6 +213,7 @@ export default function TaskSubtasks() {
                 <th className="p-3 font-semibold whitespace-nowrap w-[200px]">
                   Status
                 </th>
+                <th className="p-3 font-semibold whitespace-nowrap w-12 text-center"></th>
               </tr>
             </thead>
 
@@ -322,6 +327,19 @@ export default function TaskSubtasks() {
                         </div>
                       )}
                     </div>
+                  </td>
+                  <td className="p-3 w-12 text-center align-middle">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // Ngăn không cho row chuyển hướng trang
+                        handleRemoveSubtask(task.id);
+                      }}
+                      disabled={isUpdatingTask}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                      title="Remove subtask"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}

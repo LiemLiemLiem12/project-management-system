@@ -254,7 +254,7 @@ export const useUpdateTaskGroupTask = () => {
 export const useUpdateTask = () => {
   const api = useAPI();
   const queryClient = useQueryClient();
-
+  const currentTask = useTaskStore((s: any) => s.currentTask);
   const mutation = useMutation({
     mutationFn: ({
       projectId,
@@ -272,8 +272,14 @@ export const useUpdateTask = () => {
       });
 
       queryClient.invalidateQueries({
+        queryKey: ["currentTask", currentTask?.id],
+      });
+
+      queryClient.invalidateQueries({
         queryKey: ["kanbanBoard", variables.projectId],
       });
+
+      return res;
     },
 
     onError: (error: AxiosError) => {

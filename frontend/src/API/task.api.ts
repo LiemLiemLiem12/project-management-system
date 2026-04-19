@@ -37,7 +37,7 @@ export interface CreateTaskPayload {
   due_date?: string;
   assignee_id?: string;
   label_ids?: string[];
-  parent_id?: string;
+  parent_id?: string | null;
 }
 
 export interface MoveTaskPayload {

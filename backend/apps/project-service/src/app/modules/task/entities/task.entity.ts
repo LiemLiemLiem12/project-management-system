@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { GroupTask } from './group-task.entity';
 import { Label } from './label.entity';
-import { Checklist } from './checklist.entity';
+import { Checklist } from '../../checklist/entities/checklist.entity';
 
 @Entity('tasks')
 export class Task {

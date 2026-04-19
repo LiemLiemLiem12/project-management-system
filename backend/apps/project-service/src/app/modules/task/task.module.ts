@@ -6,14 +6,16 @@ import { GroupTask } from './entities/group-task.entity';
 import { Task } from './entities/task.entity';
 import { Label } from './entities/label.entity';
 import { ProjectModule } from '../project/project.module';
-import { Checklist } from './entities/checklist.entity';
+import { ChecklistModule } from '../checklist/checklist.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([GroupTask, Task, Label, Checklist]),
+    TypeOrmModule.forFeature([GroupTask, Task, Label]),
     forwardRef(() => ProjectModule),
+    forwardRef(() => ChecklistModule),
   ],
   controllers: [TaskController],
   providers: [TaskService],
+  exports: [TaskService, TypeOrmModule],
 })
 export class TaskModule {}

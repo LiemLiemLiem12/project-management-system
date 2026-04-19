@@ -6,6 +6,8 @@ import { ClientsModule } from '@nestjs/microservices/module/clients.module';
 import { AuthModule } from '../auth/auth.module';
 import { TaskController } from './controllers/task.controller';
 import { TaskService } from './services/task.service';
+import { ChecklistController } from './controllers/checklist.controller';
+import { ChecklistService } from './services/checklist.service';
 
 @Module({
   imports: [
@@ -24,7 +26,7 @@ import { TaskService } from './services/task.service';
       },
     ]),
   ],
-  controllers: [ProjectController, TaskController],
-  providers: [ProjectService, TaskService],
+  controllers: [ProjectController, TaskController, ChecklistController],
+  providers: [ProjectService, TaskService, ChecklistService],
 })
 export class ProjectModule {}
