@@ -8,6 +8,8 @@ import { TaskController } from './controllers/task.controller';
 import { TaskService } from './services/task.service';
 import { ChecklistController } from './controllers/checklist.controller';
 import { ChecklistService } from './services/checklist.service';
+import { LabelController } from './controllers/label.controller';
+import { LabelService } from './services/label.service';
 
 @Module({
   imports: [
@@ -26,7 +28,12 @@ import { ChecklistService } from './services/checklist.service';
       },
     ]),
   ],
-  controllers: [ProjectController, TaskController, ChecklistController],
-  providers: [ProjectService, TaskService, ChecklistService],
+  controllers: [
+    ProjectController,
+    TaskController,
+    ChecklistController,
+    LabelController,
+  ],
+  providers: [ProjectService, TaskService, ChecklistService, LabelService],
 })
 export class ProjectModule {}

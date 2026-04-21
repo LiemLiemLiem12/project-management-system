@@ -37,6 +37,25 @@ export class ProjectService {
     });
   }
 
+  addMember(payload: any) {
+    return this.projectClient.send('project_member.create', payload);
+  }
+
+  getMembers(projectId: string) {
+    return this.projectClient.send('project_member.findAll', { projectId });
+  }
+
+  updateMemberRole(payload: any) {
+    return this.projectClient.send('project_member.update', payload);
+  }
+
+  removeMember(projectId: string, userId: string) {
+    return this.projectClient.send('project_member.delete', {
+      project_id: projectId,
+      user_id: userId,
+    });
+  }
+
   async findTask(projectId: string, taskId: string) {
     try {
       const result = await firstValueFrom(

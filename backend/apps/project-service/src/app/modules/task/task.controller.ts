@@ -158,4 +158,34 @@ export class TaskController {
       payload.fallbackGroupId,
     );
   }
+
+  //Label
+
+  @MessagePattern('label.create')
+  createLabel(
+    @Payload()
+    payload: {
+      project_id: string;
+      name: string;
+      color_code: string;
+    },
+  ) {
+    return this.taskService.createLabel(payload);
+  }
+
+  @MessagePattern('label.findAllByProject')
+  getLabelsByProject(@Payload() payload: { projectId: string }) {
+    return this.taskService.findAllLabelByProject(payload.projectId);
+  }
+
+  @MessagePattern('label.update')
+  updateLabel(@Payload() payload: { id: string; [key: string]: any }) {
+    const { id, ...data } = payload;
+    return this.taskService.updateLabel(id, data);
+  }
+
+  @MessagePattern('label.delete')
+  deleteLabel(@Payload() payload: { id: string }) {
+    return this.taskService.deleteLabel(payload.id);
+  }
 }

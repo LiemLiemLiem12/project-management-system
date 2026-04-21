@@ -42,8 +42,27 @@ export class ProjectController {
   findOneProject(@Payload() payload: { id: string }) {
     return this.projectService.findOne(payload.id);
   }
-  @MessagePattern('project.get-members')
-  getMembers(@Payload() payload: { projectId: string; userId: string }) {
-    return this.projectService.getMembers(payload.projectId, payload.userId);
+
+  @MessagePattern('project_member.create')
+  addMember(
+    @Payload() payload: { project_id: string; user_id: string; role: string },
+  ) {
+    return this.projectService.addMember(payload);
+  }
+
+  @MessagePattern('project_member.update')
+  updateMemberRole(
+    @Payload() payload: { project_id: string; user_id: string; role: string },
+  ) {
+    const { project_id, user_id, ...data } = payload;
+    return this.projectService.updateMemberRole(project_id, user_id, data);
+  }
+
+  @MessagePattern('project_member.delete')
+  removeMember(@Payload() payload: { project_id: string; user_id: string }) {
+    return this.projectService.removeMember(
+      payload.project_id,
+      payload.user_id,
+    );
   }
 }

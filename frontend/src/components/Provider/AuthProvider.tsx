@@ -23,13 +23,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   ];
 
   useEffect(() => {
-    if (user) return;
+    if (user) {
+      return;
+    }
 
     if (publicRoutes.includes(pathname)) return;
 
-    if (persist) {
-      getStatus();
-    }
+    // if (persist) {
+    getStatus();
+    // }
   }, [pathname, user, persist]);
 
   return <>{children}</>;

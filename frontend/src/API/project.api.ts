@@ -1,3 +1,4 @@
+import { AddMemberPayload, UpdateMemberRolePayload } from "@/types";
 import { AxiosInstance } from "axios";
 
 export interface ProjectMember {
@@ -20,5 +21,24 @@ export const projectAPI = (axiosPrivate: AxiosInstance) => ({
 
   getMembers: (projectId: string) => {
     return axiosPrivate.get<ProjectMember[]>(`/project/${projectId}/members`);
+  },
+
+  addMember: (projectId: string, payload: AddMemberPayload) => {
+    return axiosPrivate.post(`/projects/${projectId}/members`, payload);
+  },
+
+  updateMemberRole: (
+    projectId: string,
+    userId: string,
+    payload: UpdateMemberRolePayload,
+  ) => {
+    return axiosPrivate.patch(
+      `/projects/${projectId}/members/${userId}`,
+      payload,
+    );
+  },
+
+  removeMember: (projectId: string, userId: string) => {
+    return axiosPrivate.delete(`/projects/${projectId}/members/${userId}`);
   },
 });

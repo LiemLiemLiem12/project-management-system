@@ -26,7 +26,7 @@ export class TaskService {
       where: {
         id: taskId,
       },
-      relations: ['groupTask', 'labels', 'subtasks', 'checklists'],
+      relations: ['groupTask', 'labels', 'subtasks', 'checklists', 'parent'],
       order: {
         checklists: {
           position: 'ASC',
@@ -384,5 +384,45 @@ export class TaskService {
 
     await this.groupTaskRepo.remove(group);
     return { success: true };
+  }
+
+  //Label
+
+  async createLabel(data: {
+    project_id: string;
+    name: string;
+    color_code: string;
+  }) {
+    const newLabel = this.labelRepo.create(data);
+    return await this.labelRepo.save(newLabel);
+  }
+
+  async findAllLabelByProject(projectId: string) {
+    return await this.labelRepo.find({
+      where: { project_id: projectId },
+      order: { name: 'ASC' },
+    });
+  }
+
+  async updateLabel(id: string, data: any) {
+    const label = await this.labelRepo.findOne({ where: { id } });
+
+    if (!label) {
+      throw new RpcException({ message: 'Label not found', statusCode: 404 });
+    }
+
+    Object.assign(label, data);
+    return await this.labelRepo.save(label);
+  }
+
+  async deleteLabel(id: string) {
+    const label = await this.labelRepo.findOne({ where: { id } });
+
+    if (!label) {
+      throw new RpcException({ message: 'Label not found', statusCode: 404 });
+    }
+
+    await this.labelRepo.remove(label);
+    return { success: true, message: 'Label deleted successfully' };
   }
 }

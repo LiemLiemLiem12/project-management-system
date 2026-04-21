@@ -76,6 +76,57 @@ export class ProjectService {
     }
   }
 
+  async addMember(data: { project_id: string; user_id: string; role: string }) {
+    const existingMember = await this.projectMemberRepository.findOne({
+      where: { project_id: data.project_id, user_id: data.user_id },
+    });
+
+    if (existingMember) {
+      throw new RpcException({
+        message: 'User is already a member of this project',
+        statusCode: 409,
+      });
+    }
+
+    const newMember = this.projectMemberRepository.create(data);
+    return await this.projectMemberRepository.save(newMember);
+  }
+
+  async updateMemberRole(projectId: string, userId: string, data: any) {
+    const member = await this.projectMemberRepository.findOne({
+      where: { project_id: projectId, user_id: userId },
+    });
+
+    if (!member) {
+      throw new RpcException({
+        message: 'Project member not found',
+        statusCode: 404,
+      });
+    }
+
+    Object.assign(member, data);
+    return await this.projectMemberRepository.save(member);
+  }
+
+  async removeMember(projectId: string, userId: string) {
+    const member = await this.projectMemberRepository.findOne({
+      where: { project_id: projectId, user_id: userId },
+    });
+
+    if (!member) {
+      throw new RpcException({
+        message: 'Project member not found',
+        statusCode: 404,
+      });
+    }
+
+    await this.projectMemberRepository.remove(member);
+    return {
+      success: true,
+      message: 'Member removed from project successfully',
+    };
+  }
+
   update(id: number, updateProjectDto: UpdateProjectDto) {
     return `This action updates a #${id} project`;
   }

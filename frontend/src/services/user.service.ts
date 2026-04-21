@@ -18,3 +18,20 @@ export const useGetUsersById = (userIds: string[]) => {
     isPending: queries.some((q) => q.isPending),
   };
 };
+
+export const useGetUserById = (userId: string) => {
+  const { user } = useAPI();
+
+  const query = useQuery({
+    queryKey: ["user", userId],
+    queryFn: () => user.getUserById(userId),
+    enabled: !!userId,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+
+  return {
+    data: query?.data?.data.data || null,
+    isPending: query.isPending,
+  };
+};

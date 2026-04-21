@@ -34,6 +34,7 @@ export interface GroupTask {
 export interface TaskBase {
   id: string;
   parent_id: string | null;
+  parent: Task;
   title: string;
   description: string | null;
   position: number;
@@ -69,4 +70,14 @@ export interface UpdateChecklistPayload {
   title?: string;
   is_completed?: boolean;
   position?: number;
+}
+
+//Project Member
+export interface AddMemberPayload {
+  user_id: string;
+  role: string;
+}
+
+export interface UpdateMemberRolePayload {
+  role: string;
 }

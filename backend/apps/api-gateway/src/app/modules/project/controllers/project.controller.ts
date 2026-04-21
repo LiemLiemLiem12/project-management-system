@@ -18,6 +18,8 @@ import { JwtAuthGuard } from '../../auth/guard/jwt.guard';
 import { RoleGuard } from '../../auth/guard/role.guard';
 import { Role } from '../../auth/enums/role.enum';
 import { Roles } from '../../auth/decorators/role.decorator';
+import { AddMemberDto } from '../dto/add-member.dto';
+import { UpdateMemberRoleDto } from '../dto/update-member-role.dto';
 
 @Controller('project')
 export class ProjectController {
@@ -67,6 +69,41 @@ export class ProjectController {
   getMembers(@Param('projectId') projectId: string, @Req() req: Request) {
     const userId = (req as any).user?.userId;
     return this.projectService.getProjectMembers(projectId, userId);
+  }
+
+  @Roles(Role.LEADER, Role.MODERATOR)
+  @UseGuards(RoleGuard)
+  @UseGuards(JwtAuthGuard)
+  @Post(':projectId/members')
+  addMember(@Param('projectId') projectId: string, @Body() body: AddMemberDto) {
+    return this.projectService.addMember({ ...body, project_id: projectId });
+  }
+
+  @Roles(Role.LEADER, Role.MODERATOR)
+  @UseGuards(RoleGuard)
+  @UseGuards(JwtAuthGuard)
+  @Patch(':projectId/members/:userId')
+  updateMemberRole(
+    @Param('projectId') projectId: string,
+    @Param('userId') userId: string,
+    @Body() body: UpdateMemberRoleDto,
+  ) {
+    return this.projectService.updateMemberRole({
+      project_id: projectId,
+      user_id: userId,
+      ...body,
+    });
+  }
+
+  @Roles(Role.LEADER, Role.MODERATOR)
+  @UseGuards(RoleGuard)
+  @UseGuards(JwtAuthGuard)
+  @Delete(':projectId/members/:userId')
+  removeMember(
+    @Param('projectId') projectId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.projectService.removeMember(projectId, userId);
   }
 
   @Patch(':id')

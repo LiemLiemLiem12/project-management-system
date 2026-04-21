@@ -9,7 +9,7 @@
     "emitDecoratorMetadata": true,
     "target": "es2021"
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "../api-gateway/src/app/modules/project/dto/task-params.dto.ts", "../api-gateway/src/app/modules/project/dto/search-subtask.dto.ts"],
   "exclude": [
     "out-tsc",
     "dist",
