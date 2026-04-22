@@ -1,5 +1,5 @@
 import { useTaskStore } from "@/store/task.store";
-import { Task, User } from "@/types";
+import { Label, Task, User } from "@/types";
 import {
   Link2,
   Clock,
@@ -10,10 +10,18 @@ import {
   Check,
   Search,
   ChevronDown,
+  Plus,
 } from "lucide-react";
 import { format } from "date-fns"; // Bạn nên cài date-fns để format ngày tháng
 import { useGetUserById } from "@/services/user.service";
 import { useState } from "react";
+import { useGetProjectMembers } from "@/services/project.service";
+import { useProjectStore } from "@/store/project.store";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useUpdateTask } from "@/services/task.service";
+import IconLoader from "../IconLoader";
+import { useCreateLabel, useGetLabels } from "@/services/label.service";
+import Image from "next/image";
 
 const TEAM_MEMBERS: Partial<User>[] = [
   { id: "1", username: "alex_dev", avatarUrl: "A", email: "" },
@@ -23,6 +31,7 @@ const TEAM_MEMBERS: Partial<User>[] = [
 ];
 
 export default function TaskSidebar() {
+  const currentProject = useProjectStore((s: any) => s.currentProject);
   const currentTask: Task | null = useTaskStore((s: any) => s.currentTask);
   const {
     data: assignee,
@@ -31,17 +40,112 @@ export default function TaskSidebar() {
     currentTask?.assignee_id || "",
   );
 
-  const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const { data: projectMemberData, isPending: pendingGetProjectMembers } =
+    useGetProjectMembers(currentProject?.id);
 
-  const filteredUsers = TEAM_MEMBERS.filter((user) =>
-    user?.username?.toLowerCase().includes(searchQuery.toLowerCase()),
+  const { updateTask, isPending: pendingUpdateTask } = useUpdateTask();
+
+  const { data: projectLabels } = useGetLabels(currentProject?.id || "");
+  const { mutate: createLabel, isPending: pendingCreateLabel } = useCreateLabel(
+    currentProject?.id || "",
   );
 
-  const handleSelectAssignee = (userId: string) => {
-    console.log("Cập nhật assignee mới:", userId);
-    setIsAssigneeModalOpen(false);
+  const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [pendingUser, setPendingUser] = useState("");
+
+  const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
+  const [labelSearch, setLabelSearch] = useState("");
+
+  const selectedLabelIds =
+    currentTask?.labels.map((label: any) => label.id) || [];
+
+  const debounceSearchQuery = useDebounce(searchQuery, 300);
+  const debounceLabelQuery = useDebounce(labelSearch, 300);
+  const filteredMembers =
+    projectMemberData?.filter((user) =>
+      user?.full_name
+        ?.toLowerCase()
+        .includes(debounceSearchQuery.toLowerCase()),
+    ) || [];
+
+  const filteredLabels: Label[] =
+    projectLabels?.filter((l) =>
+      l.name.toLowerCase().includes(debounceLabelQuery.toLowerCase()),
+    ) || [];
+
+  const isExactMatch = projectLabels?.some(
+    (l) => l.name.toLowerCase() === labelSearch.trim().toLowerCase(),
+  );
+
+  const handleSelectAssignee = (userId: string | null) => {
+    if (
+      pendingUser !== "" ||
+      userId === currentTask?.assignee_id ||
+      !currentTask
+    ) {
+      setIsAssigneeModalOpen(false);
+      return;
+    }
+    updateTask({
+      projectId: currentProject.id,
+      taskId: currentTask.id || "",
+      payload: {
+        assignee_id: userId,
+      },
+    });
     setSearchQuery("");
+  };
+
+  const handleToggleLabel = (labelId: string) => {
+    if (pendingUpdateTask || !currentTask) return; // Chặn click liên tục
+
+    let newLabelIds;
+    if (selectedLabelIds.includes(labelId)) {
+      newLabelIds = selectedLabelIds.filter((id: string) => id !== labelId);
+    } else {
+      newLabelIds = [...selectedLabelIds, labelId];
+    }
+
+    // Cập nhật lại task (Giả định payload backend nhận mảng label_ids)
+    updateTask({
+      projectId: currentProject.id,
+      taskId: currentTask.id,
+      payload: { label_ids: newLabelIds },
+    });
+  };
+
+  const handleCreateAndAddLabel = () => {
+    if (!labelSearch.trim() || pendingCreateLabel || !currentTask) return;
+
+    const randomColors = [
+      "#ef4444",
+      "#3b82f6",
+      "#10b981",
+      "#f59e0b",
+      "#8b5cf6",
+      "#ec4899",
+    ];
+    const randomColor =
+      randomColors[Math.floor(Math.random() * randomColors.length)];
+
+    createLabel(
+      {
+        project_id: currentProject.id,
+        name: labelSearch.trim(),
+        color_code: randomColor,
+      },
+      {
+        onSuccess: (newLabel: any) => {
+          updateTask({
+            projectId: currentProject.id,
+            taskId: currentTask.id,
+            payload: { label_ids: [...selectedLabelIds, newLabel.id] },
+          });
+          setLabelSearch("");
+        },
+      },
+    );
   };
 
   if (!currentTask) {
@@ -75,12 +179,20 @@ export default function TaskSidebar() {
                       </div>
                     ) : assignee ? (
                       <>
-                        <div className="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px]">
-                          {assignee.avatarUrl ||
-                            assignee.username.slice(-2).toUpperCase()}
+                        <div className="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] relative overflow-hidden">
+                          {assignee.avatarUrl ? (
+                            <Image
+                              src={assignee.avatarUrl}
+                              alt={assignee.fullName || "Avatar"}
+                              fill
+                              className="object-cover" // Giúp ảnh không bị méo, tự cắt trung tâm
+                            />
+                          ) : (
+                            assignee?.fullName?.slice(-2).toUpperCase()
+                          )}
                         </div>
                         <span className="text-slate-900">
-                          {assignee.username}
+                          {assignee.fullName}
                         </span>
                       </>
                     ) : (
@@ -93,6 +205,8 @@ export default function TaskSidebar() {
                   <span className="text-slate-400 italic">Unassigned</span>
                 )}
               </div>
+              {pendingUpdateTask && <IconLoader size={20} />}
+
               <ChevronDown size={14} className="text-slate-400" />
             </div>
 
@@ -126,28 +240,38 @@ export default function TaskSidebar() {
 
                 <div className="max-h-48 overflow-y-auto p-1 relative z-10 bg-white">
                   <div
-                    onClick={() => handleSelectAssignee("")}
+                    onClick={() => handleSelectAssignee(null)}
                     className="flex items-center gap-2.5 px-2.5 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded cursor-pointer transition-colors"
                   >
                     <div className="w-6 h-6 rounded-full border border-dashed border-slate-300 flex items-center justify-center"></div>
                     <span className="italic">Unassigned</span>
                   </div>
 
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map((user) => (
+                  {filteredMembers && filteredMembers.length > 0 ? (
+                    filteredMembers.map((user) => (
                       <div
-                        key={user.id}
-                        onClick={() => handleSelectAssignee(user?.id || "")}
+                        key={user.user_id}
+                        onClick={() =>
+                          handleSelectAssignee(user?.user_id || "")
+                        }
                         className="flex items-center justify-between px-2.5 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded cursor-pointer transition-colors"
                       >
                         <div className="flex items-center gap-2.5">
-                          <div className="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px]">
-                            {user.avatarUrl ||
-                              user?.username?.slice(-2).toUpperCase()}
+                          <div className="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] relative overflow-hidden">
+                            {user.avatar_url ? (
+                              <Image
+                                src={user.avatar_url}
+                                alt={user.full_name || "Avatar"}
+                                fill
+                                className="object-cover"
+                              />
+                            ) : (
+                              user?.full_name?.slice(-2).toUpperCase()
+                            )}
                           </div>
-                          <span>{user.username}</span>
+                          <span>{user.full_name}</span>
                         </div>
-                        {currentTask.assignee_id === user.id && (
+                        {currentTask.assignee_id === user.user_id && (
                           <Check size={14} className="text-blue-500" />
                         )}
                       </div>
@@ -164,26 +288,109 @@ export default function TaskSidebar() {
 
           {/* Labels */}
           <div className="text-slate-500 flex items-center">Labels</div>
-          <div className="flex flex-wrap gap-2">
-            {currentTask.labels && currentTask.labels.length > 0 ? (
-              currentTask.labels.map((label: any) => (
-                <span
-                  key={label.id}
-                  className="px-2.5 py-0.5 rounded text-xs font-semibold"
-                  style={{
-                    backgroundColor: `${label.color}20`,
-                    color: label.color,
-                  }}
-                >
-                  {label.name.toUpperCase()}
-                </span>
-              ))
-            ) : (
-              <span className="text-slate-400 italic">No labels</span>
+          <div className="relative w-full">
+            {/* KHU VỰC CLICK ĐỂ MỞ MODAL (Thay thế cho nút +) */}
+            <div
+              onClick={() => setIsLabelModalOpen(!isLabelModalOpen)}
+              className="flex w-full flex-wrap gap-2 items-center cursor-pointer p-1.5 -ml-1.5 rounded-md hover:bg-slate-100 transition-colors min-h-[32px]"
+              title="Click to edit labels"
+            >
+              {currentTask.labels && currentTask.labels.length > 0 ? (
+                currentTask.labels.map((label) => (
+                  <span
+                    key={label.id}
+                    className="px-2.5 py-0.5 border rounded text-xs font-semibold"
+                    style={{
+                      borderColor: label.color_code,
+                    }}
+                  >
+                    {label.name.toUpperCase()}
+                  </span>
+                ))
+              ) : (
+                <span className="text-slate-400 italic text-sm">No labels</span>
+              )}
+            </div>
+
+            {/* OVERLAY bắt click outside */}
+            {isLabelModalOpen && (
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setIsLabelModalOpen(false)}
+              />
             )}
-            <button className="w-6 h-6 rounded border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-600">
-              +
-            </button>
+
+            {/* DROPDOWN MODAL */}
+            {isLabelModalOpen && (
+              <div className="absolute top-full left-0 mt-1.5 w-60 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
+                {/* Khung tìm kiếm */}
+                <div className="p-2 border-b border-slate-100">
+                  <div className="relative">
+                    <Search
+                      size={14}
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 z-10"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search or create..."
+                      value={labelSearch}
+                      onChange={(e) => setLabelSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* Danh sách Label */}
+                <div className="max-h-48 overflow-y-auto p-1 text-sm text-slate-700">
+                  {filteredLabels.length > 0
+                    ? filteredLabels.map((label) => {
+                        const isSelected = selectedLabelIds.includes(label.id);
+                        return (
+                          <div
+                            key={label.id}
+                            onClick={() => handleToggleLabel(label.id)}
+                            className={`flex items-center justify-between px-2.5 py-2 hover:bg-slate-50 rounded cursor-pointer transition-colors group`}
+                          >
+                            <div
+                              className="flex border items-center gap-2 px-1 rounded"
+                              style={{ borderColor: label.color_code }}
+                            >
+                              <span className="font-medium text-slate-600 group-hover:text-slate-900">
+                                {label.name}
+                              </span>
+                            </div>
+
+                            {isSelected && (
+                              <Check size={14} className="text-blue-500" />
+                            )}
+                          </div>
+                        );
+                      })
+                    : !labelSearch && (
+                        <div className="px-3 py-4 text-center text-xs text-slate-400">
+                          No labels found
+                        </div>
+                      )}
+
+                  {labelSearch.trim() !== "" && !isExactMatch && (
+                    <div
+                      onClick={handleCreateAndAddLabel}
+                      className="flex items-center gap-2 px-2.5 py-2 mt-1 hover:bg-blue-50 rounded cursor-pointer transition-colors text-blue-600 border-t border-slate-100"
+                    >
+                      {pendingCreateLabel ? (
+                        <IconLoader size={14} />
+                      ) : (
+                        <Plus size={14} />
+                      )}
+                      <span className="font-medium truncate">
+                        Create "{labelSearch.trim()}"
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Parent Task */}

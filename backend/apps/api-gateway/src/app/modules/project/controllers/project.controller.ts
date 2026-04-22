@@ -62,9 +62,9 @@ export class ProjectController {
     return this.projectService.findTask(projectId, taskId);
   }
 
-  @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
-  @UseGuards(RoleGuard)
-  @UseGuards(JwtAuthGuard)
+  // @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
+  // @UseGuards(RoleGuard)
+  // @UseGuards(JwtAuthGuard)
   @Get(':projectId/members')
   getMembers(@Param('projectId') projectId: string, @Req() req: Request) {
     const userId = (req as any).user?.userId;

@@ -15,11 +15,11 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 
     ClientsModule.register([
       {
-        name: 'AUTH_SERVICE',
+        name: process.env.AUTH_SERVICE_NAME || 'AUTH_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://guest:guest@localhost:5672'],
-          queue: 'auth_queue',
+          urls: [process.env.RABBIT_MQ || 'amqp://guest:guest@localhost:5672'],
+          queue: process.env.AUTH_QUEUE_NAME || 'AUTH_QUEUE',
           queueOptions: {
             durable: false,
           },

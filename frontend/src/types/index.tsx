@@ -2,7 +2,7 @@ export interface User {
   id: string;
   email: string;
   username: string;
-  fullname: string;
+  fullName: string;
   provider: string;
   avatarUrl: string;
   birthday: string;
@@ -21,6 +21,7 @@ export interface Label {
   project_id: string;
   name: string;
   color_code: string;
+  project?: any;
 }
 
 export interface GroupTask {
@@ -80,4 +81,16 @@ export interface AddMemberPayload {
 
 export interface UpdateMemberRolePayload {
   role: string;
+}
+
+//Label
+export interface CreateLabelPayload {
+  project_id: string;
+  name: string;
+  color_code: string;
+}
+
+export interface UpdateLabelPayload {
+  name: string;
+  color_code: string;
 }

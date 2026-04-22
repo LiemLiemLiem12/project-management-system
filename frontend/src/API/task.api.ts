@@ -36,7 +36,7 @@ export interface CreateTaskPayload {
   group_task_id: string;
   description?: string;
   due_date?: string;
-  assignee_id?: string;
+  assignee_id?: string | null;
   label_ids?: string[];
   parent_id?: string | null;
 }

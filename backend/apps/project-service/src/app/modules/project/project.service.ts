@@ -51,7 +51,6 @@ export class ProjectService {
       if (!members.length) return [];
 
       const userIds = members.map((m) => m.user_id);
-
       const usersDetail = await firstValueFrom(
         this.authClient.send('auth.get-users-by-ids', userIds).pipe(
           timeout(3000),

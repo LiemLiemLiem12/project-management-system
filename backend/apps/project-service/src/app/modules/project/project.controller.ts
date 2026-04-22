@@ -43,6 +43,11 @@ export class ProjectController {
     return this.projectService.findOne(payload.id);
   }
 
+  @MessagePattern('project.get-members')
+  getMembers(@Payload() payload: { projectId: string; userId: string }) {
+    return this.projectService.getMembers(payload.projectId, payload.userId);
+  }
+
   @MessagePattern('project_member.create')
   addMember(
     @Payload() payload: { project_id: string; user_id: string; role: string },

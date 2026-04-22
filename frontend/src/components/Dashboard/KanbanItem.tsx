@@ -1,5 +1,6 @@
 import { Draggable } from "@hello-pangea/dnd";
 import { Task } from "@/API/task.api";
+import { useParams, useRouter } from "next/navigation";
 
 interface KanbanItemProps {
   task: Task;
@@ -7,6 +8,16 @@ interface KanbanItemProps {
 }
 
 const KanbanItem = ({ task, index }: KanbanItemProps) => {
+  const router = useRouter();
+  const param = useParams();
+
+  const { projectId } = param;
+
+  const handleClick = () => {
+    if (!projectId) return;
+    router.push(`/project/${projectId}/${task.id}`);
+  };
+
   const formattedDate = task.due_date
     ? new Date(task.due_date).toLocaleDateString("en-US", {
         month: "short",
@@ -18,6 +29,7 @@ const KanbanItem = ({ task, index }: KanbanItemProps) => {
     <Draggable draggableId={task.id} index={index}>
       {(provided, snapshot) => (
         <div
+          onClick={() => handleClick()}
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}

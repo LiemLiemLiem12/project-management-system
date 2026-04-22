@@ -108,6 +108,7 @@ export class AuthController {
   }
   @MessagePattern('auth.get-users-by-ids')
   async getUsersByIds(@Payload() userIds: string[]) {
+    console.log(userIds);
     return this.authService.getUsersByIds(userIds);
   }
 }
