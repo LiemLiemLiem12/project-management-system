@@ -11,26 +11,25 @@ import {
   Search,
   ChevronDown,
   Plus,
+  X,
 } from "lucide-react";
 import { format } from "date-fns"; // Bạn nên cài date-fns để format ngày tháng
 import { useGetUserById } from "@/services/user.service";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useGetProjectMembers } from "@/services/project.service";
 import { useProjectStore } from "@/store/project.store";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useUpdateTask } from "@/services/task.service";
+import {
+  useGetGroupTaskByProjectId,
+  useGetTasks,
+  useUpdateTask,
+} from "@/services/task.service";
 import IconLoader from "../IconLoader";
 import { useCreateLabel, useGetLabels } from "@/services/label.service";
 import Image from "next/image";
 
-const TEAM_MEMBERS: Partial<User>[] = [
-  { id: "1", username: "alex_dev", avatarUrl: "A", email: "" },
-  { id: "2", username: "sarah_pm", avatarUrl: "S", email: "" },
-  { id: "3", username: "mike_design", avatarUrl: "M", email: "" },
-  { id: "4", username: "john_doe", avatarUrl: "J", email: "" },
-];
-
 export default function TaskSidebar() {
+  const inputDateRef = useRef<HTMLInputElement>(null);
   const currentProject = useProjectStore((s: any) => s.currentProject);
   const currentTask: Task | null = useTaskStore((s: any) => s.currentTask);
   const {
@@ -49,6 +48,12 @@ export default function TaskSidebar() {
   const { mutate: createLabel, isPending: pendingCreateLabel } = useCreateLabel(
     currentProject?.id || "",
   );
+  const { data: projectTasks, isPending: pendingProjectTasks } = useGetTasks(
+    currentProject?.id,
+  );
+
+  const { data: groupTasksData, isPending: pendingGroupTasks } =
+    useGetGroupTaskByProjectId(currentProject?.id || "");
 
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,11 +62,22 @@ export default function TaskSidebar() {
   const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
   const [labelSearch, setLabelSearch] = useState("");
 
+  const [isParentModalOpen, setIsParentModalOpen] = useState(false);
+  const [parentSearch, setParentSearch] = useState("");
+
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [groupSearch, setGroupSearch] = useState("");
+
   const selectedLabelIds =
     currentTask?.labels.map((label: any) => label.id) || [];
 
+  const selectedParentIds = currentTask?.parent_id || null;
+
   const debounceSearchQuery = useDebounce(searchQuery, 300);
   const debounceLabelQuery = useDebounce(labelSearch, 300);
+  const debounceParentQuery = useDebounce(parentSearch, 300);
+  const debounceGroupQuery = useDebounce(groupSearch, 300);
+
   const filteredMembers =
     projectMemberData?.filter((user) =>
       user?.full_name
@@ -74,6 +90,46 @@ export default function TaskSidebar() {
       l.name.toLowerCase().includes(debounceLabelQuery.toLowerCase()),
     ) || [];
 
+  const filteredParents: Task[] =
+    (projectTasks as Task[])?.filter((task: Task) => {
+      if (task.id === currentTask?.id) return false;
+
+      const query = debounceParentQuery.toLowerCase();
+      const matchTitle = task.title?.toLowerCase().includes(query);
+      const matchId = task.id?.toLowerCase().includes(query);
+
+      return matchTitle || matchId;
+    }) || [];
+
+  const filteredGroupTasks =
+    groupTasksData?.filter((group: any) =>
+      group?.title?.toLowerCase().includes(debounceGroupQuery.toLowerCase()),
+    ) || [];
+
+  const handleSelectParent = (parentId: string | null) => {
+    if (
+      pendingUpdateTask ||
+      !currentTask ||
+      parentId === currentTask.parent_id
+    ) {
+      setIsParentModalOpen(false);
+      return;
+    }
+
+    updateTask(
+      {
+        projectId: currentProject.id,
+        taskId: currentTask.id,
+        payload: { parent_id: parentId },
+      },
+      {
+        onSuccess: () => {
+          setIsParentModalOpen(false);
+          setParentSearch("");
+        },
+      },
+    );
+  };
   const isExactMatch = projectLabels?.some(
     (l) => l.name.toLowerCase() === labelSearch.trim().toLowerCase(),
   );
@@ -146,6 +202,64 @@ export default function TaskSidebar() {
         },
       },
     );
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    if (!currentTask?.id || !currentProject?.id) return;
+
+    updateTask({
+      projectId: currentProject.id,
+      taskId: currentTask.id,
+      payload: {
+        due_date: newDate ? new Date(newDate).toISOString() : null,
+      },
+    });
+  };
+
+  const handleClearDate = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!currentTask?.id || !currentProject.id) return;
+
+    updateTask({
+      projectId: currentProject.id,
+      taskId: currentTask.id,
+      payload: { due_date: null },
+    });
+  };
+
+  const handleSelectGroupTask = (groupId: string | null) => {
+    if (
+      pendingUpdateTask ||
+      !currentTask ||
+      groupId === currentTask.group_task_id
+    ) {
+      setIsGroupModalOpen(false);
+      return;
+    }
+    updateTask(
+      {
+        projectId: currentProject.id,
+        taskId: currentTask.id,
+        payload: { group_task_id: groupId },
+      },
+      {
+        onSuccess: () => {
+          setIsGroupModalOpen(false);
+          setGroupSearch("");
+        },
+      },
+    );
+  };
+
+  const openDatePicker = () => {
+    if (!pendingUpdateTask && inputDateRef.current) {
+      try {
+        inputDateRef.current.showPicker();
+      } catch (error) {
+        inputDateRef.current.focus();
+      }
+    }
   };
 
   if (!currentTask) {
@@ -395,46 +509,256 @@ export default function TaskSidebar() {
 
           {/* Parent Task */}
           <div className="text-slate-500 flex items-center">Parent</div>
-          <div>
-            {currentTask.parent ? (
-              <div className="flex items-center gap-1.5 font-medium text-blue-600 hover:underline cursor-pointer group">
-                <Link2 size={14} />
-                <span
-                  className="truncate max-w-[150px]"
-                  title={currentTask.parent.title}
-                >
-                  {currentTask.parent.title}
-                </span>
+          <div className="relative w-full">
+            <div
+              onClick={() => setIsParentModalOpen(!isParentModalOpen)}
+              className="flex w-full flex-wrap gap-2 items-center cursor-pointer p-1.5 -ml-1.5 rounded-md hover:bg-slate-100 transition-colors min-h-[32px]"
+              title="Click to change parent task"
+            >
+              {currentTask.parent ? (
+                <div className="flex items-center gap-1.5 font-medium text-blue-600 group-hover:text-blue-700 transition-colors">
+                  <Link2 size={14} className="shrink-0" />
+                  <span className="truncate max-w-[200px]">
+                    {currentTask.parent.title}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-slate-400 italic text-sm">No parent</span>
+              )}
+            </div>
+
+            {isParentModalOpen && (
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setIsParentModalOpen(false)}
+              />
+            )}
+
+            {isParentModalOpen && (
+              <div className="absolute top-full left-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
+                {/* Khung tìm kiếm */}
+                <div className="p-2 border-b border-slate-100">
+                  <div className="relative">
+                    <Search
+                      size={14}
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 z-10"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search tasks..."
+                      value={parentSearch}
+                      onChange={(e) => setParentSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* Danh sách Task */}
+                <div className="max-h-56 overflow-y-auto p-1 text-sm text-slate-700 relative">
+                  {/* Loading overlay khi đang update */}
+                  {pendingUpdateTask && (
+                    <div className="absolute inset-0 bg-white/50 z-10 flex justify-center pt-4">
+                      <IconLoader size={20} />
+                    </div>
+                  )}
+
+                  {/* Nút Remove Parent (Chỉ hiện khi đang có parent và không gõ text search) */}
+                  {currentTask.parent_id && !parentSearch && (
+                    <div
+                      onClick={() => handleSelectParent(null)}
+                      className="flex items-center gap-2 px-2.5 py-2 mb-1 hover:bg-red-50 rounded cursor-pointer transition-colors text-red-500"
+                    >
+                      <span className="font-medium">No parent</span>
+                    </div>
+                  )}
+
+                  {filteredParents.length > 0 ? (
+                    filteredParents.map((task) => {
+                      const isSelected = currentTask.parent_id === task.id;
+                      return (
+                        <div
+                          key={task.id}
+                          onClick={() => handleSelectParent(task.id)}
+                          className={`flex items-start gap-2 justify-between px-2.5 py-2 hover:bg-slate-50 rounded cursor-pointer transition-colors group`}
+                        >
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <Link2
+                              size={14}
+                              className="text-slate-400 shrink-0"
+                            />
+                            <span className="font-medium text-slate-600 group-hover:text-blue-600 truncate">
+                              {task.title}
+                            </span>
+                          </div>
+
+                          {isSelected && (
+                            <Check
+                              size={14}
+                              className="text-blue-500 shrink-0"
+                            />
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="px-3 py-6 text-center flex flex-col items-center gap-2 text-slate-400">
+                      <p className="text-xs">No tasks found</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            ) : (
-              <span className="text-slate-400 italic">No parent</span>
             )}
           </div>
 
           {/* Due Date */}
           <div className="text-slate-500 flex items-center">Due date</div>
-          <div>
+          <div className="relative flex items-center group">
+            <input
+              type="date"
+              ref={inputDateRef}
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1 opacity-0 pointer-events-none"
+              value={
+                currentTask.due_date
+                  ? format(new Date(currentTask.due_date), "yyyy-MM-dd")
+                  : ""
+              }
+              onChange={handleDateChange}
+              disabled={pendingUpdateTask}
+            />
+
             {currentTask.due_date ? (
-              <div
-                className={`flex items-center gap-1.5 font-medium px-2 py-1 rounded w-fit text-xs ${
-                  new Date(currentTask.due_date) < new Date()
-                    ? "text-red-600 bg-red-50"
-                    : "text-slate-700 bg-slate-100"
-                }`}
-              >
-                <Clock size={14} />
-                {format(new Date(currentTask.due_date), "MMM dd, yyyy")}
-                {new Date(currentTask.due_date) < new Date() && " (Overdue)"}
+              <div className="flex items-center gap-1">
+                <div
+                  onClick={openDatePicker}
+                  className={`flex items-center gap-1.5 font-medium px-2 py-1 rounded w-fit text-xs cursor-pointer hover:opacity-80 transition-opacity ${
+                    pendingUpdateTask ? "opacity-50 pointer-events-none" : ""
+                  } ${
+                    new Date(currentTask.due_date) < new Date()
+                      ? "text-red-600 bg-red-50"
+                      : "text-slate-700 bg-slate-100"
+                  }`}
+                >
+                  <Clock size={14} />
+                  {format(new Date(currentTask.due_date), "MMM dd, yyyy")}
+                  {new Date(currentTask.due_date) < new Date() && " (Overdue)"}
+                </div>
+
+                <button
+                  onClick={handleClearDate}
+                  disabled={pendingUpdateTask}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity disabled:opacity-0"
+                  title="Remove due date"
+                >
+                  <X size={14} />
+                </button>
               </div>
             ) : (
-              <span className="text-slate-400 italic">No due date</span>
+              <div
+                onClick={openDatePicker}
+                className={`text-slate-400 italic cursor-pointer hover:text-slate-600 transition-colors ${
+                  pendingUpdateTask ? "opacity-50 pointer-events-none" : ""
+                }`}
+              >
+                No due date
+              </div>
             )}
           </div>
 
           {/* Group Task / Team */}
           <div className="text-slate-500 flex items-center">Group</div>
-          <div className="font-medium text-slate-900">
-            {currentTask.groupTask?.title || "General"}
+          <div className="relative">
+            {/* Trigger Button */}
+            <div
+              onClick={() => setIsGroupModalOpen(!isGroupModalOpen)}
+              className="flex items-center justify-between gap-2 font-medium cursor-pointer p-1.5 -ml-1.5 rounded-md hover:bg-slate-100 transition-colors w-fit pr-3"
+            >
+              <div className="flex items-center gap-2">
+                <Layers size={14} className="text-slate-400" />
+                {currentTask.groupTask?.title ? (
+                  <span className="text-slate-900">
+                    {currentTask.groupTask.title}
+                  </span>
+                ) : (
+                  <span className="text-slate-400 italic font-normal">
+                    General (No Group)
+                  </span>
+                )}
+              </div>
+              {pendingUpdateTask && <IconLoader size={20} />}
+              <ChevronDown size={14} className="text-slate-400" />
+            </div>
+
+            {/* OVERLAY bắt click outside */}
+            {isGroupModalOpen && (
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setIsGroupModalOpen(false)}
+              />
+            )}
+
+            {/* DROPDOWN MODAL */}
+            {isGroupModalOpen && (
+              <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden flex flex-col">
+                <div className="p-2 border-b border-slate-100">
+                  <div className="relative">
+                    <Search
+                      size={14}
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 z-10"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search groups..."
+                      value={groupSearch}
+                      onChange={(e) => setGroupSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all relative z-10"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                <div className="max-h-48 overflow-y-auto p-1 relative z-10 bg-white">
+                  {/* Default Option (Unassigned / General) */}
+                  <div
+                    onClick={() => handleSelectGroupTask(null)}
+                    className="flex items-center justify-between px-2.5 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Layers size={14} className="text-slate-400" />
+                      <span className="italic">General (No Group)</span>
+                    </div>
+                    {!currentTask.group_task_id && (
+                      <Check size={14} className="text-blue-500" />
+                    )}
+                  </div>
+
+                  {filteredGroupTasks && filteredGroupTasks.length > 0 ? (
+                    filteredGroupTasks.map((group: any) => (
+                      <div
+                        key={group.id}
+                        onClick={() => handleSelectGroupTask(group.id)}
+                        className="flex items-center justify-between px-2.5 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <Layers
+                            size={14}
+                            className="text-blue-500 shrink-0"
+                          />
+                          <span className="truncate">{group.title}</span>
+                        </div>
+                        {currentTask.group_task_id === group.id && (
+                          <Check size={14} className="text-blue-500 shrink-0" />
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-3 py-4 text-center text-xs text-slate-400">
+                      No groups found
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Reporter */}

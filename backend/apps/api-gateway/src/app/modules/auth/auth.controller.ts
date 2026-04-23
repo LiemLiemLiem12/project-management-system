@@ -15,8 +15,7 @@ import { AuthService } from './auth.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { LocalGuard } from './guard/local.guard';
 import { JwtAuthGuard } from './guard/jwt.guard';
-import type { Request, Request, Request } from 'express';
-import type { Response } from 'express';
+import type { Request as ExpressRequest, Response } from 'express';
 import { verifyOtpDto } from './dto/verify.dto';
 import { InitSignupDto } from './dto/init-signup.dto';
 import { VerifyOtpSignupDto } from './dto/verify-signup.dto';
@@ -107,11 +106,10 @@ export class AuthController {
 
   @Post('refresh-token')
   async refreshToken(
-    @Req() request: Request,
+    @Req() request: ExpressRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
     const refreshTokenFromCookie = request.cookies['refreshToken'];
-
     if (!refreshTokenFromCookie) {
       throw new UnauthorizedException('Refresh token not found in cookies');
     }
@@ -203,7 +201,7 @@ export class AuthController {
 
   @UseGuards(GoogleAuthGuard)
   @Get('google/callback')
-  async googleLogin(@Req() req: Request, @Res() res: Response) {
+  async googleLogin(@Req() req: ExpressRequest, @Res() res: Response) {
     const { user, accessToken, refreshToken } = req.user;
 
     res.cookie('refreshToken', refreshToken, {
@@ -229,7 +227,7 @@ export class AuthController {
 
   @UseGuards(FacebookAuthGuard)
   @Get('facebook/callback')
-  async facebookLogin(@Req() req: Request, @Res() res: Response) {
+  async facebookLogin(@Req() req: ExpressRequest, @Res() res: Response) {
     const { user, accessToken, refreshToken } = req.user;
 
     res.cookie('refreshToken', refreshToken, {
@@ -256,6 +254,4 @@ export class AuthController {
   async RBAC() {
     console.log('In');
   }
-
-  
 }

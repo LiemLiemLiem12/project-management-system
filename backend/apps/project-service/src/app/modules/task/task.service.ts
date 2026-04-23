@@ -425,4 +425,23 @@ export class TaskService {
     await this.labelRepo.remove(label);
     return { success: true, message: 'Label deleted successfully' };
   }
+
+  async getTasks(projectId: string) {
+    const groupTasks = await this.groupTaskRepo.find({
+      where: { project_id: projectId },
+      relations: {
+        tasks: { labels: true, checklists: true, subtasks: true },
+      },
+      order: {
+        order: 'ASC',
+        tasks: {
+          position: 'ASC',
+        },
+      },
+    });
+
+    const allTasks = groupTasks.flatMap((group) => group.tasks);
+
+    return { tasks: allTasks };
+  }
 }

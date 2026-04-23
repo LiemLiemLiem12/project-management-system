@@ -1,4 +1,5 @@
 import { AxiosInstance } from "axios";
+import { Task as TypeTask } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface Label {
@@ -33,9 +34,9 @@ export interface GroupTask {
 
 export interface CreateTaskPayload {
   title: string;
-  group_task_id: string;
+  group_task_id: string | null;
   description?: string;
-  due_date?: string;
+  due_date?: string | null;
   assignee_id?: string | null;
   label_ids?: string[];
   parent_id?: string | null;
@@ -56,6 +57,9 @@ export const taskApi = (axiosPrivate: AxiosInstance) => ({
     axiosPrivate.get<GroupTask[]>(`/tasks/${projectId}/kanban`),
 
   // Task
+  getTasks: (projectId: string) =>
+    axiosPrivate.get<TypeTask[]>(`/tasks/project/${projectId}`),
+
   createTask: (projectId: string, payload: CreateTaskPayload) => {
     return axiosPrivate.post<Task>(`/tasks/${projectId}/task`, payload);
   },

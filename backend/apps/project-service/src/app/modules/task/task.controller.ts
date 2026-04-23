@@ -17,6 +17,11 @@ export class TaskController {
 
   // ─── TASKS ────────────────────────────────────────────────────────────────
 
+  @MessagePattern('task.get-many')
+  findTasks(@Payload() payload: { projectId: string }) {
+    return this.taskService.getTasks(payload.projectId);
+  }
+
   @MessagePattern('task.get-one')
   findOneTask(@Payload() payload: { taskId: string }) {
     return this.taskService.findOne(payload.taskId);
