@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import KanbanGroup from "./KanbanGroup";
 import { useTaskStore } from "@/store/task.store";
@@ -11,6 +12,7 @@ import {
 } from "@/services/task.service";
 import { useGetProjectMembers } from "@/services/project.service";
 import { useAuthStore } from "@/store/auth.store";
+import { useProjectStore } from "@/store/project.store";
 
 interface KanbanBoardProps {
   projectId: string;
@@ -22,11 +24,21 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
   const error = useTaskStore((s) => s.error);
 
   const myUserId = useAuthStore((s) => s.user?.id);
+  const setMembers = useProjectStore((s) => s.setMembers);
 
-  // Fetch board data
   useGetKanbanBoard(projectId);
-  // Fetch members + currentUserRole → gắn vào project.store
-  useGetProjectMembers(projectId, myUserId);
+  const { data: membersData } = useGetProjectMembers(projectId);
+
+  useEffect(() => {
+    if (membersData) {
+      const currentUser = myUserId
+        ? membersData.find((m: any) => m.user_id === myUserId)
+        : null;
+      const role = currentUser?.role || null;
+
+      setMembers(membersData, role);
+    }
+  }, [membersData, myUserId, setMembers]);
 
   const moveTask = useMoveTask(projectId);
   const reorderGroups = useReorderGroups(projectId);
@@ -62,7 +74,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex gap-6 h-full items-start">
+      <div className="flex gap-6 h-full items-start p-4">
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
@@ -84,7 +96,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="h-screen w-full">
-        <div className="flex gap-6 h-full">
+        <div className="flex gap-6 h-full p-4">
           <Droppable droppableId="board" type="COLUMN" direction="horizontal">
             {(provided) => (
               <div
