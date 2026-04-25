@@ -3,6 +3,7 @@ import { MessagePattern, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../auth/entities/user.entity';
 import { Repository } from 'typeorm/repository/Repository.js';
+import { In } from 'typeorm';
 
 @Injectable()
 export class UserService {
@@ -26,5 +27,13 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async findUserByIds(ids: string[]) {
+    return await this.userRepository.find({
+      where: {
+        id: In(ids),
+      },
+    });
   }
 }

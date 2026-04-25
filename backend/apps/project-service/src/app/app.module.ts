@@ -17,6 +17,9 @@ import { Label } from './modules/task/entities/label.entity';
 import { Task } from './modules/task/entities/task.entity';
 import { ChecklistModule } from './modules/checklist/checklist.module';
 import { Checklist } from './modules/checklist/entities/checklist.entity';
+import { RagModule } from './modules/rag/rag.module';
+import { CommentVector } from './modules/rag/entities/comment-vector.entity';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -51,7 +54,21 @@ import { Checklist } from './modules/checklist/entities/checklist.entity';
       autoLoadEntities: true,
     }),
 
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      name: process.env.PG_ID_NAME || 'postgres_vector_db',
+      host: process.env.PG_HOST || 'localhost',
+      port: 5432,
+      username: process.env.PG_USER || 'postgres',
+      password: process.env.PG_PASSWORD || 'postgres',
+      database: process.env.PG_NAME || 'root',
+      entities: [CommentVector],
+      synchronize: true,
+    }),
+
     ChecklistModule,
+    RagModule,
+    EventEmitterModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],
