@@ -1,3 +1,8 @@
+"use client";
+
+import { useMemo } from "react";
+import { useParams } from "next/navigation";
+import { useTaskStore } from "@/store/task.store";
 import CalendarWidget from "@/components/Dashboard/CalendarWidget";
 import FilterButton from "@/components/Dashboard/FilterButton";
 import ProjectStatusProgressBar from "@/components/Dashboard/ProjectStatusProgressBar";
@@ -6,32 +11,81 @@ import RecentActivity from "@/components/Dashboard/RecentActivity";
 import TableTalentMember from "@/components/Dashboard/TableTalentMember";
 import TaskOverviewChart from "@/components/Dashboard/TaskOverviewChart";
 
-const taskData = [
-  { period: "Jan", tasks: 35000 },
-  { period: "Feb", tasks: 10000 },
-  { period: "Mar", tasks: 20000 },
-  { period: "Apr", tasks: 15000 },
-  { period: "May", tasks: 30000 },
-  { period: "June", tasks: 25000 },
-  { period: "July", tasks: 38000 },
-  { period: "Aug", tasks: 20000 },
-  { period: "Sept", tasks: 15000 },
-  { period: "Oct", tasks: 20000 },
-  { period: "Nov", tasks: 20000 },
-  { period: "Dec", tasks: 25000 },
-];
-
-const projectStatusData = [
-  { name: "To Do", percentage: 50, colorClass: "bg-blue-500" },
-  { name: "In Progress", percentage: 10, colorClass: "bg-orange-400" },
-  { name: "Done", percentage: 20, colorClass: "bg-green-500" },
-  { name: "Prepare", percentage: 20, colorClass: "bg-purple-500" },
+// Bảng màu tự động cho các Group Task
+const GROUP_COLORS = [
+  "bg-blue-500",
+  "bg-orange-400",
+  "bg-green-500",
+  "bg-purple-500",
+  "bg-pink-500",
+  "bg-cyan-500",
 ];
 
 export default function DashboardPage() {
+  const params = useParams();
+  const projectId = params.projectId as string; // Lấy ID dự án từ URL
+
+  const groups = useTaskStore((s) => s.groups);
+
+  // 1. Tính toán Project Status (% của mỗi group)
+  const projectStatusData = useMemo(() => {
+    const totalTasks = groups.reduce((sum, g) => sum + g.tasks.length, 0);
+
+    return groups.map((g, index) => {
+      const percentage =
+        totalTasks === 0 ? 0 : Math.round((g.tasks.length / totalTasks) * 100);
+      return {
+        name: g.title,
+        percentage: percentage,
+        colorClass: GROUP_COLORS[index % GROUP_COLORS.length],
+      };
+    });
+  }, [groups]);
+
+  // 2. Tính toán Task Overview (Task hoàn thành theo tháng)
+  const taskData = useMemo(() => {
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "June",
+      "July",
+      "Aug",
+      "Sept",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const monthlyData = monthNames.map((month) => ({
+      period: month,
+      tasks: 0,
+    }));
+
+    // Lấy tất cả các task nằm trong cột đã hoàn thành (isSuccess = true)
+    const completedTasks = groups
+      .filter((g) => g.isSuccess)
+      .flatMap((g) => g.tasks);
+
+    completedTasks.forEach((task) => {
+      // Ưu tiên dùng updated_at (ngày hoàn thành), nếu không có thì dùng created_at hoặc ngày hiện tại
+      const dateStr =
+        (task as any).updated_at ||
+        (task as any).created_at ||
+        new Date().toISOString();
+      const monthIndex = new Date(dateStr).getMonth();
+      if (monthIndex >= 0 && monthIndex <= 11) {
+        monthlyData[monthIndex].tasks += 1;
+      }
+    });
+
+    return monthlyData;
+  }, [groups]);
+
   return (
     <>
-      <div className="h-full w-full p-10">
+      <div className="h-full w-full p-10 overflow-y-auto font-sans">
         <div className="flex w-full justify-end">
           <FilterButton />
         </div>
@@ -45,7 +99,7 @@ export default function DashboardPage() {
           <CalendarWidget />
         </div>
         <div className="mt-3">
-          <TableTalentMember />
+          <TableTalentMember projectId={projectId} />
         </div>
       </div>
     </>

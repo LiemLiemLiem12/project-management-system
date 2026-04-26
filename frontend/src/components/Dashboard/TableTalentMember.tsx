@@ -1,52 +1,53 @@
 "use client";
 
-import React, { useState } from "react";
-import { Edit, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import RoleDropdown from "./RoleDropdown";
 import LabelMemberChoice from "./LabelMemberChoice";
+import { useGetProjectMembers } from "@/services/project.service";
+import { useTaskStore } from "@/store/task.store";
 
-// Dữ liệu mẫu (Mock data)
-const mockMembers = [
-  {
-    id: 1,
-    name: "Bob Smith",
-    email: "bob@company.com",
-    avatar: "https://i.pravatar.cc/150?img=11", // Hình ảnh giả lập
-    roles: [
-      { name: "Developer", color: "bg-blue-100 text-blue-600" },
-      { name: "Designer", color: "bg-red-100 text-red-600" },
-      { name: "More", color: "bg-blue-50 text-blue-500" },
-    ],
-    progress: 75,
-  },
-  {
-    id: 2,
-    name: "Bob Smith",
-    email: "bob@company.com",
-    avatar: "https://i.pravatar.cc/150?img=11",
-    roles: [
-      { name: "Developer", color: "bg-blue-100 text-blue-600" },
-      { name: "Designer", color: "bg-red-100 text-red-600" },
-      { name: "More", color: "bg-blue-50 text-blue-500" },
-    ],
-    progress: 75,
-  },
-  {
-    id: 3,
-    name: "Bob Smith",
-    email: "bob@company.com",
-    avatar: "https://i.pravatar.cc/150?img=11",
-    roles: [
-      { name: "Developer", color: "bg-blue-100 text-blue-600" },
-      { name: "Designer", color: "bg-red-100 text-red-600" },
-      { name: "More", color: "bg-blue-50 text-blue-500" },
-    ],
-    progress: 75,
-  },
-];
+interface TableTalentMemberProps {
+  projectId: string;
+}
 
-export default function TableTalentMember() {
+export default function TableTalentMember({
+  projectId,
+}: TableTalentMemberProps) {
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Lấy dữ liệu thật từ Store và API
+  const { data: membersData } = useGetProjectMembers(projectId);
+  const groups = useTaskStore((s) => s.groups);
+  const projectMembers = (membersData as any[]) || [];
+
+  // Tính toán % tiến độ cho từng Member
+  const memberStats = useMemo(() => {
+    return projectMembers.map((member) => {
+      let totalAssigned = 0;
+      let totalCompleted = 0;
+
+      groups.forEach((group) => {
+        group.tasks.forEach((task) => {
+          // CHỈ GIỮ LẠI CHECK assignee_id THÔI NÈ
+          if (task.assignee_id === member.user_id) {
+            totalAssigned += 1;
+            if (group.isSuccess) {
+              totalCompleted += 1;
+            }
+          }
+        });
+      });
+
+      const progress = totalAssigned === 0 ? 0 : Math.round((totalCompleted / totalAssigned) * 100);
+
+      return {
+        ...member,
+        progress,
+        avatarInitial: member.full_name ? member.full_name.charAt(0).toUpperCase() : member.user_id.charAt(0).toUpperCase(),
+      };
+    });
+  }, [projectMembers, groups]);
 
   return (
     <div className="w-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden font-sans">
@@ -55,7 +56,7 @@ export default function TableTalentMember() {
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold text-gray-900">All Members</h2>
           <span className="bg-gray-200 text-gray-700 text-xs font-bold px-2.5 py-1 rounded-md">
-            24
+            {memberStats.length}
           </span>
         </div>
         <div className="flex items-center gap-4 mt-4 sm:mt-0">
@@ -77,130 +78,89 @@ export default function TableTalentMember() {
               <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Task Progression
               </th>
-              <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
+              {/* ĐÃ ẨN CỘT ACTIONS */}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {mockMembers.map((member) => (
-              <tr
-                key={member.id}
-                className="hover:bg-gray-50 transition-colors"
-              >
-                {/* Cột Member */}
-                <td className="py-4 px-6">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={member.avatar}
-                      alt={member.name}
-                      className="w-12 h-12 rounded-full object-cover bg-yellow-400"
-                    />
-                    <div>
-                      <div className="font-bold text-gray-900 text-base">
-                        {member.name}
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        {member.email}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-
-                {/* Cột Role */}
-                {/* <td className="py-4 px-6">
-                  <div className="flex items-center gap-2">
-                    {member.roles.map((role, index) => (
-                      <span
-                        key={index}
-                        className={`text-xs font-semibold px-3 py-1.5 rounded-full ${role.color}`}
-                      >
-                        {role.name}
-                      </span>
-                    ))}
-                  </div>
-                </td> */}
-                <td className="py-4 px-6 min-w-10 max-w-100 w-1/4">
-                  <LabelMemberChoice />
-                </td>
-
-                {/* Cột Task Progression */}
-                <td className="py-4 px-6 w-1/4">
-                  <div className="flex flex-col w-full max-w-[200px]">
-                    <span className="text-xs text-gray-700 font-medium self-end mb-1">
-                      {member.progress}%
-                    </span>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full"
-                        style={{ width: `${member.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </td>
-
-                {/* Cột Actions */}
-                <td className="py-4 px-6">
-                  <button className="text-gray-600 hover:text-black transition-colors">
-                    <Edit className="w-5 h-5" />
-                  </button>
+            {memberStats.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="py-8 text-center text-gray-400">
+                  No members found in this project.
                 </td>
               </tr>
-            ))}
+            ) : (
+              memberStats.map((member) => (
+                <tr
+                  key={member.user_id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  {/* Cột Member */}
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold shrink-0">
+                        {member.avatarInitial}
+                      </div>
+                      <div>
+                        <div className="font-bold text-gray-900 text-base">
+                          {member.full_name || "Unknown User"}
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {member.role || "Member"}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Cột Label/Role */}
+                  <td className="py-4 px-6 min-w-10 max-w-100 w-1/4">
+                    <LabelMemberChoice />
+                  </td>
+
+                  {/* Cột Task Progression */}
+                  <td className="py-4 px-6 w-1/4">
+                    <div className="flex flex-col w-full max-w-[200px]">
+                      <span className="text-xs text-gray-700 font-medium self-end mb-1">
+                        {member.progress}%
+                      </span>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${member.progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Footer / Pagination */}
-      <div className="flex flex-col sm:flex-row items-center justify-between p-6 border-t border-gray-200">
-        <div className="text-sm text-gray-700 mb-4 sm:mb-0 font-medium">
-          Showing <span className="font-bold">1</span> to{" "}
-          <span className="font-bold">5</span> of{" "}
-          <span className="font-bold">25</span> results
+      {memberStats.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between p-6 border-t border-gray-200">
+          <div className="text-sm text-gray-700 mb-4 sm:mb-0 font-medium">
+            Showing <span className="font-bold">1</span> to{" "}
+            <span className="font-bold">{memberStats.length}</span> of{" "}
+            <span className="font-bold">{memberStats.length}</span> results
+          </div>
+
+          <div className="flex items-center gap-1 text-gray-600 font-medium text-sm">
+            <button className="p-1 hover:bg-gray-100 rounded-md transition-colors text-gray-400 hover:text-gray-700">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              className={`w-8 h-8 flex items-center justify-center rounded-md bg-blue-500 text-white`}
+            >
+              1
+            </button>
+            <button className="p-1 hover:bg-gray-100 rounded-md transition-colors text-gray-400 hover:text-gray-700">
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-
-        <div className="flex items-center gap-1 text-gray-600 font-medium text-sm">
-          <button className="p-1 hover:bg-gray-100 rounded-md transition-colors text-gray-400 hover:text-gray-700">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-
-          <button
-            className={`w-8 h-8 flex items-center justify-center rounded-md ${currentPage === 1 ? "bg-blue-500 text-white" : "hover:bg-gray-100"}`}
-            onClick={() => setCurrentPage(1)}
-          >
-            1
-          </button>
-          <button
-            className={`w-8 h-8 flex items-center justify-center rounded-md ${currentPage === 2 ? "bg-blue-500 text-white" : "hover:bg-gray-100"}`}
-            onClick={() => setCurrentPage(2)}
-          >
-            2
-          </button>
-          <button
-            className={`w-8 h-8 flex items-center justify-center rounded-md ${currentPage === 3 ? "bg-blue-500 text-white" : "hover:bg-gray-100"}`}
-            onClick={() => setCurrentPage(3)}
-          >
-            3
-          </button>
-          <span className="w-8 h-8 flex items-center justify-center">...</span>
-          <button
-            className={`w-8 h-8 flex items-center justify-center rounded-md ${currentPage === 4 ? "bg-blue-500 text-white" : "hover:bg-gray-100"}`}
-            onClick={() => setCurrentPage(4)}
-          >
-            4
-          </button>
-          <button
-            className={`w-8 h-8 flex items-center justify-center rounded-md ${currentPage === 5 ? "bg-blue-500 text-white" : "hover:bg-gray-100"}`}
-            onClick={() => setCurrentPage(5)}
-          >
-            5
-          </button>
-
-          <button className="p-1 hover:bg-gray-100 rounded-md transition-colors text-gray-400 hover:text-gray-700">
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
