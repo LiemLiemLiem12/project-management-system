@@ -16,6 +16,7 @@ export interface Task {
   title: string;
   description?: string;
   position?: number;
+  start_date?: string;
   due_date?: string;
   assignee_id?: string;
   created_by: string;
@@ -36,6 +37,7 @@ export interface CreateTaskPayload {
   title: string;
   group_task_id: string | null;
   description?: string;
+  start_date?: string;
   due_date?: string | null;
   assignee_id?: string | null;
   label_ids?: string[];

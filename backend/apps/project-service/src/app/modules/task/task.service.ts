@@ -10,7 +10,7 @@ import { Label } from './entities/label.entity';
 export class TaskService {
   constructor(
     @InjectRepository(Task)
-    private readonly taskRepository: Repository<Task>, // Giữ nguyên tên của file cũ
+    private readonly taskRepository: Repository<Task>,
 
     @InjectRepository(GroupTask)
     private readonly groupTaskRepo: Repository<GroupTask>,
@@ -58,15 +58,13 @@ export class TaskService {
       });
     return task;
   }
+
   async findTaskForSubtask(keyword: string, projectId: string, taskId: string) {
     return await this.taskRepository
       .createQueryBuilder('task')
       .leftJoin('task.groupTask', 'groupTask')
-
       .where('task.id != :taskId', { taskId })
-
       .andWhere('groupTask.project_id = :projectId', { projectId })
-
       .andWhere(
         new Brackets((qb) => {
           qb.where('task.title LIKE :keyword', {
@@ -74,7 +72,6 @@ export class TaskService {
           }).orWhere('task.id LIKE :keyword', { keyword: `%${keyword}%` });
         }),
       )
-
       .select(['task.id', 'task.title'])
       .limit(10)
       .getMany();
@@ -103,10 +100,6 @@ export class TaskService {
     return result;
   }
 
-  // update(id: number, updateTaskDto: UpdateTaskDto) {
-  //   return `This action updates a #${id} task`;
-  // }
-
   // ─── KANBAN BOARD ─────────────────────────────────────────────────────────
 
   async getKanbanBoard(projectId: string) {
@@ -131,8 +124,9 @@ export class TaskService {
     group_task_id: string;
     title: string;
     created_by: string;
+    start_date?: string; // ĐÃ SỬA THÀNH STRING CHO KHỚP VỚI ENTITY
     description?: string;
-    due_date?: Date;
+    due_date?: string | Date; // Bao lô luôn string hoặc Date cho chắc ăn
     assignee_id?: string;
     label_ids?: string[];
     parent_id?: string;
@@ -324,6 +318,7 @@ export class TaskService {
     );
     return this.getKanbanBoard(projectId);
   }
+
   async removeGroupWithFallback(id: string, fallbackGroupId: string) {
     const group = await this.groupTaskRepo.findOne({ where: { id } });
     if (!group)
@@ -343,8 +338,6 @@ export class TaskService {
       });
 
     // ── Nếu cột bị xóa là isSuccess, cột fallback phải nhận task (không block) ─
-    // Chỉ cần chuyển task sang fallback bình thường, không cần thêm điều kiện.
-    // isSuccess sẽ được gán lại cho cột fallback nếu cột hiện tại là isSuccess.
     const fallback = await this.groupTaskRepo.findOne({
       where: { id: fallbackGroupId },
     });
@@ -386,7 +379,7 @@ export class TaskService {
     return { success: true };
   }
 
-  //Label
+  // ─── LABEL ────────────────────────────────────────────────────────────────
 
   async createLabel(data: {
     project_id: string;

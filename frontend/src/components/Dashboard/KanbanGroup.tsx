@@ -21,6 +21,7 @@ import {
   Trash2,
   Edit2,
   AlertTriangle,
+  PlayCircleIcon, // Dùng icon này cho rõ là Start Date
 } from "lucide-react";
 
 interface KanbanGroupProps {
@@ -33,6 +34,7 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
   // ── Create task state ───────────────────────────────────────────────────────
   const [isCreating, setIsCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [startDate, setStartDate] = useState(""); // <-- State mới cho Start Date
   const [dueDate, setDueDate] = useState("");
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [showMemberPopup, setShowMemberPopup] = useState(false);
@@ -45,7 +47,8 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fallbackGroupId, setFallbackGroupId] = useState("");
 
-  const dateInputRef = useRef<HTMLInputElement>(null);
+  const startDateRef = useRef<HTMLInputElement>(null); // <-- Ref cho Start Date
+  const dueDateRef = useRef<HTMLInputElement>(null); // <-- Đổi tên ref cũ cho rõ ràng
 
   // ── Store ───────────────────────────────────────────────────────────────────
   const currentUserRole = useProjectStore((s) => s.currentUserRole);
@@ -85,12 +88,14 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
       {
         title: newTaskTitle,
         group_task_id: column.id,
+        start_date: startDate || undefined, // <-- Bắn start_date xuống API
         due_date: dueDate || undefined,
         assignee_id: selectedMember || undefined,
       },
       {
         onSuccess: () => {
           setNewTaskTitle("");
+          setStartDate(""); // <-- Reset lại sau khi tạo
           setDueDate("");
           setSelectedMember(null);
           setSearchQuery("");
@@ -102,6 +107,7 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
 
   const handleCancel = () => {
     setNewTaskTitle("");
+    setStartDate(""); // <-- Reset
     setDueDate("");
     setSelectedMember(null);
     setShowMemberPopup(false);
@@ -282,26 +288,60 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
 
                           <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 relative">
                             <div className="flex items-center gap-2 text-gray-400">
-                              {/* Date picker */}
-                              <div className="relative flex items-center gap-1">
+                              {/* ── Start Date Picker ── */}
+                              <div
+                                className="relative flex items-center gap-1"
+                                title="Start Date"
+                              >
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    dateInputRef.current?.showPicker()
+                                    startDateRef.current?.showPicker()
                                   }
-                                  className={`p-1 rounded hover:bg-gray-100 transition-colors ${dueDate ? "text-blue-500" : ""}`}
+                                  className={`p-1 rounded hover:bg-gray-100 transition-colors ${
+                                    startDate ? "text-emerald-500" : ""
+                                  }`}
+                                >
+                                  <PlayCircleIcon size={16} />
+                                </button>
+                                <input
+                                  type="date"
+                                  ref={startDateRef}
+                                  className="absolute opacity-0 pointer-events-none w-0"
+                                  onChange={(e) => setStartDate(e.target.value)}
+                                />
+                                {startDate && (
+                                  <span className="text-[10px] font-medium bg-emerald-50 px-1.5 py-0.5 rounded text-emerald-600">
+                                    Start: {startDate}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* ── Due Date picker ── */}
+                              <div
+                                className="relative flex items-center gap-1"
+                                title="Due Date"
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    dueDateRef.current?.showPicker()
+                                  }
+                                  className={`p-1 rounded hover:bg-gray-100 transition-colors ${
+                                    dueDate ? "text-blue-500" : ""
+                                  }`}
                                 >
                                   <CalendarIcon size={16} />
                                 </button>
                                 <input
                                   type="date"
-                                  ref={dateInputRef}
+                                  ref={dueDateRef}
                                   className="absolute opacity-0 pointer-events-none w-0"
                                   onChange={(e) => setDueDate(e.target.value)}
                                 />
                                 {dueDate && (
                                   <span className="text-[10px] font-medium bg-blue-50 px-1.5 py-0.5 rounded text-blue-600">
-                                    {dueDate}
+                                    Due: {dueDate}
                                   </span>
                                 )}
                               </div>

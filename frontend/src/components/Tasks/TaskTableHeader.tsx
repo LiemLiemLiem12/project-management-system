@@ -18,7 +18,7 @@ export default function TaskTableHeader() {
         "ASSIGNEE",
         "REPORTER",
         "STATUS",
-        "CREATED DATE",
+        "START DATE",
         "DUE DATE",
         "",
       ].map((col) => (

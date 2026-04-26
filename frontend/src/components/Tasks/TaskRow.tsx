@@ -120,7 +120,7 @@ export default function TaskRow({
       </div>
 
       {/* Cột Người thực hiện (Assignee) */}
-      <div className="px-3 py-3.5 flex items-center gap-2">
+      <div className="px-3 py-3.5 flex items-center gap-2 min-w-0">
         {assigneeId ? (
           <>
             <div
@@ -141,12 +141,14 @@ export default function TaskRow({
             </span>
           </>
         ) : (
-          <span className="text-sm text-gray-400 italic">Unassigned</span>
+          <span className="text-sm text-gray-400 italic truncate">
+            Unassigned
+          </span>
         )}
       </div>
 
       {/* Cột Người tạo (Reporter) */}
-      <div className="px-3 py-3.5 flex items-center gap-2">
+      <div className="px-3 py-3.5 flex items-center gap-2 min-w-0">
         {reporterId ? (
           <>
             <div
@@ -167,17 +169,17 @@ export default function TaskRow({
             </span>
           </>
         ) : (
-          <span className="text-sm text-gray-400">—</span>
+          <span className="text-sm text-gray-400 truncate">—</span>
         )}
       </div>
 
-      {/* Cột Trạng thái (Status Dropdown) */}
-      <div className="px-3 py-3.5 flex items-center">
-        <div className="relative">
+      {/* Cột Trạng thái (Status Dropdown) - ĐÃ FIX LỖI ĐÈ GIAO DIỆN */}
+      <div className="px-3 py-3.5 flex items-center min-w-0">
+        <div className="relative w-full max-w-[120px]">
           <select
             value={task.status}
             onChange={handleStatusChange}
-            className="appearance-none text-xs font-medium px-3 py-1.5 pr-6 rounded-lg border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all"
+            className="w-full truncate appearance-none text-xs font-medium px-3 py-1.5 pr-6 rounded-lg border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all"
             style={{ background: statusStyle.bg, color: statusStyle.text }}
           >
             {groups.map((g) => (
@@ -191,7 +193,7 @@ export default function TaskRow({
             height="10"
             viewBox="0 0 12 12"
             fill="none"
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none"
+            className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
             style={{ color: statusStyle.text }}
           >
             <path
@@ -204,19 +206,23 @@ export default function TaskRow({
         </div>
       </div>
 
-      {/* Cột Ngày tạo */}
-      <div className="px-3 py-3.5 flex items-center">
-        <span className="text-sm text-gray-500">{task.createdDate}</span>
+      {/* Cột Ngày bắt đầu (Start Date) - ĐÃ FIX LỖI ĐÈ GIAO DIỆN */}
+      <div className="px-3 py-3.5 flex items-center min-w-0">
+        <span className="text-sm text-gray-500 truncate">
+          {task.startDate || "—"}
+        </span>
       </div>
 
-      {/* Cột Hạn chót */}
-      <div className="px-3 py-3.5 flex items-center">
-        <span className="text-sm text-gray-500">{task.dueDate}</span>
+      {/* Cột Hạn chót (Due Date) - ĐÃ FIX LỖI ĐÈ GIAO DIỆN */}
+      <div className="px-3 py-3.5 flex items-center min-w-0">
+        <span className="text-sm text-gray-500 truncate">
+          {task.dueDate || "—"}
+        </span>
       </div>
 
       {/* Cột Thao tác (Actions Menu) */}
       <div
-        className="px-2 py-3.5 flex items-center justify-center relative"
+        className="px-2 py-3.5 flex items-center justify-center relative min-w-0"
         ref={menuRef}
       >
         <button

@@ -24,6 +24,13 @@ const ROW_PAD_TOP = 8;
 const ROW_PAD_BOTTOM = 8;
 const WEEKS_DAY_COUNT = 14;
 
+// ─── Hàm trị dứt điểm lệch múi giờ (Giật lùi ngày) ────────────
+function getDayDiff(d1: Date, d2: Date) {
+  const utc1 = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate());
+  const utc2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
+  return Math.floor((utc2 - utc1) / 86400000);
+}
+
 // ─── ColDef ───────────────────────────────────────────────────
 interface ColDef {
   date: Date;
@@ -86,16 +93,16 @@ function getPxPerDay(cols: ColDef[], mode: ViewMode): number {
     lastCol.date.getMonth() + 1,
     0,
   );
-  const totalDays = (rangeEnd.getTime() - rangeStart.getTime()) / 86400000;
-  const totalPx = cols.reduce((a, c) => a + c.width, 0);
-  return totalPx / totalDays;
+  return (
+    cols.reduce((a, c) => a + c.width, 0) / getDayDiff(rangeStart, rangeEnd)
+  );
 }
 
 function getRangeStart(cols: ColDef[]): Date {
   return cols[0].date;
 }
 
-// ─── Map task → pixel (clamp đến edges) ──────────────────────
+// ─── Map task → pixel ─────────────────────────────────────────
 function getBarStyle(
   task: TimelineTask,
   cols: ColDef[],
@@ -107,14 +114,9 @@ function getBarStyle(
   const rangeStart = getRangeStart(cols);
 
   if (mode === "Weeks") {
-    const si = cols.findIndex((c) => isSameDay(c.date, start));
-    if (si === -1) {
-      const dayOffset = (start.getTime() - rangeStart.getTime()) / 86400000;
-      if (dayOffset < 0 || dayOffset >= WEEKS_DAY_COUNT) return null;
-    }
-    const ei = cols.findIndex((c) => isSameDay(c.date, end));
-    const startDayOffset = (start.getTime() - rangeStart.getTime()) / 86400000;
-    const endDayOffset = (end.getTime() - rangeStart.getTime()) / 86400000;
+    const startDayOffset = getDayDiff(rangeStart, start);
+    const endDayOffset = getDayDiff(rangeStart, end);
+
     if (endDayOffset < 0 || startDayOffset >= WEEKS_DAY_COUNT) return null;
     const clampedStart = Math.max(0, startDayOffset);
     const clampedEnd = Math.min(WEEKS_DAY_COUNT - 1, endDayOffset);
@@ -126,13 +128,10 @@ function getBarStyle(
   if (mode === "Months") {
     const rangeEnd = addDays(cols[cols.length - 1].date, 6);
     if (end < rangeStart || start > rangeEnd) return null;
-    const diffStart = Math.max(
-      0,
-      (start.getTime() - rangeStart.getTime()) / 86400000,
-    );
+    const diffStart = Math.max(0, getDayDiff(rangeStart, start));
     const diffEnd = Math.min(
-      (rangeEnd.getTime() - rangeStart.getTime()) / 86400000,
-      (end.getTime() - rangeStart.getTime()) / 86400000,
+      getDayDiff(rangeStart, rangeEnd),
+      getDayDiff(rangeStart, end),
     );
     return {
       left: diffStart * pxPerDay + 4,
@@ -148,11 +147,10 @@ function getBarStyle(
     0,
   );
   if (end < rangeStart || start > rangeEnd) return null;
-  const totalDays = (rangeEnd.getTime() - rangeStart.getTime()) / 86400000;
-  const ds = Math.max(0, (start.getTime() - rangeStart.getTime()) / 86400000);
+  const ds = Math.max(0, getDayDiff(rangeStart, start));
   const de = Math.min(
-    totalDays,
-    (end.getTime() - rangeStart.getTime()) / 86400000,
+    getDayDiff(rangeStart, rangeEnd),
+    getDayDiff(rangeStart, end),
   );
   return {
     left: ds * pxPerDay + 4,
@@ -165,10 +163,12 @@ function pxToDate(px: number, cols: ColDef[], mode: ViewMode): string {
   const rangeStart = getRangeStart(cols);
   const pxPerDay = getPxPerDay(cols, mode);
 
-  // SỬA LỖI Ở ĐÂY: Dùng Math.floor thay vì Math.round để rớt vô ô nào là ăn ngay ô đó
   const dayOffset = Math.floor(px / pxPerDay);
-
-  const result = addDays(rangeStart, dayOffset);
+  const result = new Date(
+    rangeStart.getFullYear(),
+    rangeStart.getMonth(),
+    rangeStart.getDate() + dayOffset,
+  );
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${result.getFullYear()}-${pad(result.getMonth() + 1)}-${pad(result.getDate())}`;
 }
@@ -189,7 +189,7 @@ function getTodayX(cols: ColDef[], mode: ViewMode): number | null {
   if (mode === "Months") {
     const rangeEnd = addDays(cols[cols.length - 1].date, 6);
     if (today < rangeStart || today > rangeEnd) return null;
-    return ((today.getTime() - rangeStart.getTime()) / 86400000) * pxPerDay;
+    return getDayDiff(rangeStart, today) * pxPerDay;
   }
   const lastCol = cols[cols.length - 1];
   const rangeEnd = new Date(
@@ -198,7 +198,7 @@ function getTodayX(cols: ColDef[], mode: ViewMode): number | null {
     0,
   );
   if (today < rangeStart || today > rangeEnd) return null;
-  return ((today.getTime() - rangeStart.getTime()) / 86400000) * pxPerDay;
+  return getDayDiff(rangeStart, today) * pxPerDay;
 }
 
 // ─── Lane assignment ──────────────────────────────────────────
@@ -271,11 +271,14 @@ function TaskBar({
 
   return (
     <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         position: "absolute",
         left: displayLeft,
         top: topOffset,
-        zIndex: isDragging ? 50 : 2,
+        // Đè bẹp header khi hover
+        zIndex: isDragging ? 50 : hovered ? 30 : 2,
       }}
     >
       {isCompact && hovered && !isDragging && (
@@ -370,8 +373,6 @@ function TaskBar({
 
       <div
         onMouseDown={onMouseDown}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
         className={`rounded-lg select-none ${
           isDragging ? "cursor-grabbing shadow-2xl" : "cursor-grab shadow-sm"
         } ${task.color === "#F3F4F6" ? "border border-gray-200" : "border-none"} ${bar ? "visible" : "invisible"}`}
@@ -727,10 +728,13 @@ export default function TimelineGrid({
     : null;
 
   return (
-    <div className="flex h-full font-sans" style={{ overflow: "hidden" }}>
+    <div
+      className="flex items-start h-full max-h-full font-sans"
+      style={{ overflow: "hidden" }}
+    >
       {/* ── Sidebar ── */}
       <div
-        className="shrink-0 border-r border-gray-200 overflow-y-auto bg-white z-[6]"
+        className="shrink-0 border-r border-gray-200 overflow-y-auto bg-white z-[6] max-h-full pb-2"
         style={{ width: SIDEBAR_W }}
       >
         <div className="h-14 border-b border-gray-200 flex items-center pl-5 sticky top-0 bg-white z-[5]">
@@ -766,7 +770,7 @@ export default function TimelineGrid({
       {/* ── Scrollable grid ── */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-auto relative"
+        className="flex-1 overflow-auto relative max-h-full pb-2"
         style={{ cursor: dragging ? "grabbing" : "auto" }}
       >
         {/* Sticky header */}

@@ -13,7 +13,7 @@ export type Task = {
   assigneeIds: string[];
   reporterId: string;
   status: GroupKey;
-  createdDate: string;
+  startDate: string; // <-- ĐÃ SỬA THÀNH startDate
   dueDate: string;
 };
 
@@ -82,7 +82,7 @@ export function mapApiTaskToTask(apiTask: ApiTask): Task {
   const rawReporter = anyTask.created_by || anyTask.createdBy;
   const rawStatus = anyTask.group_task_id || anyTask.groupTaskId;
   const rawDueDate = anyTask.due_date || anyTask.dueDate;
-  const rawCreatedAt = anyTask.created_at || anyTask.createdAt;
+  const rawStartDate = anyTask.start_date || anyTask.startDate; // <-- BẮT LẤY START DATE TỪ API
 
   return {
     id: anyTask.id,
@@ -94,7 +94,7 @@ export function mapApiTaskToTask(apiTask: ApiTask): Task {
 
     reporterId: rawReporter || "",
     status: rawStatus || "",
-    createdDate: rawCreatedAt ? formatDate(rawCreatedAt) : "—",
+    startDate: rawStartDate ? formatDate(rawStartDate) : "—", // <-- ĐƯA START DATE LÊN UI
     dueDate: formatDate(rawDueDate),
   };
 }
