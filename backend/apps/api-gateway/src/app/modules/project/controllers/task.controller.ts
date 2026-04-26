@@ -24,6 +24,14 @@ export class TaskController {
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
   @UseGuards(JwtAuthGuard, RoleGuard)
+  @Get('project/:projectId')
+  async getTasks(@Param('projectId') projectId: string) {
+    const result = await this.taskService.findManyTask(projectId);
+    return result?.tasks ?? [];
+  }
+
+  @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Get('group')
   getGroupTaskByProjectId(@Query('projectId') projectId: string) {
     return this.taskService.getGroupTaskByProjectId(projectId);
@@ -41,7 +49,6 @@ export class TaskController {
   // @UseGuards(JwtAuthGuard, RoleGuard)
   @Patch(':taskId')
   updateTaskData(@Param('taskId') taskId: string, @Body() body: any) {
-    console.log();
     return this.taskService.updateTask(taskId, body);
   }
 
@@ -213,6 +220,4 @@ export class TaskController {
       body.fallbackGroupId,
     );
   }
-
-  //Checklist
 }

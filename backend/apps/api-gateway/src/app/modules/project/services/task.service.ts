@@ -1,6 +1,7 @@
 import { HttpException, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { ProjectTasksResponse } from '../types';
 
 @Injectable()
 export class TaskService {
@@ -24,6 +25,10 @@ export class TaskService {
   }
 
   // ── Task ────────────────────────────────────────────────────────────────────
+
+  async findManyTask(projectId: string): Promise<ProjectTasksResponse> {
+    return this.send('task.get-many', projectId);
+  }
 
   findTask(projectId: string, taskId: string) {
     return this.send('task.get-one', { projectId, taskId });

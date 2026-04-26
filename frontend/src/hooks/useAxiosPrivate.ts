@@ -74,9 +74,10 @@ const useAxiosPrivate = () => {
           } finally {
             isRefreshing = false;
           }
-        } else if (error.response?.status === 401 && !persist) {
-          window.location.href = "/login";
         }
+        // else if (error.response?.status === 401 && !persist) {
+        //   window.location.href = "/login";
+        // }
 
         return Promise.reject(error);
       },

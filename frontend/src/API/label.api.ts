@@ -13,3 +13,4 @@ export const labelApi = (axiosPrivate: AxiosInstance) => ({
 
   deleteLabel: (labelId: string) => axiosPrivate.delete(`/labels/${labelId}`),
 });
+

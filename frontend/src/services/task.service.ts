@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import toast from "react-hot-toast";
+import { Task } from "@/types";
 
 // ─── Fetch board — gọi ở component ngoài cùng (KanbanBoard) ──────────────────
 
@@ -28,6 +29,22 @@ export const useGetKanbanBoard = (projectId: string) => {
 };
 
 // ─── Create Task ──────────────────────────────────────────────────────────────
+
+export const useGetTasks = (projectId: string) => {
+  const api = useAPI();
+
+  const query = useQuery({
+    queryKey: ["tasks", projectId],
+    queryFn: () => api.task.getTasks(projectId),
+    enabled: !!projectId,
+    refetchOnWindowFocus: false,
+  });
+
+  return {
+    data: query.data?.data || ([] as Task[]),
+    isPending: query.isPending,
+  };
+};
 
 export const useCreateTask = (projectId: string) => {
   const api = useAPI();
