@@ -1,5 +1,5 @@
 {
-  "name": "@backend/project-service",
+  "name": "@backend/notification-service",
   "version": "0.0.1",
   "private": true,
   "nx": {
@@ -11,7 +11,7 @@
           "args": [
             "--node-env=production"
           ],
-          "cwd": "apps/project-service"
+          "cwd": "apps/notification-service"
         },
         "configurations": {
           "development": {
@@ -28,8 +28,8 @@
         "cache": true,
         "executor": "@nx/js:prune-lockfile",
         "outputs": [
-          "{workspaceRoot}/apps/project-service/dist/package.json",
-          "{workspaceRoot}/apps/project-service/dist/package-lock.json"
+          "{workspaceRoot}/apps/notification-service/dist/package.json",
+          "{workspaceRoot}/apps/notification-service/dist/package-lock.json"
         ],
         "options": {
           "buildTarget": "build"
@@ -41,7 +41,7 @@
         ],
         "cache": true,
         "outputs": [
-          "{workspaceRoot}/apps/project-service/dist/workspace_modules"
+          "{workspaceRoot}/apps/notification-service/dist/workspace_modules"
         ],
         "executor": "@nx/js:copy-workspace-modules",
         "options": {
@@ -63,15 +63,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "@backend/project-service:build",
+          "buildTarget": "@backend/notification-service:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "@backend/project-service:build:development"
+            "buildTarget": "@backend/notification-service:build:development"
           },
           "production": {
-            "buildTarget": "@backend/project-service:build:production"
+            "buildTarget": "@backend/notification-service:build:production"
           }
         }
       },
@@ -83,29 +83,14 @@
     }
   },
   "dependencies": {
-    "@langchain/community": "^1.1.27",
-    "@langchain/core": "^1.1.41",
-    "@langchain/google": "^0.1.10",
-    "@langchain/google-genai": "^2.1.28",
     "@nestjs/common": "^11.0.0",
-    "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.0",
-    "@nestjs/event-emitter": "^3.0.1",
-    "@nestjs/mapped-types": "*",
-    "@nestjs/microservices": "^11.1.19",
     "@nestjs/platform-express": "^11.0.0",
-    "@nestjs/typeorm": "^11.0.1",
-    "cloudinary": "^2.10.0",
-    "pg": "^8.20.0",
-    "pgvector": "^0.2.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
-    "streamifier": "^0.1.1",
-    "tslib": "^2.3.0",
-    "typeorm": "^0.3.28"
+    "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@nestjs/testing": "^11.0.0",
-    "@types/streamifier": "^0.1.2"
+    "@nestjs/testing": "^11.0.0"
   }
 }

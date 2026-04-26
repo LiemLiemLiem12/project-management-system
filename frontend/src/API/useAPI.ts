@@ -6,6 +6,7 @@ import { taskApi } from "./task.api";
 import { userApi } from "./user.api";
 import { checklistApi } from "./checklist.api";
 import { labelApi } from "./label.api";
+import { commentApi } from "./comment.api";
 
 export const useAPI = () => {
   const api = useAxiosPrivate();
@@ -18,6 +19,7 @@ export const useAPI = () => {
       user: userApi(api),
       checklist: checklistApi(api),
       label: labelApi(api),
+      comment: commentApi(api),
     }),
     [api],
   );

@@ -14,8 +14,6 @@ export class RagController {
     taskId: string;
     content: string;
   }) {
-    console.log(`[RAG Sync] Đang tạo vector cho comment: ${payload.commentId}`);
-
     await this.ragService.syncCommentToVector(
       payload.commentId,
       payload.taskId,
