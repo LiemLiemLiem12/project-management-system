@@ -1,6 +1,10 @@
-import { tasks } from "@/store/Store";
-
-export default function TaskFooter({ visibleCount }: { visibleCount: number }) {
+export default function TaskFooter({
+  visibleCount,
+  totalCount,
+}: {
+  visibleCount: number;
+  totalCount: number;
+}) {
   return (
     <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-white">
       <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
@@ -17,7 +21,7 @@ export default function TaskFooter({ visibleCount }: { visibleCount: number }) {
 
       <div className="flex items-center gap-2 text-xs text-gray-400">
         <span>
-          {visibleCount} of {tasks.length}
+          {visibleCount} of {totalCount}
         </span>
         <button className="p-1 rounded hover:bg-gray-50 hover:text-gray-600 transition-colors">
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none">

@@ -34,7 +34,7 @@ export default function TimelinePage() {
 
   const step = (dir: 1 | -1) => {
     setAnchorDate((prev) => {
-      if (viewMode === "Weeks") return addDays(prev, 7 * dir);
+      if (viewMode === "Weeks") return addDays(prev, 14 * dir); // ── 14 ngày/bước
       if (viewMode === "Months") {
         const d = new Date(prev);
         d.setMonth(d.getMonth() + 3 * dir);
@@ -67,9 +67,7 @@ export default function TimelinePage() {
         viewMode={viewMode}
         onPrev={() => step(-1)}
         onNext={() => step(1)}
-        onToday={() => {
-          setAnchorDate(getInitialAnchor(viewMode));
-        }}
+        onToday={() => setAnchorDate(getInitialAnchor(viewMode))}
         onViewMode={handleViewMode}
         filterText={filterText}
         onFilterText={setFilterText}

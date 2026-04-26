@@ -1,9 +1,11 @@
 export default function TaskTableHeader() {
   return (
-    <div className="hidden md:grid border-b border-gray-100 bg-white"
-      style={{ gridTemplateColumns: "36px 1fr 100px 120px 130px 140px 110px 110px 36px" }}
+    <div
+      className="hidden md:grid border-b border-gray-100 bg-white"
+      style={{
+        gridTemplateColumns: "36px 1fr 100px 120px 140px 110px 110px 36px",
+      }}
     >
-      {/* Checkbox col */}
       <div className="px-3 py-3 flex items-center justify-center">
         <input
           type="checkbox"
@@ -15,7 +17,6 @@ export default function TaskTableHeader() {
         "TASK NAME / ID",
         "ASSIGNEE",
         "REPORTER",
-        "PRIORITY",
         "STATUS",
         "CREATED DATE",
         "DUE DATE",

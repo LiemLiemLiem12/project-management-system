@@ -335,3 +335,76 @@ export const useDeleteGroupWithFallback = (projectId: string) => {
     },
   });
 };
+
+export const useUpdateTaskStatus = (projectId: string) => {
+  const api = useAPI();
+  const { setGroups, optimisticMoveTask } = useTaskStore();
+
+  return async (taskId: string, newGroupId: string) => {
+    const groups = useTaskStore.getState().groups;
+
+    // Tìm vị trí hiện tại của task
+    let fromGroupId = "";
+    let fromIndex = 0;
+    let toIndex = 0;
+
+    for (const g of groups) {
+      const idx = g.tasks.findIndex((t) => t.id === taskId);
+      if (idx !== -1) {
+        fromGroupId = g.id;
+        fromIndex = idx;
+        break;
+      }
+    }
+
+    // Append vào cuối group mới
+    const toGroup = groups.find((g) => g.id === newGroupId);
+    toIndex = toGroup ? toGroup.tasks.length : 0;
+
+    if (!fromGroupId) return;
+
+    // Optimistic update
+    optimisticMoveTask({
+      taskId,
+      fromGroupId,
+      toGroupId: newGroupId,
+      fromIndex,
+      toIndex,
+    });
+
+    // Sync lên server
+    try {
+      await api.task.moveTask(projectId, taskId, {
+        group_task_id: newGroupId,
+        position: toIndex,
+      });
+    } catch {
+      const res = await api.task.getBoard(projectId);
+      setGroups(res.data);
+    }
+  };
+};
+
+// ─── Delete Task (spreadsheet) ────────────────────────────────────────────────
+
+export const useDeleteTask = (projectId: string) => {
+  const api = useAPI();
+  const { setGroups } = useTaskStore();
+
+  return useMutation({
+    mutationFn: (taskId: string) => api.task.deleteTask(projectId, taskId),
+    onMutate: (taskId) => {
+      // Optimistic: xóa khỏi store ngay
+      useTaskStore.setState((s) => ({
+        groups: s.groups.map((g) => ({
+          ...g,
+          tasks: g.tasks.filter((t) => t.id !== taskId),
+        })),
+      }));
+    },
+    onError: async () => {
+      const res = await api.task.getBoard(projectId);
+      setGroups(res.data);
+    },
+  });
+};

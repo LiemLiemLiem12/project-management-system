@@ -1,32 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { getTasksByGroup, type GroupKey } from "@/store/Store";
+import { useSpTasksByGroup, getGroupStyle } from "@/store/spreadsheet.store";
 import TaskRow from "./TaskRow";
 
-const GROUP_BADGE_STYLES: Record<GroupKey, { bg: string; text: string }> = {
-  todo: { bg: "#FEF3C7", text: "#92400E" },
-  inprog: { bg: "#FEF9C3", text: "#854D0E" },
-  done: { bg: "#DCFCE7", text: "#166534" },
-};
-
-const GROUP_LABELS: Record<GroupKey, string> = {
-  todo: "TO-DO",
-  inprog: "IN PROGRESS",
-  done: "DONE",
-};
+interface TaskGroupSectionProps {
+  groupKey: string;
+  groupLabel: string;
+  isSuccess: boolean;
+  search: string;
+  projectId: string;
+}
 
 export default function TaskGroupSection({
   groupKey,
+  groupLabel,
+  isSuccess,
   search,
-}: {
-  groupKey: GroupKey;
-  search: string;
-}) {
-  const [collapsed, setCollapsed] = useState(true);
+  projectId,
+}: TaskGroupSectionProps) {
+  const [collapsed, setCollapsed] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
 
-  const allTasks = getTasksByGroup(groupKey);
+  const allTasks = useSpTasksByGroup(groupKey);
   const filtered = search
     ? allTasks.filter(
         (t) =>
@@ -45,7 +41,7 @@ export default function TaskGroupSection({
     });
   };
 
-  const style = GROUP_BADGE_STYLES[groupKey];
+  const style = getGroupStyle(groupKey);
 
   return (
     <div>
@@ -54,7 +50,6 @@ export default function TaskGroupSection({
         className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50/80 cursor-pointer select-none hover:bg-gray-100/60 transition-colors"
         onClick={() => setCollapsed(!collapsed)}
       >
-        {/* Chevron */}
         <svg
           width="11"
           height="11"
@@ -71,15 +66,20 @@ export default function TaskGroupSection({
           />
         </svg>
 
-        {/* Badge */}
         <span
           className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
           style={{ background: style.bg, color: style.text }}
         >
-          {GROUP_LABELS[groupKey]}
+          {groupLabel}
         </span>
 
         <span className="text-xs text-gray-400">({filtered.length} tasks)</span>
+
+        {isSuccess && (
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-600 uppercase">
+            Done
+          </span>
+        )}
       </div>
 
       {/* Task rows */}
@@ -91,6 +91,7 @@ export default function TaskGroupSection({
               taskId={task.id}
               checked={checkedIds.has(task.id)}
               onToggle={() => toggle(task.id)}
+              projectId={projectId}
             />
           ))}
         </div>
