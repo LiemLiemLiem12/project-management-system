@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, Brackets } from 'typeorm';
 import { RpcException } from '@nestjs/microservices/exceptions/rpc-exception';
 import { Task } from './entities/task.entity';
 import { GroupTask } from './entities/group-task.entity';
 import { Label } from './entities/label.entity';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class TaskService {
@@ -17,6 +18,9 @@ export class TaskService {
 
     @InjectRepository(Label)
     private readonly labelRepo: Repository<Label>,
+
+    @Inject('AUDIT_SERVICE_CLIENT')
+    private readonly auditClient: ClientProxy,
   ) {}
 
   // ─── HÀM CỦA FILE CŨ (GIỮ NGUYÊN 100% LOGIC & MICROSERVICE EXCEPTION) ───
@@ -124,25 +128,25 @@ export class TaskService {
     group_task_id: string;
     title: string;
     created_by: string;
-    start_date?: string; // ĐÃ SỬA THÀNH STRING CHO KHỚP VỚI ENTITY
+    start_date?: string;
     description?: string;
-    due_date?: string | Date; // Bao lô luôn string hoặc Date cho chắc ăn
+    due_date?: string | Date;
     assignee_id?: string;
     label_ids?: string[];
     parent_id?: string;
   }) {
-    const maxPos = await this.taskRepository.findOne({
-      where: { group_task_id: payload.group_task_id },
+    const maxPosTask = await this.taskRepository.findOne({
+      where: {
+        groupTask: { project_id: payload.project_id },
+      },
       order: { position: 'DESC' },
+      relations: ['groupTask'],
     });
-    const position = maxPos ? maxPos.position + 1 : 0;
 
-    let nextIdValue: string;
-    if (!position) {
-      nextIdValue = '1';
-    } else {
-      nextIdValue = 'task-' + position.toString();
-    }
+    const position = maxPosTask ? maxPosTask.position + 1 : 1;
+
+    const nextIdValue = `task-${position}`;
+
     let labels: Label[] = [];
     if (payload.label_ids?.length) {
       labels = await this.labelRepo.findBy({ id: In(payload.label_ids) });
@@ -155,11 +159,25 @@ export class TaskService {
       labels,
     });
 
-    return this.taskRepository.save(task);
+    const newTask = await this.taskRepository.save(task);
+
+    this.auditClient.emit('log_action_created', {
+      user_id: payload.created_by || 'unknown_user',
+      action: 'CREATE_TASK',
+      entity_type: 'TASK',
+      entity_id: newTask.id,
+      old_value: null,
+      new_value: newTask,
+    });
+
+    return newTask;
   }
 
-  async update(id: string, data: any) {
-    const task = await this.findTaskById(id); // Dùng hàm nội bộ thay vì findOne
+  async update(id: string, data: any, currentUserId: string = 'unknown_user') {
+    const task = await this.findTaskById(id);
+
+    const oldTask = JSON.parse(JSON.stringify(task));
+
     if (data.label_ids !== undefined) {
       task.labels = data.label_ids?.length
         ? await this.labelRepo.findBy({ id: In(data.label_ids) })
@@ -185,7 +203,18 @@ export class TaskService {
     }
 
     Object.assign(task, data);
-    return await this.taskRepository.save(task);
+    const newTask = await this.taskRepository.save(task);
+
+    this.auditClient.emit('log_action_created', {
+      user_id: currentUserId,
+      action: 'UPDATE_TASK',
+      entity_type: 'TASK',
+      entity_id: id,
+      old_value: oldTask,
+      new_value: newTask,
+    });
+
+    return newTask;
   }
 
   async moveTask(payload: {
@@ -262,13 +291,26 @@ export class TaskService {
       position: newPos,
     });
 
-    // Trả về dữ liệu đã cập nhật để Gateway nhận được
     return task;
   }
 
-  async remove(id: string) {
-    const task = await this.findTaskById(id); // Dùng hàm nội bộ
-    return this.taskRepository.remove(task);
+  async remove(id: string, currentUserId: string = 'unknown_user') {
+    const task = await this.findTaskById(id);
+
+    const oldTask = JSON.parse(JSON.stringify(task));
+
+    const result = await this.taskRepository.remove(task);
+
+    this.auditClient.emit('log_action_created', {
+      user_id: currentUserId,
+      action: 'DELETE_TASK',
+      entity_type: 'TASK',
+      entity_id: id,
+      old_value: oldTask,
+      new_value: null,
+    });
+
+    return result;
   }
 
   async archive(id: string) {
@@ -436,5 +478,9 @@ export class TaskService {
     const allTasks = groupTasks.flatMap((group) => group.tasks);
 
     return { tasks: allTasks };
+  }
+
+  async getLogsFromAudit() {
+    return this.auditClient.send('get_recent_logs', {});
   }
 }

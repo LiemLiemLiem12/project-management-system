@@ -10,6 +10,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+
 import { TaskService } from '../services/task.service';
 import { JwtAuthGuard } from '../../auth/guard/jwt.guard';
 import { RoleGuard } from '../../auth/guard/role.guard';
@@ -21,6 +22,11 @@ import { title } from 'process';
 @Controller('tasks')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
+
+  @Get('recent-activities')
+  getRecentActivities() {
+    return this.taskService.getRecentActivities();
+  }
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
   @UseGuards(JwtAuthGuard, RoleGuard)

@@ -8,7 +8,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
-  // ─── KANBAN BOARD ─────────────────────────────────────────────────────────
+  // ─── KANBAN BOARD ──────────────────────────────────────────────s───────────
 
   @MessagePattern('task.get-kanban-board')
   getKanbanBoard(@Payload() payload: { projectId: string }) {
@@ -192,5 +192,10 @@ export class TaskController {
   @MessagePattern('label.delete')
   deleteLabel(@Payload() payload: { id: string }) {
     return this.taskService.deleteLabel(payload.id);
+  }
+
+  @MessagePattern('get_recent_activities')
+  getRecentActivities() {
+    return this.taskService.getLogsFromAudit();
   }
 }

@@ -18,6 +18,12 @@ export class TaskService {
     }
   }
 
+  // ── Audit Log / Recent Activities ───────────────────────────────────────────
+
+  getRecentActivities() {
+    return this.send('get_recent_activities', {});
+  }
+
   // ── Kanban Board ────────────────────────────────────────────────────────────
 
   getKanbanBoard(projectId: string) {
@@ -71,6 +77,7 @@ export class TaskService {
   reorderGroups(projectId: string, ordered_ids: string[]) {
     return this.send('task.group.reorder', { projectId, ordered_ids });
   }
+
   async findTaskForSubtask(keyword: string, projectId: string, taskId: string) {
     try {
       const result = await firstValueFrom(

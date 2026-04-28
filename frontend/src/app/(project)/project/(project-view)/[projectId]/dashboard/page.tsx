@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useTaskStore } from "@/store/task.store";
+import { useAPI } from "@/API/useAPI";
 import CalendarWidget from "@/components/Dashboard/CalendarWidget";
 import FilterButton from "@/components/Dashboard/FilterButton";
 import ProjectStatusProgressBar from "@/components/Dashboard/ProjectStatusProgressBar";
@@ -11,7 +12,6 @@ import RecentActivity from "@/components/Dashboard/RecentActivity";
 import TableTalentMember from "@/components/Dashboard/TableTalentMember";
 import TaskOverviewChart from "@/components/Dashboard/TaskOverviewChart";
 
-// Bảng màu tự động cho các Group Task
 const GROUP_COLORS = [
   "bg-blue-500",
   "bg-orange-400",
@@ -23,11 +23,27 @@ const GROUP_COLORS = [
 
 export default function DashboardPage() {
   const params = useParams();
-  const projectId = params.projectId as string; // Lấy ID dự án từ URL
+  const projectId = params.projectId as string;
+  const { task } = useAPI();
 
   const groups = useTaskStore((s) => s.groups);
+  const setGroups = useTaskStore((s) => s.setGroups);
 
-  // 1. Tính toán Project Status (% của mỗi group)
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!projectId) return;
+      try {
+        const response = await task.getBoard(projectId);
+        if (response && response.data) {
+          setGroups(response.data);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchData();
+  }, [projectId, setGroups, task]);
+
   const projectStatusData = useMemo(() => {
     const totalTasks = groups.reduce((sum, g) => sum + g.tasks.length, 0);
 
@@ -42,7 +58,6 @@ export default function DashboardPage() {
     });
   }, [groups]);
 
-  // 2. Tính toán Task Overview (Task hoàn thành theo tháng)
   const taskData = useMemo(() => {
     const monthNames = [
       "Jan",
@@ -63,16 +78,14 @@ export default function DashboardPage() {
       tasks: 0,
     }));
 
-    // Lấy tất cả các task nằm trong cột đã hoàn thành (isSuccess = true)
     const completedTasks = groups
       .filter((g) => g.isSuccess)
       .flatMap((g) => g.tasks);
 
-    completedTasks.forEach((task) => {
-      // Ưu tiên dùng updated_at (ngày hoàn thành), nếu không có thì dùng created_at hoặc ngày hiện tại
+    completedTasks.forEach((t) => {
       const dateStr =
-        (task as any).updated_at ||
-        (task as any).created_at ||
+        (t as any).updated_at ||
+        (t as any).created_at ||
         new Date().toISOString();
       const monthIndex = new Date(dateStr).getMonth();
       if (monthIndex >= 0 && monthIndex <= 11) {
