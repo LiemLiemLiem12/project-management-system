@@ -94,3 +94,45 @@ export interface UpdateLabelPayload {
   name: string;
   color_code: string;
 }
+
+//Comment
+export interface Comment {
+  id: string;
+  parent_comment_id: string;
+  task_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  medias: CommentMedia[];
+}
+
+export interface CommentMedia {
+  id: string;
+  comment_id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  file_size: number;
+  created_at: Date;
+  comment: Comment;
+}
+
+export interface CommentMediaPayload {
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  file_size: number;
+}
+
+export interface CreateCommentPayload {
+  task_id?: string;
+  user_id: string;
+  content: string;
+  parent_comment_id?: string;
+  medias?: CommentMediaPayload[];
+}
+
+export interface UpdateCommentPayload extends Partial<CreateCommentPayload> {
+  id: number;
+}

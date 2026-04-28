@@ -57,7 +57,9 @@
         "apps/api-gateway-e2e/**/*",
         "apps/auth-service-e2e/**/*",
         "apps/project-service-e2e/**/*",
-        "apps/audit-service-e2e/**/*"
+        "apps/audit-service-e2e/**/*",
+        "apps/notification-service-e2e/**/*",
+        "apps/storage-service-e2e/**/*"
       ]
     }
   ],

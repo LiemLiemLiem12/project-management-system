@@ -61,6 +61,9 @@
       "name": "Debug @backend/audit-service with Nx",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["nx", "serve", "@backend/audit-service"],
+      "name": "Debug @backend/notification-service with Nx",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["nx", "serve", "@backend/notification-service"],
       "env": {
         "NODE_OPTIONS": "--inspect=9232"
       },
@@ -70,6 +73,25 @@
       "sourceMaps": true,
       "outFiles": [
         "${workspaceFolder}/apps/audit-service/dist/**/*.(m|c|)js",
+        "${workspaceFolder}/apps/notification-service/dist/**/*.(m|c|)js",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug @backend/storage-service with Nx",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["nx", "serve", "@backend/storage-service"],
+      "env": {
+        "NODE_OPTIONS": "--inspect=9233"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/apps/storage-service/dist/**/*.(m|c|)js",
         "!**/node_modules/**"
       ]
     }

@@ -26,6 +26,18 @@
     },
     {
       "path": "./apps/audit-service"
+    },
+    {
+      "path": "./apps/notification-service-e2e"
+    },
+    {
+      "path": "./apps/notification-service"
+    },
+    {
+      "path": "./apps/storage-service-e2e"
+    },
+    {
+      "path": "./apps/storage-service"
     }
   ]
 }

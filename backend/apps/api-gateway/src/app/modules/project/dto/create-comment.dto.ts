@@ -24,10 +24,4 @@ export class CreateCommentDto {
   @IsUUID()
   @IsOptional()
   parent_comment_id?: string;
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => CreateCommentMediaDto)
-  medias?: CreateCommentMediaDto[];
 }
