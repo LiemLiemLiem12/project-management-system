@@ -58,6 +58,9 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Debug @backend/audit-service with Nx",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["nx", "serve", "@backend/audit-service"],
       "name": "Debug @backend/notification-service with Nx",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["nx", "serve", "@backend/notification-service"],
@@ -69,6 +72,7 @@
       "skipFiles": ["<node_internals>/**"],
       "sourceMaps": true,
       "outFiles": [
+        "${workspaceFolder}/apps/audit-service/dist/**/*.(m|c|)js",
         "${workspaceFolder}/apps/notification-service/dist/**/*.(m|c|)js",
         "!**/node_modules/**"
       ]

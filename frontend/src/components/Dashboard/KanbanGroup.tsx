@@ -21,7 +21,7 @@ import {
   Trash2,
   Edit2,
   AlertTriangle,
-  PlayCircleIcon, // Dùng icon này cho rõ là Start Date
+  PlayCircleIcon,
 } from "lucide-react";
 
 interface KanbanGroupProps {
@@ -31,31 +31,27 @@ interface KanbanGroupProps {
 }
 
 const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
-  // ── Create task state ───────────────────────────────────────────────────────
   const [isCreating, setIsCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [startDate, setStartDate] = useState(""); // <-- State mới cho Start Date
+  const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [showMemberPopup, setShowMemberPopup] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ── Group action state ──────────────────────────────────────────────────────
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(column.title);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fallbackGroupId, setFallbackGroupId] = useState("");
 
-  const startDateRef = useRef<HTMLInputElement>(null); // <-- Ref cho Start Date
-  const dueDateRef = useRef<HTMLInputElement>(null); // <-- Đổi tên ref cũ cho rõ ràng
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const dueDateRef = useRef<HTMLInputElement>(null);
 
-  // ── Store ───────────────────────────────────────────────────────────────────
   const currentUserRole = useProjectStore((s) => s.currentUserRole);
   const members = useProjectStore((s) => s.members);
   const allGroups = useTaskStore((s) => s.groups);
 
-  // ── Hooks ───────────────────────────────────────────────────────────────────
   const { mutate: createTask, isPending: isCreatingTask } =
     useCreateTask(projectId);
   const { mutate: renameGroup, isPending: isRenaming } =
@@ -63,7 +59,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
   const { mutate: deleteGroup, isPending: isDeleting } =
     useDeleteGroupWithFallback(projectId);
 
-  // ── Computed ────────────────────────────────────────────────────────────────
   const canManage =
     currentUserRole === "Leader" || currentUserRole === "Moderator";
   const isLastColumn = allGroups.length <= 1;
@@ -74,28 +69,26 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
     return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  // Set default fallback khi mở modal
   useEffect(() => {
     if (showDeleteModal && availableGroups.length > 0 && !fallbackGroupId) {
       setFallbackGroupId(availableGroups[0].id);
     }
   }, [showDeleteModal]);
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
   const handleCreateTask = () => {
     if (!newTaskTitle.trim() || isCreatingTask) return;
     createTask(
       {
         title: newTaskTitle,
         group_task_id: column.id,
-        start_date: startDate || undefined, // <-- Bắn start_date xuống API
+        start_date: startDate || undefined,
         due_date: dueDate || undefined,
         assignee_id: selectedMember || undefined,
       },
       {
         onSuccess: () => {
           setNewTaskTitle("");
-          setStartDate(""); // <-- Reset lại sau khi tạo
+          setStartDate("");
           setDueDate("");
           setSelectedMember(null);
           setSearchQuery("");
@@ -107,7 +100,7 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
 
   const handleCancel = () => {
     setNewTaskTitle("");
-    setStartDate(""); // <-- Reset
+    setStartDate("");
     setDueDate("");
     setSelectedMember(null);
     setShowMemberPopup(false);
@@ -135,7 +128,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
     );
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <>
       <Draggable draggableId={column.id} index={index}>
@@ -147,7 +139,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
               snapshot.isDragging ? "shadow-2xl ring-2 ring-blue-500 z-40" : ""
             }`}
           >
-            {/* ── Header ── */}
             <div
               className="p-4 flex items-center justify-between"
               {...provided.dragHandleProps}
@@ -186,7 +177,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                 )}
               </div>
 
-              {/* Dấu 3 chấm — chỉ Leader/Moderator mới thấy */}
               {canManage && (
                 <div className="relative">
                   <button
@@ -250,7 +240,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
               )}
             </div>
 
-            {/* ── Droppable body ── */}
             <Droppable droppableId={column.id} type="TASK">
               {(provided) => (
                 <div
@@ -266,7 +255,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
 
                   {provided.placeholder}
 
-                  {/* ── Add a card — chỉ Leader/Moderator ── */}
                   {canManage && (
                     <>
                       {isCreating ? (
@@ -288,7 +276,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
 
                           <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 relative">
                             <div className="flex items-center gap-2 text-gray-400">
-                              {/* ── Start Date Picker ── */}
                               <div
                                 className="relative flex items-center gap-1"
                                 title="Start Date"
@@ -317,7 +304,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                                 )}
                               </div>
 
-                              {/* ── Due Date picker ── */}
                               <div
                                 className="relative flex items-center gap-1"
                                 title="Due Date"
@@ -346,7 +332,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                                 )}
                               </div>
 
-                              {/* Member picker */}
                               <div className="relative">
                                 <button
                                   onClick={() => setShowMemberPopup((v) => !v)}
@@ -373,12 +358,11 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                                 </button>
 
                                 {showMemberPopup && (
-                                  <div className="absolute bottom-full left-0 mb-2 w-52 bg-white shadow-xl border rounded-lg z-50 p-2">
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-52 bg-white shadow-2xl border border-gray-200 rounded-lg z-[9999] p-2">
                                     <p className="text-[10px] font-bold text-gray-400 px-2 py-1 uppercase tracking-wider">
                                       Assign to member
                                     </p>
 
-                                    {/* Search */}
                                     <input
                                       type="text"
                                       value={searchQuery}
@@ -389,7 +373,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                                       className="w-full text-xs px-2 py-1.5 mb-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
                                     />
 
-                                    {/* Unassigned */}
                                     <div
                                       onClick={() => {
                                         setSelectedMember(null);
@@ -411,41 +394,42 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                                       )}
                                     </div>
 
-                                    {/* Members */}
-                                    {filteredMembers.map((m) => {
-                                      const displayName =
-                                        (m as any).full_name || m.user_id;
-                                      return (
-                                        <div
-                                          key={m.user_id}
-                                          onClick={() => {
-                                            setSelectedMember(m.user_id);
-                                            setShowMemberPopup(false);
-                                          }}
-                                          className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-md cursor-pointer"
-                                        >
-                                          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0">
-                                            {displayName
-                                              .charAt(0)
-                                              .toUpperCase()}
+                                    <div className="max-h-48 overflow-y-auto">
+                                      {filteredMembers.map((m) => {
+                                        const displayName =
+                                          (m as any).full_name || m.user_id;
+                                        return (
+                                          <div
+                                            key={m.user_id}
+                                            onClick={() => {
+                                              setSelectedMember(m.user_id);
+                                              setShowMemberPopup(false);
+                                            }}
+                                            className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-md cursor-pointer"
+                                          >
+                                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0">
+                                              {displayName
+                                                .charAt(0)
+                                                .toUpperCase()}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-xs text-gray-700 font-medium truncate">
+                                                {displayName}
+                                              </p>
+                                              <p className="text-[10px] text-gray-400">
+                                                {m.role}
+                                              </p>
+                                            </div>
+                                            {selectedMember === m.user_id && (
+                                              <CheckIcon
+                                                size={12}
+                                                className="text-blue-500 shrink-0"
+                                              />
+                                            )}
                                           </div>
-                                          <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-700 font-medium truncate">
-                                              {displayName}
-                                            </p>
-                                            <p className="text-[10px] text-gray-400">
-                                              {m.role}
-                                            </p>
-                                          </div>
-                                          {selectedMember === m.user_id && (
-                                            <CheckIcon
-                                              size={12}
-                                              className="text-blue-500 shrink-0"
-                                            />
-                                          )}
-                                        </div>
-                                      );
-                                    })}
+                                        );
+                                      })}
+                                    </div>
                                   </div>
                                 )}
                               </div>
@@ -488,7 +472,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
         )}
       </Draggable>
 
-      {/* ── Delete Modal ── */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg shadow-xl w-[550px] p-6 text-gray-800">
@@ -502,7 +485,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
               Select a new home for any work in this column before deleting it.
             </p>
 
-            {/* Warning nếu đây là cột isSuccess */}
             {column.isSuccess && (
               <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2.5 mb-5 text-xs text-yellow-700">
                 <AlertTriangle

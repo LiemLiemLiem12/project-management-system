@@ -22,6 +22,12 @@
       "path": "./apps/project-service"
     },
     {
+      "path": "./apps/audit-service-e2e"
+    },
+    {
+      "path": "./apps/audit-service"
+    },
+    {
       "path": "./apps/notification-service-e2e"
     },
     {
