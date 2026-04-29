@@ -9,37 +9,47 @@ import {
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
+
+import FormData from 'form-data';
+
 import { CommentService } from '../services/comment.service';
 import { CreateCommentDto } from '../dto/create-comment.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
+import { CreateCommentMediaDto } from '../dto/create-comment-media.dto';
 
 @Controller('comments')
 export class CommentController {
-  constructor(private readonly commentService: CommentService) {}
+  constructor(
+    private readonly commentService: CommentService,
+    private readonly configService: ConfigService,
+    private readonly httpService: HttpService,
+  ) {}
 
   @Post()
   @UseInterceptors(
-    FileInterceptor('files', { limits: { fileSize: 100 * 1024 } }),
+    FilesInterceptor('files', 10, { limits: { fileSize: 100 * 1024 * 1024 } }),
   )
-  createComment(
+  async createComment(
     @Body() body: CreateCommentDto,
     @UploadedFiles() files: Array<Express.Multer.File>,
   ) {
-    const serializedFiles =
-      files?.map((file) => ({
-        originalname: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size,
-        base64Buffer: file.buffer.toString('base64'),
-      })) || [];
+    let medias: CreateCommentMediaDto[] = [];
+
+    if (files && files.length > 0) {
+      medias = await this.commentService.uploadFiles(files);
+    }
 
     const payload = {
       ...body,
-      rawFiles: serializedFiles,
+      medias,
     };
 
-    return this.commentService.createComment(body);
+    return this.commentService.createComment(payload);
   }
 
   @Get('task/:taskId')
@@ -49,17 +59,24 @@ export class CommentController {
 
   @Patch(':id')
   updateComment(@Param('id') id: string, @Body() body: any) {
+    // Include taskId in the service call for WebSocket broadcast
     return this.commentService.updateComment(id, body);
   }
 
   @Delete(':id')
-  deleteComment(@Param('id') id: string) {
-    return this.commentService.deleteComment(id);
+  deleteComment(@Param('id') id: string, @Body() body?: any) {
+    // Accept taskId in body for WebSocket broadcast, or pass directly
+    const taskId = body?.taskId;
+    return this.commentService.deleteComment(id, taskId);
   }
 
   @Get('summary/task/:taskId')
   async summarizeTaskComments(@Param('taskId') taskId: string) {
-    console.log(taskId);
     return this.commentService.summarizeTaskComments(taskId);
+  }
+
+  @Get('/:id')
+  async getSubComments(@Param('id') id: string) {
+    return this.commentService.getSubComments(id);
   }
 }

@@ -28,6 +28,9 @@ export class CommentMedia {
   @Column('float')
   file_size!: number;
 
+  @Column()
+  public_id!: string;
+
   @CreateDateColumn()
   created_at!: Date;
 

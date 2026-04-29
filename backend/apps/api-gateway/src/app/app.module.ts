@@ -12,6 +12,7 @@ import googleOauthConfig from './modules/auth/config/google-oauth.config';
   imports: [
     ConfigModule.forRoot({
       envFilePath: '.env.local',
+      isGlobal: true,
     }),
     AuthModule,
     ProjectModule,

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ActivityComment from "./ActivityComment";
 import ActivityHistory from "./ActivityHistory";
+import ActivitySummary from "./ActivitySummary";
 
 type TabType = "comments" | "history" | "summarize";
 
@@ -47,11 +48,7 @@ export default function TaskActivity() {
       <div className="min-h-[200px]">
         {activeTab === "comments" && <ActivityComment />}
         {activeTab === "history" && <ActivityHistory />}
-        {activeTab === "summarize" && (
-          <div className="text-center text-slate-500 py-8">
-            Content for {activeTab} is not implemented yet.
-          </div>
-        )}
+        {activeTab === "summarize" && <ActivitySummary />}
       </div>
     </section>
   );

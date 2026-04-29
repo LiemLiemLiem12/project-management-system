@@ -8,9 +8,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { ConfigService } from '@nestjs/config/dist/config.service';
 import * as cookieParser from 'cookie-parser';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Enable WebSocket support
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   const configService = app.get(ConfigService);
 
@@ -18,8 +22,13 @@ async function bootstrap() {
   const port = configService.get('API_GATEWAY_PORT') || 4000;
   app.setGlobalPrefix(globalPrefix);
 
+  const origins = [
+    configService.get('FRONTEND_ORIGIN') || 'http://localhost:3000',
+    configService.get('CORS_ORIGIN') || 'http://localhost:4001',
+  ];
+
   app.enableCors({
-    origin: configService.get('CORS_ORIGIN') || 'http://localhost:3000',
+    origin: origins,
     credentials: true,
   });
 
