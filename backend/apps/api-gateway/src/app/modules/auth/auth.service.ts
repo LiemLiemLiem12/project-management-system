@@ -178,4 +178,17 @@ export class AuthService {
       throw new HttpException(error.message, error.statusCode || 400);
     }
   }
+  async checkUserExists(email: string) {
+    try {
+      const result = await firstValueFrom(
+        this.authClient.send('auth.check_email', email),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Lỗi khi kiểm tra email',
+        error.statusCode || 500,
+      );
+    }
+  }
 }

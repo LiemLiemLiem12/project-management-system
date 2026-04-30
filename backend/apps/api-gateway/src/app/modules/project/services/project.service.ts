@@ -11,10 +11,6 @@ export class ProjectService {
     private readonly projectClient: ClientProxy,
   ) {}
 
-  create(createProjectDto: CreateProjectDto) {
-    return 'This action adds a new project';
-  }
-
   findAll() {
     return `This action returns all project`;
   }
@@ -73,5 +69,36 @@ export class ProjectService {
 
   remove(id: number) {
     return `This action removes a #${id} project`;
+  }
+
+  async create(createProjectDto: any, userId: string) {
+    try {
+      const result = await firstValueFrom(
+        this.projectClient.send('project.create_complex', {
+          ...createProjectDto,
+          ownerId: userId,
+        }),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to create project complex',
+        error.statusCode || 500,
+      );
+    }
+  }
+
+  async getProjects(userId: string) {
+    try {
+      const result = await firstValueFrom(
+        this.projectClient.send('project.find_all', userId),
+      );
+      return result;
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to fetch projects',
+        error.statusCode || 500,
+      );
+    }
   }
 }

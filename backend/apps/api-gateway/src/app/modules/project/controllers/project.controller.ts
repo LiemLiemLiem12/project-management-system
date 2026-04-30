@@ -25,15 +25,10 @@ import { UpdateMemberRoleDto } from '../dto/update-member-role.dto';
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
-  @Post()
-  create(@Body() createProjectDto: CreateProjectDto) {
-    return this.projectService.create(createProjectDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.projectService.findAll();
-  }
+  // @Get()
+  // findAll() {
+  //   return this.projectService.findAll();
+  // }
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
   @UseGuards(RoleGuard)
@@ -114,5 +109,20 @@ export class ProjectController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.projectService.remove(+id);
+  }
+
+  @Post('create_complex')
+  @UseGuards(JwtAuthGuard)
+  async create(@Req() req: any, @Body() createProjectDto: any) {
+    const userId = req.user.userId;
+
+    return this.projectService.create(createProjectDto, userId);
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async getProjects(@Req() req: any) {
+    const userId = req.user.userId;
+    return this.projectService.getProjects(userId);
   }
 }

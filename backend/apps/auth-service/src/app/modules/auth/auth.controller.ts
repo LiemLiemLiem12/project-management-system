@@ -110,4 +110,9 @@ export class AuthController {
   async getUsersByIds(@Payload() userIds: string[]) {
     return this.authService.getUsersByIds(userIds);
   }
+
+  @MessagePattern('auth.check_email')
+  async handleCheckEmail(@Payload() email: string) {
+    return this.authService.checkUserExists(email);
+  }
 }

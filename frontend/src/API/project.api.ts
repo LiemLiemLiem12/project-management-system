@@ -41,4 +41,15 @@ export const projectAPI = (axiosPrivate: AxiosInstance) => ({
   removeMember: (projectId: string, userId: string) => {
     return axiosPrivate.delete(`/projects/${projectId}/members/${userId}`);
   },
+
+  createProject: (payload: {
+    name: string;
+    description: string;
+    members: { email: string; role: string }[];
+  }) => {
+    return axiosPrivate.post("/project/create_complex", payload);
+  },
+  getUserProjects: () => {
+    return axiosPrivate.get("/project");
+  },
 });

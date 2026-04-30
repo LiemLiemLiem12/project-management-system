@@ -4,12 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
-  Info,
   X,
   Plus,
   UserPlus,
   ShieldCheck,
+  Loader2,
 } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { useProjectService } from "@/services/project.service";
+import { useAuthService } from "@/services/auth.service";
+// 🚀 Thêm store để lấy thông tin người đang đăng nhập
+import { useAuthStore } from "@/store/auth.store";
 
 type Member = {
   email: string;
@@ -19,27 +25,51 @@ type Member = {
 export default function CreateProjectPage() {
   const router = useRouter();
 
+  const { createProject, isCreating } = useProjectService();
+  const { checkUserExists, isCheckingEmail } = useAuthService();
+
+  // 🚀 Lấy user hiện tại từ store ra (để check vụ tự add chính mình)
+  const currentUser = useAuthStore((state: any) => state.user);
+
   const [name, setName] = useState("");
-  const [key_, setKey] = useState("");
   const [description, setDescription] = useState("");
 
   const [members, setMembers] = useState<Member[]>([]);
   const [emailInput, setEmailInput] = useState("");
   const [roleInput, setRoleInput] = useState<Member["role"]>("Member");
 
-  const [loading, setLoading] = useState(false);
+  const addMember = async () => {
+    const email = emailInput.trim();
+    if (!email) return;
 
-  const handleNameChange = (v: string) => {
-    setName(v);
-    if (!key_ || key_ === name.slice(0, 6).toUpperCase()) {
-      setKey(v.replace(/\s+/g, "").toUpperCase().slice(0, 6));
+    // 🚀 Chặn: Không cho phép tự thêm chính mình
+    if (currentUser?.email && email === currentUser.email) {
+      toast.error("You cannot add yourself to the project!");
+      return;
     }
-  };
 
-  const addMember = () => {
-    if (emailInput && !members.find((m) => m.email === emailInput)) {
-      setMembers([...members, { email: emailInput, role: roleInput }]);
-      setEmailInput("");
+    if (members.find((m) => m.email === email)) {
+      toast.error("This email is already in the list!");
+      return;
+    }
+
+    try {
+      const response = await checkUserExists(email);
+      const userExistsInDatabase = response.data?.exists ?? response.data;
+
+      if (userExistsInDatabase) {
+        setMembers([...members, { email, role: roleInput }]);
+        setEmailInput("");
+        toast.success(`Successfully added ${email}`);
+      } else {
+        toast.error("User not found in the system!");
+      }
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        toast.error("User not found in the system!");
+      } else {
+        toast.error("Failed to check user existence!");
+      }
     }
   };
 
@@ -48,18 +78,26 @@ export default function CreateProjectPage() {
   };
 
   const handleSubmit = async () => {
-    if (!name.trim()) return;
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setLoading(false);
-    router.push("/for-you");
+    if (!name.trim()) {
+      toast.error("Please enter a project name!");
+      return;
+    }
+    try {
+      await createProject({
+        name,
+        description,
+        members,
+      });
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const inputClass =
-    "w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white";
+    "w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400";
 
   return (
-    <div className="h-screen bg-white flex flex-col font-sans text-slate-800">
+    <div className="h-[calc(100vh-64px)] bg-white flex flex-col font-sans text-slate-800 overflow-hidden">
       <header className="h-14 border-b border-slate-200 flex items-center px-6 gap-4 shrink-0 bg-white">
         <button
           onClick={() => router.back()}
@@ -89,7 +127,6 @@ export default function CreateProjectPage() {
             <h2 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2">
               Project details
             </h2>
-
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-slate-700">
                 Project name <span className="text-red-500">*</span>
@@ -97,32 +134,11 @@ export default function CreateProjectPage() {
               <input
                 type="text"
                 value={name}
-                onChange={(e) => handleNameChange(e.target.value)}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Hotel Reservation System"
                 className={inputClass}
               />
             </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-                Project key
-                <Info className="w-4 h-4 text-slate-400" />
-              </label>
-              <input
-                type="text"
-                value={key_}
-                onChange={(e) =>
-                  setKey(e.target.value.toUpperCase().slice(0, 6))
-                }
-                placeholder="e.g. HRS"
-                maxLength={6}
-                className={`${inputClass} uppercase tracking-widest font-mono w-48`}
-              />
-              <p className="text-xs text-slate-500">
-                This key is used as a prefix for tasks (e.g. HRS-1).
-              </p>
-            </div>
-
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-slate-700">
                 Description
@@ -140,8 +156,7 @@ export default function CreateProjectPage() {
           <section className="flex flex-col gap-6">
             <div className="border-b border-slate-200 pb-2">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <UserPlus size={20} className="text-blue-600" />
-                Add members
+                <UserPlus size={20} className="text-blue-600" /> Add members
               </h2>
             </div>
 
@@ -151,6 +166,8 @@ export default function CreateProjectPage() {
                   type="email"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addMember()}
+                  disabled={isCheckingEmail}
                   placeholder="name@company.com"
                   className={inputClass}
                 />
@@ -158,7 +175,8 @@ export default function CreateProjectPage() {
               <select
                 value={roleInput}
                 onChange={(e) => setRoleInput(e.target.value as Member["role"])}
-                className="px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isCheckingEmail}
+                className="px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
               >
                 <option value="Viewer">Viewer</option>
                 <option value="Member">Member</option>
@@ -166,11 +184,16 @@ export default function CreateProjectPage() {
               </select>
               <button
                 onClick={addMember}
-                disabled={!emailInput}
-                className="px-7 py-2 bg-blue-500 text-white font-medium rounded-[12px] hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+                disabled={!emailInput || isCheckingEmail}
+                className="px-7 py-2 bg-blue-500 text-white font-medium rounded-[12px] hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2 min-w-[90px] justify-center"
               >
-                <Plus size={16} />
-                Add
+                {isCheckingEmail ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <>
+                    <Plus size={16} /> Add
+                  </>
+                )}
               </button>
             </div>
 
@@ -182,7 +205,7 @@ export default function CreateProjectPage() {
                 members.map((member) => (
                   <div
                     key={member.email}
-                    className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors bg-slate-50/50"
+                    className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/50"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-sm font-bold">
@@ -193,15 +216,13 @@ export default function CreateProjectPage() {
                           {member.email}
                         </span>
                         <span className="text-[11px] uppercase font-bold text-slate-500 flex items-center gap-1 mt-0.5">
-                          <ShieldCheck size={12} />
-                          {member.role}
+                          <ShieldCheck size={12} /> {member.role}
                         </span>
                       </div>
                     </div>
                     <button
                       onClick={() => removeMember(member.email)}
                       className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Remove member"
                     >
                       <X size={18} />
                     </button>
@@ -219,19 +240,19 @@ export default function CreateProjectPage() {
         </div>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white px-8 py-4 flex items-center justify-end gap-4 shrink-0">
+      <footer className="border-t border-slate-200 bg-white px-8 py-4 flex items-center justify-end gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <button
           onClick={() => router.back()}
-          className="px-6 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+          className="px-6 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={handleSubmit}
-          disabled={!name.trim() || loading}
+          disabled={!name.trim() || isCreating || isCheckingEmail}
           className="px-8 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center min-w-[140px]"
         >
-          {loading ? "Creating..." : "Create Project"}
+          {isCreating ? "Creating..." : "Create Project"}
         </button>
       </footer>
     </div>

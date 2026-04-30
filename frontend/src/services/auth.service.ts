@@ -251,6 +251,11 @@ export const useAuthService = () => {
     },
   });
 
+  // 👇 ĐÂY! TUI ĐÃ THÊM HÀM CHECK USER VÀO ĐÂY NÈ ÔNG GIÁO
+  const handleCheckUserExists = useMutation({
+    mutationFn: (email: string) => api.auth.checkUserExists(email),
+  });
+
   return {
     login: handleLogin.mutateAsync,
     loginStatus: handleLogin.isPending,
@@ -280,5 +285,8 @@ export const useAuthService = () => {
 
     resendOTP: handleResendOTP.mutateAsync,
     pendingResetOTP: handleResendOTP.isPending,
+
+    checkUserExists: handleCheckUserExists.mutateAsync,
+    isCheckingEmail: handleCheckUserExists.isPending,
   };
 };

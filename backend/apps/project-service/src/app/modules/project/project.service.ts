@@ -3,20 +3,33 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Project } from './entities/project.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ProjectMember } from './entities/project-member.entity';
 import { RpcException, ClientProxy } from '@nestjs/microservices';
 
 import { firstValueFrom, timeout, catchError, of } from 'rxjs';
+import { GroupTask } from '../task/entities/group-task.entity';
+
+export interface CreateProjectComplexPayload {
+  name: string;
+  description?: string;
+  ownerId: string;
+  members: { email: string; role: string }[];
+}
 
 @Injectable()
 export class ProjectService {
   constructor(
+    private dataSource: DataSource,
+
     @InjectRepository(Project)
     private readonly projectRepository: Repository<Project>,
 
     @InjectRepository(ProjectMember)
     private readonly projectMemberRepository: Repository<ProjectMember>,
+
+    @InjectRepository(GroupTask)
+    private readonly groupTaskRepository: Repository<GroupTask>,
 
     @Inject('AUTH_SERVICE')
     private readonly authClient: ClientProxy,
@@ -40,6 +53,68 @@ export class ProjectService {
     }
 
     return project;
+  }
+
+  async createComplex(payload: CreateProjectComplexPayload) {
+    const { name, description, ownerId, members } = payload;
+
+    return await this.dataSource.transaction(async (manager) => {
+      const project = await manager.save(Project, {
+        name,
+        description,
+        owner_id: ownerId,
+        status: 'Active',
+      });
+
+      await manager.save(ProjectMember, {
+        project_id: project.id,
+        user_id: ownerId,
+        role: 'Leader',
+        joined_date: new Date().toISOString(),
+      });
+
+      const defaultGroups = [
+        { project_id: project.id, title: 'To Do', order: 0, isSuccess: false },
+        {
+          project_id: project.id,
+          title: 'In Progress',
+          order: 1,
+          isSuccess: false,
+        },
+        { project_id: project.id, title: 'Done', order: 2, isSuccess: true },
+      ];
+      await manager.save(GroupTask, defaultGroups);
+
+      // 4. Xử lý mời thành viên qua Email (gọi sang Auth Service để lấy ID)
+      if (members && members.length > 0) {
+        const emails = members.map((m) => m.email);
+
+        // Gọi Auth Service để lấy thông tin User từ Email
+        const usersDetail = await firstValueFrom(
+          this.authClient.send('auth.get-users-by-emails', emails).pipe(
+            timeout(5000),
+            catchError(() => of([])),
+          ),
+        );
+
+        for (const memberInvite of members) {
+          const foundUser = usersDetail.find(
+            (u: any) => u.email === memberInvite.email,
+          );
+          if (foundUser) {
+            await manager.save(ProjectMember, {
+              project_id: project.id,
+              user_id: foundUser.id,
+              // Map role: Moderator -> Leader, còn lại là Member
+              role: memberInvite.role === 'Moderator' ? 'Leader' : 'Member',
+              joined_date: new Date().toISOString(),
+            });
+          }
+        }
+      }
+
+      return project;
+    });
   }
 
   async getMembers(projectId: string, userId: string) {
@@ -140,5 +215,15 @@ export class ProjectService {
       .where('member.project_id = :projectId', { projectId })
       .andWhere('member.user_id = :userId', { userId })
       .getOne();
+  }
+
+  async findAllByUser(userId: string) {
+    return await this.dataSource
+      .getRepository(Project)
+      .createQueryBuilder('project')
+      .innerJoin('project_members', 'pm', 'pm.project_id = project.id')
+      .where('pm.user_id = :userId', { userId })
+      .orderBy('project.created_date', 'DESC')
+      .getMany();
   }
 }

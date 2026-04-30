@@ -1,4 +1,6 @@
 "use client";
+import { projectAPI } from "@/API/project.api";
+
 import { useAPI } from "@/API/useAPI";
 import { useProjectStore } from "@/store/project.store";
 import { AddMemberPayload, UpdateMemberRolePayload } from "@/types";
@@ -134,4 +136,35 @@ export const useRemoveProjectMember = (projectId: string) => {
       toast.error("Failed to remove member from the project.");
     },
   });
+};
+
+export const useProjectService = () => {
+  const api = useAPI();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const handleCreateProject = useMutation({
+    mutationFn: (payload: {
+      name: string;
+      description: string;
+      members: { email: string; role: string }[];
+    }) => api.project.createProject(payload),
+
+    onSuccess: () => {
+      toast.success("Project and Kanban board created successfully!");
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      router.push("/for-you");
+    },
+  });
+  const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => api.project.getUserProjects(),
+  });
+
+  return {
+    createProject: handleCreateProject.mutateAsync,
+    isCreating: handleCreateProject.isPending,
+    projects: projectsData?.data || [],
+    isLoadingProjects,
+  };
 };
