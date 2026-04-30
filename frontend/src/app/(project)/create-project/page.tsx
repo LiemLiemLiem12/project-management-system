@@ -12,12 +12,13 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
+// Đảm bảo đường dẫn import đúng với thư mục của ông
 import { useProjectService } from "@/services/project.service";
 import { useAuthService } from "@/services/auth.service";
-// 🚀 Thêm store để lấy thông tin người đang đăng nhập
 import { useAuthStore } from "@/store/auth.store";
 
 type Member = {
+  id: string;
   email: string;
   role: "Viewer" | "Member" | "Moderator";
 };
@@ -28,7 +29,6 @@ export default function CreateProjectPage() {
   const { createProject, isCreating } = useProjectService();
   const { checkUserExists, isCheckingEmail } = useAuthService();
 
-  // 🚀 Lấy user hiện tại từ store ra (để check vụ tự add chính mình)
   const currentUser = useAuthStore((state: any) => state.user);
 
   const [name, setName] = useState("");
@@ -42,7 +42,6 @@ export default function CreateProjectPage() {
     const email = emailInput.trim();
     if (!email) return;
 
-    // 🚀 Chặn: Không cho phép tự thêm chính mình
     if (currentUser?.email && email === currentUser.email) {
       toast.error("You cannot add yourself to the project!");
       return;
@@ -54,21 +53,26 @@ export default function CreateProjectPage() {
     }
 
     try {
+      // 💡 Lưu ý: Nếu hook của ông dùng useMutation, thay dòng dưới thành:
+      // const response = await checkUserExists.mutateAsync(email);
       const response = await checkUserExists(email);
-      const userExistsInDatabase = response.data?.exists ?? response.data;
 
-      if (userExistsInDatabase) {
-        setMembers([...members, { email, role: roleInput }]);
+      const exists = response.data?.exists;
+      const fetchedUserId = response.data?.id;
+
+      if (exists && fetchedUserId) {
+        setMembers([...members, { id: fetchedUserId, email, role: roleInput }]);
         setEmailInput("");
         toast.success(`Successfully added ${email}`);
       } else {
         toast.error("User not found in the system!");
       }
     } catch (error: any) {
+      console.error(error);
       if (error.response?.status === 404) {
         toast.error("User not found in the system!");
       } else {
-        toast.error("Failed to check user existence!");
+        toast.error("System error while checking email!");
       }
     }
   };
@@ -82,14 +86,23 @@ export default function CreateProjectPage() {
       toast.error("Please enter a project name!");
       return;
     }
+
     try {
       await createProject({
         name,
         description,
-        members,
+        members: members.map((m) => ({
+          id: m.id,
+          email: m.email,
+          role: m.role,
+        })),
       });
+
+      toast.success("Project created successfully!");
+      router.push("/for-you");
     } catch (error) {
       console.error(error);
+      toast.error("Error creating project, please try again!");
     }
   };
 
@@ -98,6 +111,7 @@ export default function CreateProjectPage() {
 
   return (
     <div className="h-[calc(100vh-64px)] bg-white flex flex-col font-sans text-slate-800 overflow-hidden">
+      {/* Header */}
       <header className="h-14 border-b border-slate-200 flex items-center px-6 gap-4 shrink-0 bg-white">
         <button
           onClick={() => router.back()}
@@ -112,8 +126,10 @@ export default function CreateProjectPage() {
         </span>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-10">
+      {/* Main Form */}
+      <main className="flex-1 overflow-y-auto px-6 py-10 custom-scrollbar">
         <div className="max-w-3xl mx-auto flex flex-col gap-12">
+          {/* Title */}
           <div>
             <h1 className="text-3xl font-bold text-slate-900 mb-2">
               Create a new project
@@ -123,6 +139,7 @@ export default function CreateProjectPage() {
             </p>
           </div>
 
+          {/* Project Details Section */}
           <section className="flex flex-col gap-6">
             <h2 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2">
               Project details
@@ -135,7 +152,7 @@ export default function CreateProjectPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Hotel Reservation System"
+                placeholder="e.g. Hotel Reservation Engine"
                 className={inputClass}
               />
             </div>
@@ -153,6 +170,7 @@ export default function CreateProjectPage() {
             </div>
           </section>
 
+          {/* Invite Members Section */}
           <section className="flex flex-col gap-6">
             <div className="border-b border-slate-200 pb-2">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -160,6 +178,7 @@ export default function CreateProjectPage() {
               </h2>
             </div>
 
+            {/* Input Add Member */}
             <div className="flex gap-3 items-start">
               <div className="flex-1">
                 <input
@@ -197,10 +216,12 @@ export default function CreateProjectPage() {
               </button>
             </div>
 
+            {/* Members List */}
             <div className="flex flex-col gap-2 mt-2">
               <h3 className="text-sm font-semibold text-slate-700 mb-1">
                 Team members ({members.length})
               </h3>
+
               {members.length > 0 ? (
                 members.map((member) => (
                   <div
@@ -240,6 +261,7 @@ export default function CreateProjectPage() {
         </div>
       </main>
 
+      {/* Footer / Actions */}
       <footer className="border-t border-slate-200 bg-white px-8 py-4 flex items-center justify-end gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <button
           onClick={() => router.back()}
@@ -252,7 +274,11 @@ export default function CreateProjectPage() {
           disabled={!name.trim() || isCreating || isCheckingEmail}
           className="px-8 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center min-w-[140px]"
         >
-          {isCreating ? "Creating..." : "Create Project"}
+          {isCreating ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            "Create Project"
+          )}
         </button>
       </footer>
     </div>

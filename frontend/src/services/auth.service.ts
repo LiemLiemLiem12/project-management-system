@@ -251,7 +251,6 @@ export const useAuthService = () => {
     },
   });
 
-  // 👇 ĐÂY! TUI ĐÃ THÊM HÀM CHECK USER VÀO ĐÂY NÈ ÔNG GIÁO
   const handleCheckUserExists = useMutation({
     mutationFn: (email: string) => api.auth.checkUserExists(email),
   });

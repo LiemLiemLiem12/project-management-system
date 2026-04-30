@@ -12,9 +12,13 @@ import { GroupTask } from '../task/entities/group-task.entity';
 
 export interface CreateProjectComplexPayload {
   name: string;
-  description?: string;
+  description: string;
   ownerId: string;
-  members: { email: string; role: string }[];
+  members: {
+    id: string;
+    email: string;
+    role: string;
+  }[];
 }
 
 @Injectable()
@@ -85,32 +89,16 @@ export class ProjectService {
       ];
       await manager.save(GroupTask, defaultGroups);
 
-      // 4. Xử lý mời thành viên qua Email (gọi sang Auth Service để lấy ID)
       if (members && members.length > 0) {
-        const emails = members.map((m) => m.email);
+        const projectMembers = members.map((memberInvite) => ({
+          project_id: project.id,
+          user_id: memberInvite.id,
 
-        // Gọi Auth Service để lấy thông tin User từ Email
-        const usersDetail = await firstValueFrom(
-          this.authClient.send('auth.get-users-by-emails', emails).pipe(
-            timeout(5000),
-            catchError(() => of([])),
-          ),
-        );
+          role: memberInvite.role === 'Moderator' ? 'Leader' : 'Member',
+          joined_date: new Date().toISOString(),
+        }));
 
-        for (const memberInvite of members) {
-          const foundUser = usersDetail.find(
-            (u: any) => u.email === memberInvite.email,
-          );
-          if (foundUser) {
-            await manager.save(ProjectMember, {
-              project_id: project.id,
-              user_id: foundUser.id,
-              // Map role: Moderator -> Leader, còn lại là Member
-              role: memberInvite.role === 'Moderator' ? 'Leader' : 'Member',
-              joined_date: new Date().toISOString(),
-            });
-          }
-        }
+        await manager.save(ProjectMember, projectMembers);
       }
 
       return project;

@@ -114,7 +114,8 @@ export class ProjectController {
   @Post('create_complex')
   @UseGuards(JwtAuthGuard)
   async create(@Req() req: any, @Body() createProjectDto: any) {
-    const userId = req.user.userId;
+   
+    const userId = req.user.userId || req.user.id;
 
     return this.projectService.create(createProjectDto, userId);
   }

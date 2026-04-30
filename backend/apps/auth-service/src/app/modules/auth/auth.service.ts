@@ -562,12 +562,18 @@ export class AuthService {
 
     return this.getAuth(existingUser);
   }
-
   async checkUserExists(email: string) {
     const user = await this.userRepository.findOne({
       where: { email: email },
     });
 
-    return { exists: !!user };
+    if (user) {
+      return {
+        exists: true,
+        id: user.id,
+      };
+    }
+
+    return { exists: false };
   }
 }
