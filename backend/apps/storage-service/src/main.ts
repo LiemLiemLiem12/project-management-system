@@ -12,9 +12,14 @@ async function bootstrap() {
   const port = process.env.PORT || 4001;
   const ServiceName = process.env.STORAGE_SERVICE_NAME || 'STORAGE_SERVICE';
 
+  // app.enableCors({
+  //   origin: 'http://localhost:3000',
+  //   credentials: true,
+  // });
+
   await app.listen(port);
 
-  Logger.log(`${ServiceName} is running on: http://localhost:${port}`);
+  Logger.log(`[${ServiceName}] is running on: http://localhost:${port}`);
 }
 
 bootstrap();

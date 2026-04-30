@@ -18,4 +18,14 @@ export class UserService {
       throw new HttpException(error.message, error.statusCode || 400);
     }
   }
+
+  async findUsersByIds(ids: string[]) {
+    try {
+      return await firstValueFrom(
+        this.authClient.send('user.get-by-ids', { ids }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 400);
+    }
+  }
 }

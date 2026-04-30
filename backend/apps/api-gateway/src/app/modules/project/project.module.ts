@@ -12,9 +12,12 @@ import { LabelController } from './controllers/label.controller';
 import { LabelService } from './services/label.service';
 import { CommentController } from './controllers/comment.controller';
 import { CommentService } from './services/comment.service';
+import { HttpModule } from '@nestjs/axios';
+import { CommentGateway } from './gateways/comment.gateway';
 
 @Module({
   imports: [
+    HttpModule,
     AuthModule,
     ClientsModule.register([
       {
@@ -37,6 +40,13 @@ import { CommentService } from './services/comment.service';
     LabelController,
     CommentController,
   ],
-  providers: [ProjectService, TaskService, ChecklistService, LabelService, CommentService],
+  providers: [
+    ProjectService,
+    TaskService,
+    ChecklistService,
+    LabelService,
+    CommentService,
+    CommentGateway,
+  ],
 })
 export class ProjectModule {}

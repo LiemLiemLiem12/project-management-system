@@ -26,4 +26,9 @@ export class CommentController {
   delete(@Payload() payload: { id: string }) {
     return this.commentService.delete(payload.id);
   }
+
+  @MessagePattern('comment.getSubComment')
+  findSubComments(@Payload() payload: { id: string }) {
+    return this.commentService.findSubComments(payload.id);
+  }
 }

@@ -1,6 +1,8 @@
 import {
   BadRequestException,
+  Body,
   Controller,
+  Delete,
   Post,
   UploadedFiles,
   UseInterceptors,
@@ -10,6 +12,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { UploadApiErrorResponse } from 'cloudinary';
+import { DeleteFilesDto } from './dto/delete-files.dto';
 
 @Controller('comments')
 export class CommentController {
@@ -44,18 +47,44 @@ export class CommentController {
     }
 
     try {
-      const urls = await this.commentService.uploadImages(files);
+      const uploadedFiles = await this.commentService.uploadImages(files);
 
       return {
         success: true,
         message: 'Upload images successfully',
-        urls: urls,
+        files: uploadedFiles,
       };
     } catch (error) {
       if (error instanceof Error) {
         console.error(error.message);
       }
       throw new BadRequestException('Failure when uploading to Cloudinary');
+    }
+  }
+
+  @Delete('images')
+  async deleteImages(@Body() body: DeleteFilesDto) {
+    const { publicIds } = body;
+
+    if (!publicIds || publicIds.length === 0) {
+      throw new BadRequestException(
+        'Please provide an array of publicIds to delete!',
+      );
+    }
+
+    try {
+      const result = await this.commentService.deleteImages(publicIds);
+
+      return {
+        success: true,
+        message: 'Delete files successfully',
+        data: result,
+      };
+    } catch (error: any) {
+      console.error(error?.message);
+      throw new BadRequestException(
+        error?.message || 'Failure when deleting files from Cloudinary',
+      );
     }
   }
 }

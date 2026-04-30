@@ -29,6 +29,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 
     ConfigModule.forRoot({
       envFilePath: '.env.local',
+      isGlobal: true,
     }),
 
     TypeOrmModule.forRoot({

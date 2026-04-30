@@ -98,13 +98,15 @@ export interface UpdateLabelPayload {
 //Comment
 export interface Comment {
   id: string;
-  parent_comment_id: string;
+  parent_comment_id: string | null;
   task_id: string;
   user_id: string;
   content: string;
   created_at: string;
   updated_at: string;
   medias: CommentMedia[];
+  subCommentCount?: number;
+  user?: User;
 }
 
 export interface CommentMedia {
@@ -115,7 +117,7 @@ export interface CommentMedia {
   file_type: string;
   file_size: number;
   created_at: Date;
-  comment: Comment;
+  comment?: Comment;
 }
 
 export interface CommentMediaPayload {
@@ -129,7 +131,7 @@ export interface CreateCommentPayload {
   task_id?: string;
   user_id: string;
   content: string;
-  parent_comment_id?: string;
+  parent_comment_id?: string | null;
   medias?: CommentMediaPayload[];
 }
 

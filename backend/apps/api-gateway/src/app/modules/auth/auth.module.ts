@@ -55,6 +55,6 @@ import { UserService } from './user.service';
     FacebookStrategy,
     UserService,
   ],
-  exports: [AuthService],
+  exports: [AuthService, UserService],
 })
 export class AuthModule {}

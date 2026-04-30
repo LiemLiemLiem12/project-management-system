@@ -22,8 +22,8 @@ export const useCreateComment = (taskId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateCommentPayload) => {
-      return api.comment.createComment(taskId, payload);
+    mutationFn: (payload: FormData) => {
+      return api.comment.createComment(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -35,7 +35,7 @@ export const useCreateComment = (taskId: string) => {
       });
     },
     onError: (error: any) => {
-      console.error("Failed to create comment:", error);
+      console.error("Failed to create comment:", error.response.data);
       toast.error("Failed to post comment.");
     },
   });
@@ -53,7 +53,10 @@ export const useUpdateComment = (taskId: string) => {
       commentId: string;
       payload: UpdateCommentPayload;
     }) => {
-      return api.comment.updateComment(commentId, payload);
+      // Include taskId in payload for WebSocket broadcast
+      return api.comment.updateComment(commentId, {
+        ...payload,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -77,7 +80,8 @@ export const useDeleteComment = (taskId: string) => {
 
   return useMutation({
     mutationFn: (commentId: string) => {
-      return api.comment.deleteComment(commentId);
+      // Include taskId in body for WebSocket broadcast
+      return api.comment.deleteComment(commentId, { taskId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -94,7 +98,6 @@ export const useDeleteComment = (taskId: string) => {
   });
 };
 
-// Hook cho endpoint summary mới
 export const useSummarizeTaskComments = (taskId: string) => {
   const api = useAPI();
 
@@ -105,6 +108,20 @@ export const useSummarizeTaskComments = (taskId: string) => {
       return res.data;
     },
     enabled: !!taskId,
+    refetchOnWindowFocus: false,
+  });
+};
+
+export const useGetSubComments = (id: string, showSubComments: boolean) => {
+  const api = useAPI();
+
+  return useQuery({
+    queryKey: ["subComments", id],
+    queryFn: async () => {
+      const res = await api.comment.getSubComments(id);
+      return res.data;
+    },
+    enabled: !!id && !!showSubComments,
     refetchOnWindowFocus: false,
   });
 };
