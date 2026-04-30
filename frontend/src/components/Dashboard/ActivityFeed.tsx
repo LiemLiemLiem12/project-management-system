@@ -1,78 +1,62 @@
-import { activities, ActivityItem } from "@/store/Store";
+"use client";
 
-// ─── Avatar ───────────────────────────────────────────────────
-function Avatar({ item }: { item: ActivityItem }) {
-  const colors: Record<ActivityItem["action"], string> = {
-    commented: "bg-gray-200 text-gray-600",
-    completed: "bg-green-100 text-green-600",
-    created: "bg-blue-100 text-blue-600",
-  };
+import { useAuditStore } from "@/store/audit.store";
+import { useGetRecentActivities } from "@/services/audit.service";
 
-  const icons: Record<ActivityItem["action"], string> = {
-    commented: "💬",
-    completed: "✓",
-    created: "✏️",
-  };
-
-  return (
-    <div
-      className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 ${colors[item.action]}`}
-    >
-      {item.actorAvatar ?? icons[item.action]}
-    </div>
-  );
-}
-
-// ─── ActivityRow ──────────────────────────────────────────────
-function ActivityRow({ id }: { id: string }) {
-  const item = activities.find((a) => a.id === id)!;
-
-  const actionText: Record<ActivityItem["action"], string> = {
-    commented: "commented on",
-    completed: "completed",
-    created: "created a new task",
-  };
-
+function ActivityRow({ data }: { data: any }) {
   return (
     <div className="flex gap-3 py-4 border-b border-gray-50 last:border-0">
-      <Avatar item={item} />
+      <div className="w-9 h-9 rounded-full bg-[#0052CC] flex items-center justify-center text-sm font-bold text-white flex-shrink-0 uppercase">
+        {data.avatar || data.user?.charAt(0) || "U"}
+      </div>
       <div className="min-w-0">
-        <p className="text-sm text-gray-800">
-          <span className="font-semibold">{item.actor}</span>{" "}
-          {actionText[item.action]}{" "}
-          <a
-            href={item.targetHref}
-            className="text-blue-500 hover:underline font-medium"
-          >
-            {item.targetLabel}
-          </a>
+        <p className="text-sm text-gray-800 break-words leading-relaxed">
+          <span className="font-semibold text-[#0052CC] hover:underline cursor-pointer">
+            {data.user}
+          </span>{" "}
+          <span className="text-gray-600">{data.action}</span>{" "}
+          <span className="font-medium text-[#0052CC] hover:underline cursor-pointer">
+            {data.task}
+          </span>
+          <span className="inline-block bg-[#00C853] text-white font-semibold px-1.5 py-0.5 ml-2 text-[10px] rounded-sm align-middle mb-0.5">
+            {data.status}
+          </span>
         </p>
-        {item.preview && (
-          <p className="text-sm text-gray-500 mt-0.5 truncate">
-            {item.preview}
-          </p>
-        )}
-        <p className="text-xs text-gray-400 mt-1">{item.timestamp}</p>
+        <p className="text-xs text-gray-400 mt-1">{data.time}</p>
       </div>
     </div>
   );
 }
 
-// ─── ActivityFeed ─────────────────────────────────────────────
 export default function ActivityFeed() {
+  // Hook này sẽ tự động gọi API lấy log audit
+  useGetRecentActivities();
+
+  const { activities, isLoading, error } = useAuditStore();
+
   return (
     <section>
-      <h2 className="text-base font-semibold text-gray-900 mb-4">
-        {"What's Next"}
+      <h2 className="text-base font-bold text-gray-900 mb-4">
+        Recent Activity
       </h2>
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
         <div className="px-5 divide-y divide-gray-50">
-          {activities.map((a) => (
-            <ActivityRow key={a.id} id={a.id} />
-          ))}
+          {isLoading ? (
+            <p className="py-4 text-gray-500 text-sm animate-pulse">
+              Loading activity...
+            </p>
+          ) : error ? (
+            <p className="py-4 text-red-500 text-sm">{error}</p>
+          ) : activities.length === 0 ? (
+            <p className="py-4 text-gray-500 text-sm">No activity found.</p>
+          ) : (
+            activities
+              .slice(0, 5)
+              .map((a) => <ActivityRow key={`feed-${a.id}`} data={a} />)
+          )}
         </div>
         <div className="px-5 py-4 border-t border-gray-100">
-          <button className="w-full text-xs font-semibold text-gray-400 hover:text-gray-600 tracking-widest uppercase transition-colors">
+          <button className="w-full text-xs font-bold text-gray-400 hover:text-[#0052CC] tracking-widest uppercase transition-colors">
             Load More Activity
           </button>
         </div>

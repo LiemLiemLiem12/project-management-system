@@ -1,9 +1,13 @@
 import { create } from "zustand";
 import { GroupTask, Task } from "@/API/task.api";
 
-// 1. Khai báo kho chứa tất cả State và Action
-interface TaskState {
-  // ─── Phần Kanban Board (Mới) ───
+// 1. Khai báo 1 interface duy nhất chứa TẤT CẢ State và Action
+interface TaskStoreState {
+  // ─── Phần My Tasks (Trang For You) ───
+  myTasks: any[];
+  setMyTasks: (tasks: any[]) => void;
+
+  // ─── Phần Kanban Board ───
   groups: GroupTask[];
   isLoading: boolean;
   error: string | null;
@@ -24,25 +28,27 @@ interface TaskState {
   appendGroup: (group: GroupTask) => void;
   appendTask: (groupId: string, task: Task) => void;
 
-  // ─── Phần Current Task (Cũ - Giữ y nguyên) ───
+  // ─── Phần Current Task ───
   currentTask: any;
   setCurrentTask: (task: any) => void;
 }
 
-// 2. Triển khai kho dữ liệu
-export const useTaskStore = create<TaskState>((set, get) => ({
+// 2. Triển khai kho dữ liệu duy nhất
+export const useTaskStore = create<TaskStoreState>((set) => ({
   // ─── Khởi tạo State ban đầu ───
+  myTasks: [],
   groups: [],
   isLoading: false,
   error: null,
+  currentTask: null,
 
-  currentTask: null, // Của store cũ
-
-  // ─── Các hàm cập nhật State ───
+  // ─── Các hàm cập nhật State chung ───
+  setMyTasks: (tasks) => set({ myTasks: tasks }),
   setGroups: (groups) => set({ groups }),
   setLoading: (v) => set({ isLoading: v }),
   setError: (v) => set({ error: v }),
 
+  // ─── Các hàm cập nhật UI cho Kanban ───
   optimisticMoveTask: ({
     taskId,
     fromGroupId,
@@ -88,6 +94,6 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }));
   },
 
-  // ─── Hàm của store cũ (Giữ y nguyên) ───
-  setCurrentTask: (id: string) => set({ currentTask: id }),
+  // ─── Hàm của store cũ ───
+  setCurrentTask: (task) => set({ currentTask: task }),
 }));

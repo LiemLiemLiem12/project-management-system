@@ -483,4 +483,19 @@ export class TaskService {
   async getLogsFromAudit() {
     return this.auditClient.send('get_recent_logs', {});
   }
+  async findMyTasks(userId: string) {
+    const tasks = await this.taskRepository.find({
+      where: {
+        assignee_id: userId,
+        is_archived: false,
+      },
+      relations: ['groupTask'],
+    });
+
+    return tasks.map((task) => ({
+      ...task,
+      groupTitle: task.groupTask?.title || 'Unknown',
+      isSuccess: task.groupTask?.isSuccess || false,
+    }));
+  }
 }

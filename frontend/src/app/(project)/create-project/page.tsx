@@ -1,0 +1,239 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ChevronLeft,
+  Info,
+  X,
+  Plus,
+  UserPlus,
+  ShieldCheck,
+} from "lucide-react";
+
+type Member = {
+  email: string;
+  role: "Viewer" | "Member" | "Moderator";
+};
+
+export default function CreateProjectPage() {
+  const router = useRouter();
+
+  const [name, setName] = useState("");
+  const [key_, setKey] = useState("");
+  const [description, setDescription] = useState("");
+
+  const [members, setMembers] = useState<Member[]>([]);
+  const [emailInput, setEmailInput] = useState("");
+  const [roleInput, setRoleInput] = useState<Member["role"]>("Member");
+
+  const [loading, setLoading] = useState(false);
+
+  const handleNameChange = (v: string) => {
+    setName(v);
+    if (!key_ || key_ === name.slice(0, 6).toUpperCase()) {
+      setKey(v.replace(/\s+/g, "").toUpperCase().slice(0, 6));
+    }
+  };
+
+  const addMember = () => {
+    if (emailInput && !members.find((m) => m.email === emailInput)) {
+      setMembers([...members, { email: emailInput, role: roleInput }]);
+      setEmailInput("");
+    }
+  };
+
+  const removeMember = (email: string) => {
+    setMembers(members.filter((m) => m.email !== email));
+  };
+
+  const handleSubmit = async () => {
+    if (!name.trim()) return;
+    setLoading(true);
+    await new Promise((r) => setTimeout(r, 1000));
+    setLoading(false);
+    router.push("/for-you");
+  };
+
+  const inputClass =
+    "w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white";
+
+  return (
+    <div className="h-screen bg-white flex flex-col font-sans text-slate-800">
+      <header className="h-14 border-b border-slate-200 flex items-center px-6 gap-4 shrink-0 bg-white">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors font-medium"
+        >
+          <ChevronLeft size={18} />
+          Back
+        </button>
+        <span className="text-slate-300">|</span>
+        <span className="text-sm font-bold text-slate-800">
+          Create new project
+        </span>
+      </header>
+
+      <main className="flex-1 overflow-y-auto px-6 py-10">
+        <div className="max-w-3xl mx-auto flex flex-col gap-12">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+              Create a new project
+            </h1>
+            <p className="text-slate-500">
+              Set up basic information and invite your team to the project.
+            </p>
+          </div>
+
+          <section className="flex flex-col gap-6">
+            <h2 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2">
+              Project details
+            </h2>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-slate-700">
+                Project name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="e.g. Hotel Reservation System"
+                className={inputClass}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                Project key
+                <Info className="w-4 h-4 text-slate-400" />
+              </label>
+              <input
+                type="text"
+                value={key_}
+                onChange={(e) =>
+                  setKey(e.target.value.toUpperCase().slice(0, 6))
+                }
+                placeholder="e.g. HRS"
+                maxLength={6}
+                className={`${inputClass} uppercase tracking-widest font-mono w-48`}
+              />
+              <p className="text-xs text-slate-500">
+                This key is used as a prefix for tasks (e.g. HRS-1).
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-slate-700">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Brief description of the project..."
+                rows={4}
+                className={`${inputClass} resize-none`}
+              />
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-6">
+            <div className="border-b border-slate-200 pb-2">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <UserPlus size={20} className="text-blue-600" />
+                Add members
+              </h2>
+            </div>
+
+            <div className="flex gap-3 items-start">
+              <div className="flex-1">
+                <input
+                  type="email"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="name@company.com"
+                  className={inputClass}
+                />
+              </div>
+              <select
+                value={roleInput}
+                onChange={(e) => setRoleInput(e.target.value as Member["role"])}
+                className="px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Viewer">Viewer</option>
+                <option value="Member">Member</option>
+                <option value="Moderator">Moderator</option>
+              </select>
+              <button
+                onClick={addMember}
+                disabled={!emailInput}
+                className="px-7 py-2 bg-blue-500 text-white font-medium rounded-[12px] hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                <Plus size={16} />
+                Add
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2 mt-2">
+              <h3 className="text-sm font-semibold text-slate-700 mb-1">
+                Team members ({members.length})
+              </h3>
+              {members.length > 0 ? (
+                members.map((member) => (
+                  <div
+                    key={member.email}
+                    className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors bg-slate-50/50"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-sm font-bold">
+                        {member.email.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-800">
+                          {member.email}
+                        </span>
+                        <span className="text-[11px] uppercase font-bold text-slate-500 flex items-center gap-1 mt-0.5">
+                          <ShieldCheck size={12} />
+                          {member.role}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeMember(member.email)}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Remove member"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+                  <p className="text-sm text-slate-500">
+                    You are the only person in this project right now.
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <footer className="border-t border-slate-200 bg-white px-8 py-4 flex items-center justify-end gap-4 shrink-0">
+        <button
+          onClick={() => router.back()}
+          className="px-6 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={!name.trim() || loading}
+          className="px-8 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center min-w-[140px]"
+        >
+          {loading ? "Creating..." : "Create Project"}
+        </button>
+      </footer>
+    </div>
+  );
+}
