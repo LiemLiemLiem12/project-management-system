@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useSpTasksByGroup, getGroupStyle } from "@/store/spreadsheet.store";
 import TaskRow from "./TaskRow";
+import { FilterState } from "@/components/Kanban/FilterButton";
 
 interface TaskGroupSectionProps {
   groupKey: string;
   groupLabel: string;
   isSuccess: boolean;
   search: string;
+  filters: FilterState;
   projectId: string;
 }
 
@@ -17,21 +19,45 @@ export default function TaskGroupSection({
   groupLabel,
   isSuccess,
   search,
+  filters,
   projectId,
 }: TaskGroupSectionProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
 
   const allTasks = useSpTasksByGroup(groupKey);
-  const filtered = search
-    ? allTasks.filter(
-        (t) =>
-          t.name.toLowerCase().includes(search.toLowerCase()) ||
-          t.taskCode.toLowerCase().includes(search.toLowerCase()),
-      )
-    : allTasks;
 
-  if (search && filtered.length === 0) return null;
+  // ========================================================
+  // 🚀 LÕI LỌC DỮ LIỆU ĐÃ ĐƯỢC ĐỒNG BỘ VỚI DỮ LIỆU THẬT
+  // ========================================================
+  const filtered = allTasks.filter((t: any) => {
+    const taskName = t.name || t.title || "";
+    const taskCode = t.taskCode || t.id || "";
+
+    // 1. Khớp Search
+    const matchSearch =
+      !search ||
+      taskName.toLowerCase().includes(search.toLowerCase()) ||
+      taskCode.toLowerCase().includes(search.toLowerCase());
+
+    // 2. Khớp Assignee (Lấy từ array assigneeIds hoặc chuỗi assignee_id)
+    const tAssignees = t.assigneeIds || (t.assignee_id ? [t.assignee_id] : []);
+    const matchAssignee =
+      filters.assignee.length === 0 ||
+      (filters.assignee.includes("unassigned") && tAssignees.length === 0) ||
+      tAssignees.some((id: string) => filters.assignee.includes(String(id)));
+
+    // 3. Khớp Parent (So sánh parent_id của Task với danh sách Parent được chọn)
+    const matchParent =
+      filters.parent.length === 0 ||
+      filters.parent.includes(String(t.parent_id));
+
+    return matchSearch && matchAssignee && matchParent;
+  });
+
+  const isFiltering =
+    search || filters.assignee.length > 0 || filters.parent.length > 0;
+  if (isFiltering && filtered.length === 0) return null;
 
   const toggle = (id: string) => {
     setCheckedIds((prev) => {
@@ -45,7 +71,6 @@ export default function TaskGroupSection({
 
   return (
     <div>
-      {/* Group header */}
       <div
         className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50/80 cursor-pointer select-none hover:bg-gray-100/60 transition-colors"
         onClick={() => setCollapsed(!collapsed)}
@@ -82,10 +107,9 @@ export default function TaskGroupSection({
         )}
       </div>
 
-      {/* Task rows */}
       {!collapsed && (
         <div>
-          {filtered.map((task) => (
+          {filtered.map((task: any) => (
             <TaskRow
               key={task.id}
               taskId={task.id}

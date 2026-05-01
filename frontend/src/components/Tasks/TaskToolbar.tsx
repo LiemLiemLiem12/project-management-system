@@ -1,16 +1,23 @@
 "use client";
 
-import { assignees } from "@/store/Store";
+import { useProjectStore } from "@/store/project.store";
+import FilterButton, { FilterState } from "@/components/Kanban/FilterButton";
 
 export default function TaskToolbar({
   search,
   onSearch,
+  onFilterChange, // 🚀 Thêm prop này để truyền data filter lên component cha
 }: {
   search: string;
   onSearch: (v: string) => void;
+  onFilterChange?: (filters: FilterState) => void;
 }) {
-  // Hiện 3 avatar đầu
-  const visible = assignees.slice(0, 3);
+  // 🚀 Lấy danh sách thành viên THẬT từ project
+  const members = useProjectStore((s) => s.members) || [];
+
+  // Hiện tối đa 3 avatar đầu tiên
+  const visibleMembers = members.slice(0, 3);
+  const remainingCount = members.length > 3 ? members.length - 3 : 0;
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
@@ -40,44 +47,51 @@ export default function TaskToolbar({
         />
       </div>
 
-      {/* Avatar group */}
+      {/* 🚀 AVATAR GROUP DÙNG DATA THẬT */}
       <div className="hidden sm:flex items-center">
-        {visible.map((a, i) => (
+        {visibleMembers.map((m: any, i) => {
+          const name = m.full_name || m.user_id || "U";
+          const initial = name.charAt(0).toUpperCase();
+          const avatarUrl = m.avatar || m.avatar_url;
+
+          return (
+            <div
+              key={m.user_id}
+              className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold flex-shrink-0 cursor-pointer hover:z-10 transition-transform hover:scale-110 shadow-sm overflow-hidden bg-gradient-to-tr from-blue-400 to-indigo-500 text-white"
+              style={{
+                marginLeft: i === 0 ? 0 : -6,
+                zIndex: visibleMembers.length - i,
+              }}
+              title={name}
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                initial
+              )}
+            </div>
+          );
+        })}
+        {remainingCount > 0 && (
           <div
-            key={a.id}
-            className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-medium flex-shrink-0 cursor-pointer hover:z-10 transition-transform hover:scale-110"
-            style={{
-              marginLeft: i === 0 ? 0 : -6,
-              background: a.color,
-              color: a.textColor,
-              zIndex: visible.length - i,
-            }}
+            className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-medium bg-gray-100 text-gray-500 cursor-pointer"
+            style={{ marginLeft: -6 }}
           >
-            {a.initials}
+            +{remainingCount}
           </div>
-        ))}
-        <div
-          className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-medium bg-gray-100 text-gray-500 cursor-pointer"
-          style={{ marginLeft: -6 }}
-        >
-          +4
-        </div>
+        )}
       </div>
 
       <div className="hidden sm:block w-px h-5 bg-gray-200 mx-1" />
 
-      {/* Filter & Sort */}
-      <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-          <path
-            d="M2 4h12M4 8h8M6 12h4"
-            stroke="currentColor"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-          />
-        </svg>
-        <span className="hidden sm:inline">Filter</span>
-      </button>
+      {/* 🚀 CHÈN FILTER BUTTON VÀO ĐÂY */}
+      <FilterButton onFilterChange={onFilterChange} />
+
+      {/* Sort */}
       <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
           <path
