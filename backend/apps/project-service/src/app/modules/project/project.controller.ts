@@ -79,4 +79,9 @@ export class ProjectController {
   findAllProjectsByMember(@Payload() userId: string) {
     return this.projectService.findAllByUser(userId);
   }
+
+  @MessagePattern('project.accept_invite')
+  async handleAcceptInvite(data: { token: string; userId: string }) {
+    return await this.projectService.acceptInvite(data.token, data.userId);
+  }
 }

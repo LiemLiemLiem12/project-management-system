@@ -9,6 +9,9 @@ import {
   UseGuards,
   Res,
   Req,
+  HttpStatus,
+  HttpException,
+  Query,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ProjectService } from '../services/project.service';
@@ -29,6 +32,28 @@ export class ProjectController {
   // findAll() {
   //   return this.projectService.findAll();
   // }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async getProjects(@Req() req: any) {
+    const userId = req.user.userId;
+    return this.projectService.getProjects(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('accept-invite')
+  async acceptInvite(@Query('token') token: string, @Req() req: any) {
+    if (!token) {
+      throw new HttpException('Token is required', HttpStatus.BAD_REQUEST);
+    }
+
+    const userId = req.user.userId;
+    try {
+      return await this.projectService.acceptInvite(token, userId);
+    } catch (error) {
+      throw new HttpException('Unauthorized', HttpStatus.FORBIDDEN);
+    }
+  }
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
   @UseGuards(RoleGuard)
@@ -114,16 +139,8 @@ export class ProjectController {
   @Post('create_complex')
   @UseGuards(JwtAuthGuard)
   async create(@Req() req: any, @Body() createProjectDto: any) {
-   
     const userId = req.user.userId || req.user.id;
 
     return this.projectService.create(createProjectDto, userId);
-  }
-
-  @Get()
-  @UseGuards(JwtAuthGuard)
-  async getProjects(@Req() req: any) {
-    const userId = req.user.userId;
-    return this.projectService.getProjects(userId);
   }
 }

@@ -6,9 +6,10 @@ import { Project } from './entities/project.entity';
 import { DataSource, Repository } from 'typeorm';
 import { ProjectMember } from './entities/project-member.entity';
 import { RpcException, ClientProxy } from '@nestjs/microservices';
-
 import { firstValueFrom, timeout, catchError, of } from 'rxjs';
 import { GroupTask } from '../task/entities/group-task.entity';
+import { v4 as uuidv4 } from 'uuid';
+import { MailService } from '../mail/mail.service';
 
 export interface CreateProjectComplexPayload {
   name: string;
@@ -25,16 +26,13 @@ export interface CreateProjectComplexPayload {
 export class ProjectService {
   constructor(
     private dataSource: DataSource,
-
+    private readonly mailService: MailService,
     @InjectRepository(Project)
     private readonly projectRepository: Repository<Project>,
-
     @InjectRepository(ProjectMember)
     private readonly projectMemberRepository: Repository<ProjectMember>,
-
     @InjectRepository(GroupTask)
     private readonly groupTaskRepository: Repository<GroupTask>,
-
     @Inject('AUTH_SERVICE')
     private readonly authClient: ClientProxy,
   ) {}
@@ -74,6 +72,8 @@ export class ProjectService {
         project_id: project.id,
         user_id: ownerId,
         role: 'Leader',
+        status: 'Active',
+        invite_token: null,
         joined_date: new Date().toISOString(),
       });
 
@@ -93,12 +93,28 @@ export class ProjectService {
         const projectMembers = members.map((memberInvite) => ({
           project_id: project.id,
           user_id: memberInvite.id,
-
-          role: memberInvite.role === 'Moderator' ? 'Leader' : 'Member',
+          role: memberInvite.role,
+          status: 'Pending',
+          invite_token: uuidv4(),
           joined_date: new Date().toISOString(),
         }));
 
         await manager.save(ProjectMember, projectMembers);
+
+        for (const pm of projectMembers) {
+          const originalMember = members.find((m) => m.id === pm.user_id);
+
+          if (originalMember?.email && pm.invite_token) {
+            this.mailService
+              .sendProjectInvite(
+                originalMember.email,
+                project.name,
+                pm.role,
+                pm.invite_token,
+              )
+              .catch(() => {});
+          }
+        }
       }
 
       return project;
@@ -108,7 +124,7 @@ export class ProjectService {
   async getMembers(projectId: string, userId: string) {
     try {
       const members = await this.projectMemberRepository.find({
-        where: { project_id: projectId },
+        where: { project_id: projectId, status: 'Active' },
       });
 
       if (!members.length) return [];
@@ -117,7 +133,7 @@ export class ProjectService {
       const usersDetail = await firstValueFrom(
         this.authClient.send('auth.get-users-by-ids', userIds).pipe(
           timeout(3000),
-          catchError((err) => {
+          catchError(() => {
             return of([]);
           }),
         ),
@@ -202,6 +218,7 @@ export class ProjectService {
       .createQueryBuilder('member')
       .where('member.project_id = :projectId', { projectId })
       .andWhere('member.user_id = :userId', { userId })
+      .andWhere('member.status = :status', { status: 'Active' })
       .getOne();
   }
 
@@ -211,7 +228,43 @@ export class ProjectService {
       .createQueryBuilder('project')
       .innerJoin('project_members', 'pm', 'pm.project_id = project.id')
       .where('pm.user_id = :userId', { userId })
+      .andWhere('pm.status = :status', { status: 'Active' })
       .orderBy('project.created_date', 'DESC')
       .getMany();
+  }
+  async acceptInvite(token: string, userId: string) {
+    const cleanToken = token.trim();
+    const cleanUserId = userId.trim();
+
+    if (!cleanUserId || cleanUserId === 'undefined') {
+      throw new RpcException({
+        message: 'Invalid User Identity',
+        statusCode: 401,
+      });
+    }
+
+    const member = await this.projectMemberRepository
+      .createQueryBuilder('pm')
+      .where('pm.invite_token = :token', { token: cleanToken })
+      .andWhere('pm.user_id = :userId', { userId: cleanUserId })
+      .andWhere('pm.status = :status', { status: 'Pending' })
+      .getOne();
+
+    if (!member) {
+      throw new RpcException({
+        message: 'This invitation is not for you or is invalid!',
+        statusCode: 403,
+      });
+    }
+
+    member.status = 'Active';
+    member.invite_token = null;
+
+    await this.projectMemberRepository.save(member);
+
+    return {
+      success: true,
+      message: 'Joined successfully!',
+    };
   }
 }

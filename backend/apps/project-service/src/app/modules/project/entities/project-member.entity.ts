@@ -6,7 +6,6 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryColumn,
-  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Project } from './project.entity';
 import { MemberTalent } from './member-talent.entity';
@@ -19,8 +18,18 @@ export class ProjectMember {
   @PrimaryColumn('uuid')
   user_id!: string;
 
-  @Column({ type: 'enum', enum: ['Leader', 'Member'] })
+  @Column({ type: 'enum', enum: ['Leader', 'Member', 'Moderator'] })
   role!: string;
+
+  @Column({
+    type: 'enum',
+    enum: ['Pending', 'Active', 'Declined'],
+    default: 'Pending',
+  })
+  status!: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  invite_token!: string | null;
 
   @CreateDateColumn()
   joined_date!: Date;

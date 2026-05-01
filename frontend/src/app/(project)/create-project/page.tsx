@@ -53,8 +53,6 @@ export default function CreateProjectPage() {
     }
 
     try {
-      // 💡 Lưu ý: Nếu hook của ông dùng useMutation, thay dòng dưới thành:
-      // const response = await checkUserExists.mutateAsync(email);
       const response = await checkUserExists(email);
 
       const exists = response.data?.exists;
