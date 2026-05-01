@@ -10,6 +10,8 @@ import {
 import { useUpdateTaskStatus, useDeleteTask } from "@/services/task.service";
 import { useGetProjectMembers } from "@/services/project.service";
 import DeleteTaskModal from "./DeleteTaskModal";
+// 🚀 Thêm import này để check role
+import { useProjectStore } from "@/store/project.store";
 
 export default function TaskRow({
   taskId,
@@ -27,11 +29,15 @@ export default function TaskRow({
   const updateStatus = useUpdateTaskStatus(projectId);
   const { mutate: deleteTask } = useDeleteTask(projectId);
 
-  // Lấy danh sách thành viên dự án trực tiếp từ API (tự động cache bởi React Query)
+  // Lấy danh sách thành viên dự án
   const { data: membersData } = useGetProjectMembers(projectId);
   const projectMembers = (membersData as any[]) || [];
 
-  // Vẫn giữ hook màu sắc để avatar có màu ngẫu nhiên theo ID cho đẹp
+  // 🚀 Lấy role của user hiện tại
+  const currentUserRole = useProjectStore((s) => s.currentUserRole);
+  const isMember = currentUserRole === "Member";
+
+  // Vẫn giữ hook màu sắc
   const assigneeColors = useAssignee(task?.assigneeIds?.[0]);
   const reporterColors = useAssignee(task?.reporterId);
 
@@ -52,14 +58,13 @@ export default function TaskRow({
   if (!task) return null;
 
   // ==========================================
-  // XỬ LÝ HIỂN THỊ TÊN NGƯỜI THỰC HIỆN (ASSIGNEE)
+  // XỬ LÝ HIỂN THỊ TÊN NGƯỜI THỰC HIỆN
   // ==========================================
   const assigneeId = task.assigneeIds?.[0];
   const realAssignee = projectMembers.find(
     (m: any) => m.user_id === assigneeId,
   );
 
-  // Ưu tiên 1: Tên đầy đủ từ API Members. Ưu tiên 2: Tên từ hook màu. Ưu tiên 3: ID gốc.
   const assigneeName =
     realAssignee?.full_name || assigneeColors?.name || assigneeId;
   const assigneeInitial = assigneeName
@@ -67,7 +72,7 @@ export default function TaskRow({
     : "?";
 
   // ==========================================
-  // XỬ LÝ HIỂN THỊ TÊN NGƯỜI TẠO (REPORTER)
+  // XỬ LÝ HIỂN THỊ TÊN NGƯỜI TẠO
   // ==========================================
   const reporterId = task.reporterId;
   const realReporter = projectMembers.find(
@@ -119,7 +124,7 @@ export default function TaskRow({
         </span>
       </div>
 
-      {/* Cột Người thực hiện (Assignee) */}
+      {/* Cột Người thực hiện */}
       <div className="px-3 py-3.5 flex items-center gap-2 min-w-0">
         {assigneeId ? (
           <>
@@ -147,7 +152,7 @@ export default function TaskRow({
         )}
       </div>
 
-      {/* Cột Người tạo (Reporter) */}
+      {/* Cột Người tạo */}
       <div className="px-3 py-3.5 flex items-center gap-2 min-w-0">
         {reporterId ? (
           <>
@@ -173,7 +178,7 @@ export default function TaskRow({
         )}
       </div>
 
-      {/* Cột Trạng thái (Status Dropdown) - ĐÃ FIX LỖI ĐÈ GIAO DIỆN */}
+      {/* Cột Trạng thái */}
       <div className="px-3 py-3.5 flex items-center min-w-0">
         <div className="relative w-full max-w-[120px]">
           <select
@@ -206,37 +211,40 @@ export default function TaskRow({
         </div>
       </div>
 
-      {/* Cột Ngày bắt đầu (Start Date) - ĐÃ FIX LỖI ĐÈ GIAO DIỆN */}
+      {/* Cột Ngày bắt đầu */}
       <div className="px-3 py-3.5 flex items-center min-w-0">
         <span className="text-sm text-gray-500 truncate">
           {task.startDate || "—"}
         </span>
       </div>
 
-      {/* Cột Hạn chót (Due Date) - ĐÃ FIX LỖI ĐÈ GIAO DIỆN */}
+      {/* Cột Hạn chót */}
       <div className="px-3 py-3.5 flex items-center min-w-0">
         <span className="text-sm text-gray-500 truncate">
           {task.dueDate || "—"}
         </span>
       </div>
 
-      {/* Cột Thao tác (Actions Menu) */}
+      {/* Cột Thao tác */}
       <div
         className="px-2 py-3.5 flex items-center justify-center relative min-w-0"
         ref={menuRef}
       >
-        <button
-          onClick={() => setMenuOpen((v) => !v)}
-          className="p-1 rounded hover:bg-gray-200 text-gray-300 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"
-        >
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="3" r="1.2" fill="currentColor" />
-            <circle cx="8" cy="8" r="1.2" fill="currentColor" />
-            <circle cx="8" cy="13" r="1.2" fill="currentColor" />
-          </svg>
-        </button>
+        {/* 🚀 ẨN HOÀN TOÀN NẾU LÀ MEMBER */}
+        {!isMember && (
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="p-1 rounded hover:bg-gray-200 text-gray-300 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="3" r="1.2" fill="currentColor" />
+              <circle cx="8" cy="8" r="1.2" fill="currentColor" />
+              <circle cx="8" cy="13" r="1.2" fill="currentColor" />
+            </svg>
+          </button>
+        )}
 
-        {menuOpen && (
+        {menuOpen && !isMember && (
           <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
             <button
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"

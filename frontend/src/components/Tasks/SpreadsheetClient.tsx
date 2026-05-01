@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react"; // <-- Thêm useEffect
+import { useState, useMemo, useEffect } from "react";
 import { useSpTasks, useSpGroups } from "@/store/spreadsheet.store";
 import { useGetKanbanBoard } from "@/services/task.service";
 import { useTaskStore } from "@/store/task.store";
-import { useGetProjectMembers } from "@/services/project.service"; // <-- Thêm
-import { useProjectStore } from "@/store/project.store"; // <-- Thêm
-import { useAuthStore } from "@/store/auth.store"; // <-- Thêm
+import { useGetProjectMembers } from "@/services/project.service";
+import { useProjectStore } from "@/store/project.store";
+import { useAuthStore } from "@/store/auth.store";
 
 import TaskToolbar from "./TaskToolbar";
 import TaskTableHeader from "./TaskTableHeader";
@@ -23,9 +23,6 @@ export default function SpreadsheetClient({
   // Fetch board — dùng lại hook kanban, data sync vào task.store
   useGetKanbanBoard(projectId);
 
-  // ==========================================
-  // LẤY DANH SÁCH THÀNH VIÊN ĐỂ DỊCH ID SANG TÊN
-  // ==========================================
   const myUserId = useAuthStore((s) => s.user?.id);
   const setMembers = useProjectStore((s: any) => s.setMembers);
   const { data: membersData } = useGetProjectMembers(projectId);
@@ -87,7 +84,11 @@ export default function SpreadsheetClient({
               />
             ))}
           </div>
-          <TaskFooter visibleCount={visibleCount} totalCount={tasks.length} />
+          <TaskFooter
+            visibleCount={visibleCount}
+            totalCount={tasks.length}
+            projectId={projectId}
+          />
         </div>
       </div>
     </div>
