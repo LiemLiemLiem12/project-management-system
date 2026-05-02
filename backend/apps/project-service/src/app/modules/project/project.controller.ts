@@ -8,6 +8,11 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
+  @MessagePattern('project.create_complex')
+  createComplex(@Payload() data: any) {
+    return this.projectService.createComplex(data);
+  }
+
   @MessagePattern('createProject')
   create(@Payload() createProjectDto: CreateProjectDto) {
     return this.projectService.create(createProjectDto);
@@ -69,5 +74,14 @@ export class ProjectController {
       payload.project_id,
       payload.user_id,
     );
+  }
+  @MessagePattern('project.find_all')
+  findAllProjectsByMember(@Payload() userId: string) {
+    return this.projectService.findAllByUser(userId);
+  }
+
+  @MessagePattern('project.accept_invite')
+  async handleAcceptInvite(data: { token: string; userId: string }) {
+    return await this.projectService.acceptInvite(data.token, data.userId);
   }
 }

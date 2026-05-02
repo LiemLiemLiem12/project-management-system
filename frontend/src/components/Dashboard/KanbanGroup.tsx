@@ -24,13 +24,23 @@ import {
   PlayCircleIcon,
 } from "lucide-react";
 
+import { FilterState } from "@/components/Kanban/FilterButton";
+
 interface KanbanGroupProps {
   column: GroupTask;
   index: number;
   projectId: string;
+  search?: string;
+  filters?: FilterState;
 }
 
-const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
+const KanbanGroup = ({
+  column,
+  index,
+  projectId,
+  search = "",
+  filters = { parent: [], assignee: [] },
+}: KanbanGroupProps) => {
   const [isCreating, setIsCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -63,17 +73,51 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
     currentUserRole === "Leader" || currentUserRole === "Moderator";
   const isLastColumn = allGroups.length <= 1;
   const availableGroups = allGroups.filter((g) => g.id !== column.id);
-  const selectedMemberInfo = members?.find((m) => m.user_id === selectedMember);
+  const selectedMemberInfo = members?.find(
+    (m: any) => m.user_id === selectedMember,
+  );
   const filteredMembers = members.filter((m) => {
     const name = (m as any).full_name || m.user_id;
     return name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  // ========================================================
+  // 🚀 LÕI LỌC DỮ LIỆU TASK (Fix lỗi chữ 'a')
+  // ========================================================
+  const filteredTasks = column.tasks.filter((t: any) => {
+    const safeSearch = (search || "").trim().toLowerCase();
+    const taskName = String(t.title || t.name || "").toLowerCase();
+    const taskCode = String(t.taskCode || t.id || "")
+      .toLowerCase()
+      .replace("task-", "");
+
+    const matchSearch =
+      !safeSearch ||
+      taskName.includes(safeSearch) ||
+      taskCode.includes(safeSearch);
+
+    const tAssignees = t.assigneeIds || (t.assignee_id ? [t.assignee_id] : []);
+    const matchAssignee =
+      !filters?.assignee ||
+      filters.assignee.length === 0 ||
+      (filters.assignee.includes("unassigned") && tAssignees.length === 0) ||
+      tAssignees.some((id: string) => filters.assignee.includes(String(id)));
+
+    const matchParent =
+      !filters?.parent ||
+      filters.parent.length === 0 ||
+      filters.parent.includes(String(t.parent_id)) ||
+      filters.parent.includes(String(t.parentId)) ||
+      filters.parent.includes(String(t.id));
+
+    return matchSearch && matchAssignee && matchParent;
   });
 
   useEffect(() => {
     if (showDeleteModal && availableGroups.length > 0 && !fallbackGroupId) {
       setFallbackGroupId(availableGroups[0].id);
     }
-  }, [showDeleteModal]);
+  }, [showDeleteModal, availableGroups, fallbackGroupId]);
 
   const handleCreateTask = () => {
     if (!newTaskTitle.trim() || isCreatingTask) return;
@@ -135,12 +179,13 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
           <div
             ref={provided.innerRef}
             {...provided.draggableProps}
-            className={`flex flex-col bg-[#F1F2F4] rounded-xl w-[300px] shrink-0 h-full group/col transition-all relative ${
+            // 🚀 h-full max-h-full giúp cột kéo dài chạm đáy
+            className={`flex flex-col bg-[#F1F2F4] rounded-xl w-[320px] min-w-[320px] shrink-0 h-full max-h-full group/col transition-all relative ${
               snapshot.isDragging ? "shadow-2xl ring-2 ring-blue-500 z-40" : ""
             }`}
           >
             <div
-              className="p-4 flex items-center justify-between"
+              className="p-4 flex items-center justify-between shrink-0"
               {...provided.dragHandleProps}
             >
               <div className="flex items-center gap-2 flex-1 mr-2">
@@ -166,7 +211,7 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                       {column.title}
                     </h3>
                     <span className="text-gray-400 text-xs font-semibold">
-                      {column.tasks.length}
+                      {filteredTasks.length}
                     </span>
                     {column.isSuccess && (
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-600 uppercase tracking-wide">
@@ -227,11 +272,6 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                         >
                           <Trash2 size={13} />
                           Remove column
-                          {isLastColumn && (
-                            <span className="ml-auto text-[10px] text-gray-400 font-normal">
-                              last
-                            </span>
-                          )}
                         </button>
                       </div>
                     </>
@@ -245,11 +285,12 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`flex-1 overflow-y-auto px-3 flex flex-col gap-3 ${
+                  // 🚀 overflow-y-auto đảm nhiệm cuộn dọc khi thẻ task bị nhiều quá
+                  className={`flex-1 overflow-y-auto overflow-x-hidden px-3 flex flex-col gap-3 ${
                     showMemberPopup ? "pb-64" : "pb-4"
                   }`}
                 >
-                  {column.tasks.map((task, index) => (
+                  {filteredTasks.map((task: any, index: number) => (
                     <KanbanItem key={task.id} task={task} index={index} />
                   ))}
 
@@ -258,7 +299,7 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                   {canManage && (
                     <>
                       {isCreating ? (
-                        <div className="bg-white rounded-lg shadow-sm p-3 mb-2 mt-1 relative z-10">
+                        <div className="bg-white rounded-lg shadow-sm p-3 mb-2 mt-1 relative z-10 shrink-0">
                           <textarea
                             autoFocus
                             value={newTaskTitle}
@@ -274,8 +315,10 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                             }}
                           />
 
+                          {/* 🚀 Cụm Tool Create Task (Ngày giờ & Assign) */}
                           <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 relative">
                             <div className="flex items-center gap-2 text-gray-400">
+                              {/* Start Date */}
                               <div
                                 className="relative flex items-center gap-1"
                                 title="Start Date"
@@ -285,9 +328,7 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                                   onClick={() =>
                                     startDateRef.current?.showPicker()
                                   }
-                                  className={`p-1 rounded hover:bg-gray-100 transition-colors ${
-                                    startDate ? "text-emerald-500" : ""
-                                  }`}
+                                  className={`p-1 rounded hover:bg-gray-100 transition-colors ${startDate ? "text-emerald-500" : ""}`}
                                 >
                                   <PlayCircleIcon size={16} />
                                 </button>
@@ -297,13 +338,9 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                                   className="absolute opacity-0 pointer-events-none w-0"
                                   onChange={(e) => setStartDate(e.target.value)}
                                 />
-                                {startDate && (
-                                  <span className="text-[10px] font-medium bg-emerald-50 px-1.5 py-0.5 rounded text-emerald-600">
-                                    Start: {startDate}
-                                  </span>
-                                )}
                               </div>
 
+                              {/* Due Date */}
                               <div
                                 className="relative flex items-center gap-1"
                                 title="Due Date"
@@ -313,9 +350,7 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                                   onClick={() =>
                                     dueDateRef.current?.showPicker()
                                   }
-                                  className={`p-1 rounded hover:bg-gray-100 transition-colors ${
-                                    dueDate ? "text-blue-500" : ""
-                                  }`}
+                                  className={`p-1 rounded hover:bg-gray-100 transition-colors ${dueDate ? "text-blue-500" : ""}`}
                                 >
                                   <CalendarIcon size={16} />
                                 </button>
@@ -325,13 +360,9 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                                   className="absolute opacity-0 pointer-events-none w-0"
                                   onChange={(e) => setDueDate(e.target.value)}
                                 />
-                                {dueDate && (
-                                  <span className="text-[10px] font-medium bg-blue-50 px-1.5 py-0.5 rounded text-blue-600">
-                                    Due: {dueDate}
-                                  </span>
-                                )}
                               </div>
 
+                              {/* Assign Member (Đã được hồi sinh) */}
                               <div className="relative">
                                 <button
                                   onClick={() => setShowMemberPopup((v) => !v)}
@@ -358,7 +389,7 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                                 </button>
 
                                 {showMemberPopup && (
-                                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-52 bg-white shadow-2xl border border-gray-200 rounded-lg z-[9999] p-2">
+                                  <div className="absolute bottom-full left-0 mb-2 w-52 bg-white shadow-2xl border border-gray-200 rounded-lg z-[9999] p-2">
                                     <p className="text-[10px] font-bold text-gray-400 px-2 py-1 uppercase tracking-wider">
                                       Assign to member
                                     </p>
@@ -457,7 +488,7 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
                       ) : (
                         <button
                           onClick={() => setIsCreating(true)}
-                          className="opacity-0 group-hover/col:opacity-100 transition-all duration-200 flex items-center gap-2 w-full py-2 px-3 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg text-sm font-medium mt-1 mb-2"
+                          className="opacity-0 group-hover/col:opacity-100 shrink-0 transition-all duration-200 flex items-center gap-2 w-full py-2 px-3 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg text-sm font-medium mt-1 mb-2"
                         >
                           <span className="text-lg leading-none">+</span> Add a
                           card
@@ -472,6 +503,7 @@ const KanbanGroup = ({ column, index, projectId }: KanbanGroupProps) => {
         )}
       </Draggable>
 
+      {/* Modal Xóa Cột */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg shadow-xl w-[550px] p-6 text-gray-800">

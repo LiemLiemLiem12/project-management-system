@@ -198,4 +198,9 @@ export class TaskController {
   getRecentActivities() {
     return this.taskService.getLogsFromAudit();
   }
+
+  @MessagePattern('get_my_tasks')
+  async getMyTasks(@Payload() data: { userId: string }) {
+    return this.taskService.findMyTasks(data.userId);
+  }
 }

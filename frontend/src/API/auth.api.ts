@@ -68,4 +68,8 @@ export const authAPI = (axiosPrivate: AxiosInstance) => ({
   getStatus: () => {
     return axiosPrivate.get("auth/status");
   },
+
+  checkUserExists: (email: string) => {
+    return axiosPrivate.post("/auth/check-email", { email });
+  },
 });

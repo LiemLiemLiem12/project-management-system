@@ -30,7 +30,9 @@ export default function DeleteTaskModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[1px]"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
@@ -55,22 +57,29 @@ export default function DeleteTaskModal({
             className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-              <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path
+                d="M3 3l10 10M13 3L3 13"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>
 
         {/* Body */}
         <p className="text-sm text-gray-600 leading-relaxed mb-5">
-          You can choose to delete or archive this work item and all its subtasks.
-          Deleting is irreversible. It permanently removes the work item, subtasks,
-          comments and attachments. To keep subtasks move them to a different parent.
+          You can choose to delete or archive this work item and all its
+          subtasks. Deleting is irreversible. It permanently removes the work
+          item, subtasks, comments and attachments. To keep subtasks move them
+          to a different parent.
         </p>
 
         {/* Input */}
         <div className="mb-5">
           <label className="block text-sm text-gray-600 mb-2">
-            Type <span className="font-semibold text-gray-900">delete</span> to continue
+            Type <span className="font-semibold text-gray-900">delete</span> to
+            continue
           </label>
           <input
             ref={inputRef}

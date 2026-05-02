@@ -1,65 +1,72 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Filter, Search, User, Check, Tag } from "lucide-react";
+import { Filter, Search, User } from "lucide-react";
+import { useTaskStore } from "@/store/task.store";
+import { useProjectStore } from "@/store/project.store";
 
-// Định nghĩa kiểu dữ liệu cho object state chứa các bộ lọc
-type FilterState = {
+export type FilterState = {
   parent: string[];
   assignee: string[];
-  label: string[];
 };
 
-export default function FilterButton() {
-  // Các state quản lý UI (Đóng/mở, Tab hiện tại, Ô search)
+interface FilterButtonProps {
+  onFilterChange?: (filters: FilterState) => void;
+}
+
+export default function FilterButton({ onFilterChange }: FilterButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<keyof FilterState>("parent");
+  const [activeTab, setActiveTab] = useState<keyof FilterState>("assignee");
   const [searchAssignee, setSearchAssignee] = useState("");
+  const [searchParent, setSearchParent] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // 1. STATE DUY NHẤT chứa object key-value lưu trữ toàn bộ các lựa chọn filter
   const [filters, setFilters] = useState<FilterState>({
     parent: [],
     assignee: [],
-    label: [],
   });
 
-  // 2. HÀM HANDLER DÙNG CHUNG để toggle (chọn/bỏ chọn) cho bất kỳ tab nào
+  const groups = useTaskStore((s) => s.groups) || [];
+  const members = useProjectStore((s: any) => s.members) || [];
+
+  const parentList = groups
+    .flatMap((g) => g.tasks)
+    .map((t: any) => ({
+      id: t.id,
+      name: t.title || t.name || t.id,
+      code: t.taskCode || "",
+    }));
+
+  const assigneesList = [
+    { id: "unassigned", name: "Unassigned", icon: User },
+    ...members.map((m: any) => ({
+      id: m.user_id,
+      name: m.full_name || m.user_id || "Unknown",
+      initials: String(m.full_name || m.user_id || "U")
+        .charAt(0)
+        .toUpperCase(),
+      avatar: m.avatar || m.avatar_url,
+    })),
+  ];
+
+  useEffect(() => {
+    if (onFilterChange) onFilterChange(filters);
+  }, [filters, onFilterChange]);
+
   const handleToggleFilter = (key: keyof FilterState, id: string | number) => {
-    const stringId = String(id); // Đảm bảo id luôn là string để so sánh
+    const stringId = String(id);
     setFilters((prev) => {
       const currentList = prev[key];
       const isExist = currentList.includes(stringId);
-
       return {
         ...prev,
         [key]: isExist
-          ? currentList.filter((item) => item !== stringId) // Bỏ chọn
-          : [...currentList, stringId], // Chọn thêm
+          ? currentList.filter((item) => item !== stringId)
+          : [...currentList, stringId],
       };
     });
   };
 
-  // --- MOCK DATA ---
-  const parentList = [
-    { id: "no-parent", name: "No parent" },
-    { id: "DC-29", name: "Thực hiện - Frontend" },
-    { id: "DC-30", name: "Thiết kế - UI/UX" },
-  ];
-
-  const assigneesList = [
-    { id: "unassigned", name: "Unassigned", icon: User },
-    { id: "liem", name: "Trần Thanh Liêm", initials: "TL" },
-    { id: "na", name: "Na Ha", initials: "NH" },
-  ];
-
-  const labelList = [
-    { id: "bug", name: "Bug", color: "border-red-500" },
-    { id: "feature", name: "Feature", color: "border-blue-500" },
-    { id: "enhancement", name: "Enhancement", color: "border-green-500" },
-  ];
-
-  // --- XỬ LÝ CLICK OUTSIDE ---
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -70,27 +77,45 @@ export default function FilterButton() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // --- RENDER FUNCTIONS CHO TỪNG TAB ---
   const renderParentTab = () => (
-    <div className="p-4 flex flex-col h-full space-y-4">
-      <div className="">
-        {parentList.map((option) => (
-          <label
-            key={option.id}
-            className="group flex relative items-center hover:bg-gray-200 p-2 space-x-3 cursor-pointer"
-          >
-            <div className="absolute left-0 top-0 h-full bg-blue-700 w-0.5 hidden group-hover:block" />
-
-            <input
-              type="checkbox"
-              className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              checked={filters.parent.includes(String(option.id))}
-              onChange={() => handleToggleFilter("parent", option.id)}
-            />
-
-            <span className="text-sm text-gray-700">{option.name}</span>
-          </label>
-        ))}
+    <div className="p-4 flex flex-col h-full">
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search parent task..."
+          className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          value={searchParent}
+          onChange={(e) => setSearchParent(e.target.value)}
+        />
+      </div>
+      <div className="flex-1 overflow-y-auto max-h-[250px]">
+        {parentList.length > 0 ? (
+          parentList
+            .filter((p) =>
+              p.name.toLowerCase().includes(searchParent.toLowerCase()),
+            )
+            .map((option) => (
+              <label
+                key={option.id}
+                className="group flex items-center hover:bg-gray-100 p-2 rounded-md cursor-pointer space-x-3"
+              >
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  checked={filters.parent.includes(String(option.id))}
+                  onChange={() => handleToggleFilter("parent", option.id)}
+                />
+                <span className="text-sm text-gray-700 truncate">
+                  {option.name}
+                </span>
+              </label>
+            ))
+        ) : (
+          <p className="text-xs text-center text-gray-400 mt-4">
+            No tasks found
+          </p>
+        )}
       </div>
     </div>
   );
@@ -101,14 +126,13 @@ export default function FilterButton() {
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
         <input
           type="text"
-          placeholder="Search assignee"
+          placeholder="Search assignee..."
           className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           value={searchAssignee}
           onChange={(e) => setSearchAssignee(e.target.value)}
         />
       </div>
-
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto max-h-[250px]">
         {assigneesList
           .filter((a) =>
             a.name.toLowerCase().includes(searchAssignee.toLowerCase()),
@@ -116,29 +140,14 @@ export default function FilterButton() {
           .map((assignee) => (
             <label
               key={assignee.id}
-              className="flex p-2 relative items-center hover:bg-gray-200 space-x-3 cursor-pointer group"
+              className="flex items-center hover:bg-gray-100 p-2 rounded-md cursor-pointer space-x-3"
             >
-              <div className="absolute left-0 top-0 h-full bg-blue-700 w-0.5 hidden group-hover:block" />
-
-              <div className="flex items-center justify-center w-4 h-4  rounded-sm ">
-                <input
-                  type="checkbox"
-                  className="size-full text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  checked={filters.assignee.includes(assignee.id)}
-                  onChange={() => handleToggleFilter("assignee", assignee.id)}
-                />
-              </div>
-
-              {assignee.icon ? (
-                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                  <assignee.icon className="w-4 h-4" />
-                </div>
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-medium">
-                  {assignee.initials}
-                </div>
-              )}
-
+              <input
+                type="checkbox"
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                checked={filters.assignee.includes(assignee.id)}
+                onChange={() => handleToggleFilter("assignee", assignee.id)}
+              />
               <span className="text-sm text-gray-700">{assignee.name}</span>
             </label>
           ))}
@@ -146,82 +155,56 @@ export default function FilterButton() {
     </div>
   );
 
-  const renderLabelTab = () => (
-    <div className="p-4 flex flex-col h-full space-y-4">
-      <div className="">
-        {labelList.map((label) => (
-          <label
-            key={label.id}
-            className="flex group items-center relative hover:bg-gray-200 p-2 space-x-3 cursor-pointer"
-          >
-            <div className="absolute left-0 top-0 h-full bg-blue-700 w-0.5 hidden group-hover:block" />
-            <input
-              type="checkbox"
-              className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              checked={filters.label.includes(label.id)}
-              onChange={() => handleToggleFilter("label", label.id)}
-            />
-            <div className="flex text-sm items-center space-x-2">
-              <span>{label.name}</span>
-            </div>
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-
-  // Cấu hình các Tabs bên trái để render bằng loop cho gọn
-  const TABS: { id: keyof FilterState; label: string }[] = [
-    { id: "parent", label: "Parent" },
-    { id: "assignee", label: "Assignee" },
-    { id: "label", label: "Label" },
-  ];
+  const activeFiltersCount = Object.values(filters).flat().length;
 
   return (
     <div className="relative inline-block text-left" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex shadow h-full items-center space-x-2 relative px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-transparent rounded-md text-sm font-medium text-gray-700 transition-colors"
+        className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md text-sm font-medium text-gray-700 transition-all"
       >
         <Filter className="w-4 h-4" />
         <span>Filter</span>
-        {/* Hiển thị số lượng filter đang active nếu muốn */}
-        {Object.values(filters).flat().length > 0 && (
-          <span className="ml-1 bg-blue-500 text-white absolute right-0 top-0 text-[10px] px-1.5 py-0.5 rounded-full">
-            {Object.values(filters).flat().length}
+        {activeFiltersCount > 0 && (
+          <span className="ml-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+            {activeFiltersCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute left-1/2 -translate-x-1/3 md:-translate-x-1/2 z-30 mt-2 w-[400px] md:w-[550px] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden flex flex-col">
-          <div className="flex h-[350px] overflow-auto">
-            {/* Cột trái: Menu Tabs */}
-            <div className="w-1/3 bg-white border-r border-gray-200 py-2">
-              <ul className="space-y-1">
-                {TABS.map((tab) => (
-                  <li key={tab.id}>
-                    <button
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full text-left px-4 py-2 text-sm ${
-                        activeTab === tab.id
-                          ? "bg-gray-200 font-medium text-gray-900"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+        /* 🚀 FIX GIAO DIỆN CHÍNH: 
+           - Thay right-0 bằng left-0 để popup mở sang phải, không bị mất hình.
+           - Thêm min-w-[450px] để không bị bóp méo giao diện.
+        */
+        <div className="absolute left-0 top-full mt-2 min-w-[450px] bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] flex overflow-hidden origin-top-left transition-all">
+          {/* Cột trái: Tabs điều hướng */}
+          <div className="w-[140px] bg-gray-50 border-r border-gray-200 py-2 flex-shrink-0">
+            <button
+              onClick={() => setActiveTab("parent")}
+              className={`w-full text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider ${
+                activeTab === "parent"
+                  ? "bg-white text-blue-600 border-r-2 border-blue-600"
+                  : "text-gray-500 hover:bg-gray-100"
+              }`}
+            >
+              Parent Task
+            </button>
+            <button
+              onClick={() => setActiveTab("assignee")}
+              className={`w-full text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider ${
+                activeTab === "assignee"
+                  ? "bg-white text-blue-600 border-r-2 border-blue-600"
+                  : "text-gray-500 hover:bg-gray-100"
+              }`}
+            >
+              Assignee
+            </button>
+          </div>
 
-            {/* Cột phải: Nội dung chi tiết */}
-            <div className="w-2/3 bg-white">
-              {activeTab === "parent" && renderParentTab()}
-              {activeTab === "assignee" && renderAssigneeTab()}
-              {activeTab === "label" && renderLabelTab()}
-            </div>
+          {/* Cột phải: Nội dung danh sách lọc */}
+          <div className="flex-1 bg-white min-h-[300px] max-h-[400px] flex flex-col">
+            {activeTab === "parent" ? renderParentTab() : renderAssigneeTab()}
           </div>
         </div>
       )}

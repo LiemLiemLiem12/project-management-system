@@ -251,6 +251,10 @@ export const useAuthService = () => {
     },
   });
 
+  const handleCheckUserExists = useMutation({
+    mutationFn: (email: string) => api.auth.checkUserExists(email),
+  });
+
   return {
     login: handleLogin.mutateAsync,
     loginStatus: handleLogin.isPending,
@@ -280,5 +284,8 @@ export const useAuthService = () => {
 
     resendOTP: handleResendOTP.mutateAsync,
     pendingResetOTP: handleResendOTP.isPending,
+
+    checkUserExists: handleCheckUserExists.mutateAsync,
+    isCheckingEmail: handleCheckUserExists.isPending,
   };
 };

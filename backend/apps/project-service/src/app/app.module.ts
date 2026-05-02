@@ -20,12 +20,14 @@ import { Checklist } from './modules/checklist/entities/checklist.entity';
 import { RagModule } from './modules/rag/rag.module';
 import { CommentVector } from './modules/rag/entities/comment-vector.entity';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
     ProjectModule,
     TaskModule,
     CommentModule,
+    MailModule,
 
     ConfigModule.forRoot({
       envFilePath: '.env.local',

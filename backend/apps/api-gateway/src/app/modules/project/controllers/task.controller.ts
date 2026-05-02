@@ -246,4 +246,12 @@ export class TaskController {
       body.fallbackGroupId,
     );
   }
+
+  @Get('my-tasks')
+  @UseGuards(JwtAuthGuard)
+  getMyTasks(@Req() req: any) {
+    const userId = req.user?.userId;
+
+    return this.taskService.getMyTasks(userId);
+  }
 }

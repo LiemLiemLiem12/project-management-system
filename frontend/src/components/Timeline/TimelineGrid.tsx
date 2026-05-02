@@ -759,9 +759,6 @@ export default function TimelineGrid({
                   {g.name}
                 </span>
               </div>
-              <button className="bg-transparent border-none cursor-pointer text-left text-xs text-blue-500 font-medium mt-1 p-0 font-inherit">
-                + Add
-              </button>
             </div>
           );
         })}

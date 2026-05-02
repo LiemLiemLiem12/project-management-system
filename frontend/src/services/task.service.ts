@@ -28,6 +28,24 @@ export const useGetKanbanBoard = (projectId: string) => {
   });
 };
 
+// ─── My Tasks (Trang For You) ─────────────────────────────────────────────────
+
+export const useGetMyTasks = () => {
+  const api = useAPI();
+  const { setMyTasks } = useTaskStore();
+
+  return useQuery({
+    queryKey: ["myTasks"],
+    queryFn: async () => {
+      const res = await api.task.getMyTasks(); // Nhớ thêm getMyTasks vào file task.api nhé!
+      setMyTasks(res.data); // Nạp data thẳng vào store Zustand
+      return res.data;
+    },
+    refetchOnWindowFocus: false,
+    // Không cần enabled vì route này lúc nào cũng có thể gọi
+  });
+};
+
 // ─── Create Task ──────────────────────────────────────────────────────────────
 
 export const useGetTasks = (projectId: string) => {

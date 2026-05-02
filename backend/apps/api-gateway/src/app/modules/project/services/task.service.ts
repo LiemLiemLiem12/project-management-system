@@ -182,4 +182,8 @@ export class TaskService {
       fallbackGroupId,
     });
   }
+
+  getMyTasks(userId: string) {
+    return this.send('get_my_tasks', { userId });
+  }
 }

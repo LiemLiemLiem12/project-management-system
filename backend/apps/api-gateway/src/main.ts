@@ -37,6 +37,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
+
   await app.listen(port);
   Logger.log(
     `[API Gateway] is running on: http://localhost:${port}/${globalPrefix}`,

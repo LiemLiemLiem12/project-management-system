@@ -254,4 +254,10 @@ export class AuthController {
   async RBAC() {
     console.log('In');
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('check-email')
+  async checkUserEmail(@Body() body: { email: string }) {
+    return this.authService.checkUserExists(body.email);
+  }
 }

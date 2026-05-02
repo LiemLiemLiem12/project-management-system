@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react"; // <-- Thêm useEffect
+import { useState, useMemo, useEffect } from "react";
 import { useSpTasks, useSpGroups } from "@/store/spreadsheet.store";
 import { useGetKanbanBoard } from "@/services/task.service";
 import { useTaskStore } from "@/store/task.store";
-import { useGetProjectMembers } from "@/services/project.service"; // <-- Thêm
-import { useProjectStore } from "@/store/project.store"; // <-- Thêm
-import { useAuthStore } from "@/store/auth.store"; // <-- Thêm
+import { useGetProjectMembers } from "@/services/project.service";
+import { useProjectStore } from "@/store/project.store";
+import { useAuthStore } from "@/store/auth.store";
 
 import TaskToolbar from "./TaskToolbar";
 import TaskTableHeader from "./TaskTableHeader";
 import TaskGroupSection from "./TaskGroupSection";
 import TaskFooter from "./TaskFooter";
+
+// 🚀 Import FilterState từ file FilterButton
+import { FilterState } from "@/components/Kanban/FilterButton";
 
 export default function SpreadsheetClient({
   projectId,
@@ -20,12 +23,15 @@ export default function SpreadsheetClient({
 }) {
   const [search, setSearch] = useState("");
 
+  // 🚀 TẠO STATE LƯU TRỮ BỘ LỌC
+  const [filters, setFilters] = useState<FilterState>({
+    parent: [],
+    assignee: [],
+  });
+
   // Fetch board — dùng lại hook kanban, data sync vào task.store
   useGetKanbanBoard(projectId);
 
-  // ==========================================
-  // LẤY DANH SÁCH THÀNH VIÊN ĐỂ DỊCH ID SANG TÊN
-  // ==========================================
   const myUserId = useAuthStore((s) => s.user?.id);
   const setMembers = useProjectStore((s: any) => s.setMembers);
   const { data: membersData } = useGetProjectMembers(projectId);
@@ -45,14 +51,29 @@ export default function SpreadsheetClient({
   const groups = useSpGroups();
   const isLoading = useTaskStore((s) => s.isLoading);
 
+  // 🚀 TÍNH TOÁN LẠI SỐ LƯỢNG TASK HIỂN THỊ SAU KHI LỌC
   const visibleCount = useMemo(() => {
-    if (!search) return tasks.length;
-    return tasks.filter(
-      (t) =>
+    return tasks.filter((t) => {
+      // 1. Lọc theo Search (Tên hoặc Mã Task)
+      const matchSearch =
+        !search ||
         t.name.toLowerCase().includes(search.toLowerCase()) ||
-        t.taskCode.toLowerCase().includes(search.toLowerCase()),
-    ).length;
-  }, [search, tasks]);
+        t.taskCode.toLowerCase().includes(search.toLowerCase());
+
+      // 2. Lọc theo Assignee
+      const matchAssignee =
+        filters.assignee.length === 0 || // Nếu không chọn filter assignee nào thì pass
+        (filters.assignee.includes("unassigned") &&
+          (!t.assigneeIds || t.assigneeIds.length === 0)) || // Chọn unassigned
+        (t.assigneeIds &&
+          t.assigneeIds.some((id) => filters.assignee.includes(String(id)))); // Kiểm tra có id người dùng không
+
+      // 3. Lọc theo Parent (Nếu sau này API có trường parent_id)
+      // const matchParent = filters.parent.length === 0 || (t.parent_id && filters.parent.includes(String(t.parent_id)));
+
+      return matchSearch && matchAssignee; // Thêm && matchParent nếu có dữ liệu parent
+    }).length;
+  }, [search, tasks, filters]);
 
   if (isLoading) {
     return (
@@ -72,8 +93,14 @@ export default function SpreadsheetClient({
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8 flex items-start justify-center">
       <div className="w-full">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <TaskToolbar search={search} onSearch={setSearch} />
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          {/* 🚀 TRUYỀN HÀM setFilters VÀO TOOLBAR */}
+          <TaskToolbar
+            search={search}
+            onSearch={setSearch}
+            onFilterChange={setFilters}
+          />
+
           <TaskTableHeader />
           <div>
             {groups.map((group) => (
@@ -83,11 +110,18 @@ export default function SpreadsheetClient({
                 groupLabel={group.label}
                 isSuccess={group.isSuccess}
                 search={search}
+                filters={filters} // 🚀 TRUYỀN FILTERS XUỐNG GROUP ĐỂ NÓ ẨN TASK
                 projectId={projectId}
               />
             ))}
           </div>
-          <TaskFooter visibleCount={visibleCount} totalCount={tasks.length} />
+
+          {/* Nhớ thêm projectId vào TaskFooter như fix lỗi ở trên nha */}
+          <TaskFooter
+            visibleCount={visibleCount}
+            totalCount={tasks.length}
+            projectId={projectId}
+          />
         </div>
       </div>
     </div>

@@ -53,6 +53,7 @@ export interface MoveTaskPayload {
 export const taskApi = (axiosPrivate: AxiosInstance) => ({
   getTask: (projectId: string, taskId: string) =>
     axiosPrivate.get<Task>(`/tasks/${projectId}/task/${taskId}`),
+  getMyTasks: () => axiosPrivate.get("/tasks/my-tasks"),
 
   // Kanban board
   getBoard: (projectId: string) =>

@@ -11,6 +11,7 @@ import QuickStatisticCardList from "@/components/Dashboard/QuickStatisticCardLis
 import RecentActivity from "@/components/Dashboard/RecentActivity";
 import TableTalentMember from "@/components/Dashboard/TableTalentMember";
 import TaskOverviewChart from "@/components/Dashboard/TaskOverviewChart";
+import { useGetKanbanBoard } from "@/services/task.service";
 
 const GROUP_COLORS = [
   "bg-blue-500",
@@ -25,6 +26,7 @@ export default function DashboardPage() {
   const params = useParams();
   const projectId = params.projectId as string;
   const { task } = useAPI();
+  useGetKanbanBoard(projectId);
 
   const groups = useTaskStore((s) => s.groups);
   const setGroups = useTaskStore((s) => s.setGroups);
@@ -99,9 +101,9 @@ export default function DashboardPage() {
   return (
     <>
       <div className="h-full w-full p-10 overflow-y-auto font-sans">
-        <div className="flex w-full justify-end">
+        {/* <div className="flex w-full justify-end">
           <FilterButton />
-        </div>
+        </div> */}
         <QuickStatisticCardList />
         <div className="flex flex-col w-full lg:flex-row gap-3 mt-3">
           <TaskOverviewChart data={taskData} />
