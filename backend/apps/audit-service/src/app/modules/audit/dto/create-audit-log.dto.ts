@@ -1,4 +1,5 @@
 export class CreateAuditLogDto {
+  project_id?: string;
   user_id?: string;
   action?: string;
   entity_type?: string;

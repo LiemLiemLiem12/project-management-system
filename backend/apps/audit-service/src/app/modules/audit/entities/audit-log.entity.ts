@@ -10,6 +10,9 @@ export class AuditLog {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  project_id!: string;
+
   @Column({ type: 'varchar', length: 255 })
   user_id!: string;
 

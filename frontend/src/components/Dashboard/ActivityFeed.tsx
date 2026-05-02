@@ -1,7 +1,11 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { useAuditStore } from "@/store/audit.store";
-import { useGetRecentActivities } from "@/services/audit.service";
+import {
+  useGetRecentActivities,
+  useGetFeedActivities,
+} from "@/services/audit.service";
 
 function ActivityRow({ data }: { data: any }) {
   return (
@@ -18,9 +22,11 @@ function ActivityRow({ data }: { data: any }) {
           <span className="font-medium text-[#0052CC] hover:underline cursor-pointer">
             {data.task}
           </span>
-          <span className="inline-block bg-[#00C853] text-white font-semibold px-1.5 py-0.5 ml-2 text-[10px] rounded-sm align-middle mb-0.5">
-            {data.status}
-          </span>
+          {data.status && (
+            <span className="inline-block bg-[#00C853] text-white font-semibold px-1.5 py-0.5 ml-2 text-[10px] rounded-sm align-middle mb-0.5">
+              {data.status}
+            </span>
+          )}
         </p>
         <p className="text-xs text-gray-400 mt-1">{data.time}</p>
       </div>
@@ -28,16 +34,31 @@ function ActivityRow({ data }: { data: any }) {
   );
 }
 
-export default function ActivityFeed() {
-  // Hook này sẽ tự động gọi API lấy log audit
-  useGetRecentActivities();
+export default function ActivityFeed({
+  targetUserId,
+  myProjectIds = [],
+}: {
+  targetUserId?: string;
+  myProjectIds?: string[];
+}) {
+  const params = useParams();
+  const projectId = params.projectId as string;
+
+  useGetRecentActivities(projectId);
+  useGetFeedActivities(myProjectIds);
 
   const { activities, isLoading, error } = useAuditStore();
+
+  const filteredActivities = targetUserId
+    ? activities.filter(
+        (a) => a.user_id === targetUserId || a.user === targetUserId,
+      )
+    : activities;
 
   return (
     <section>
       <h2 className="text-base font-bold text-gray-900 mb-4">
-        Recent Activity
+        {targetUserId ? "User's Activity" : "Recent Activity"}
       </h2>
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
         <div className="px-5 divide-y divide-gray-50">
@@ -47,10 +68,14 @@ export default function ActivityFeed() {
             </p>
           ) : error ? (
             <p className="py-4 text-red-500 text-sm">{error}</p>
-          ) : activities.length === 0 ? (
-            <p className="py-4 text-gray-500 text-sm">No activity found.</p>
+          ) : filteredActivities.length === 0 ? (
+            <p className="py-4 text-gray-500 text-sm">
+              {targetUserId
+                ? "No activity found for this user."
+                : "No activity found."}
+            </p>
           ) : (
-            activities
+            filteredActivities
               .slice(0, 5)
               .map((a) => <ActivityRow key={`feed-${a.id}`} data={a} />)
           )}

@@ -23,9 +23,15 @@ import { title } from 'process';
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
-  @Get('recent-activities')
-  getRecentActivities() {
-    return this.taskService.getRecentActivities();
+  @Get('recent-activities/:projectId')
+  getRecentActivities(@Param('projectId') projectId: string) {
+    // Gọi xuống service và truyền projectId vào
+    return this.taskService.getRecentActivities(projectId);
+  }
+
+  @Post('recent-activities/feed')
+  getFeedActivities(@Body('projectIds') projectIds: string[]) {
+    return this.taskService.getFeedActivities(projectIds);
   }
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
