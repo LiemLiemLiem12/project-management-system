@@ -91,29 +91,7 @@ export default function TaskToolbar({
       {/* 🚀 CHÈN FILTER BUTTON VÀO ĐÂY */}
       <FilterButton onFilterChange={onFilterChange} />
 
-      {/* Sort */}
-      <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-          <path
-            d="M2 5h12M5 9h6M8 13h0"
-            stroke="currentColor"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-          />
-        </svg>
-        <span className="hidden sm:inline">Sort</span>
-      </button>
-
       <div className="flex-1" />
-
-      {/* More */}
-      <button className="p-1.5 rounded-lg hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="3" r="1.2" fill="currentColor" />
-          <circle cx="8" cy="8" r="1.2" fill="currentColor" />
-          <circle cx="8" cy="13" r="1.2" fill="currentColor" />
-        </svg>
-      </button>
     </div>
   );
 }

@@ -93,7 +93,7 @@ export default function SpreadsheetClient({
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8 flex items-start justify-center">
       <div className="w-full">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           {/* 🚀 TRUYỀN HÀM setFilters VÀO TOOLBAR */}
           <TaskToolbar
             search={search}
