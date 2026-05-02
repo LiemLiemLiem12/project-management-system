@@ -15,7 +15,7 @@ import {
   DropResult,
 } from "@hello-pangea/dnd";
 
-export default function TaskChecklist() {
+export default function TaskChecklist({ canManage }: { canManage: boolean }) {
   const currentTask = useTaskStore((s: any) => s.currentTask);
   const items: Checklist[] = currentTask?.checklists || [];
 
@@ -234,7 +234,7 @@ export default function TaskChecklist() {
 
       {/* Add New Item Form */}
       <div className="mt-3">
-        {isAdding ? (
+        {isAdding && canManage ? (
           <div className="space-y-2">
             <input
               autoFocus
@@ -269,7 +269,11 @@ export default function TaskChecklist() {
           <button
             onClick={() => setIsAdding(true)}
             disabled={isLoading}
-            className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors py-1 disabled:opacity-50"
+            className={`flex items-center gap-1.5 text-sm font-medium ${
+              canManage
+                ? "text-blue-600 hover:text-blue-700"
+                : "text-gray-500 cursor-not-allowed"
+            } transition-colors py-1 disabled:opacity-50`}
           >
             <Plus size={16} />
             Add an item

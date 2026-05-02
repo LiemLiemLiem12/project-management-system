@@ -15,8 +15,9 @@ import IconLoader from "../IconLoader";
 import { TaskBase } from "@/types";
 import { redirect, useParams, useRouter } from "next/navigation";
 import { useUpdateTask } from "@/services/task.service";
+import { useProjectStore } from "@/store/project.store";
 
-export default function TaskSubtasks() {
+export default function TaskSubtasks({ canManage }: { canManage: boolean }) {
   const {
     subtasks,
     isAdding,
@@ -81,7 +82,7 @@ export default function TaskSubtasks() {
       </div>
 
       {/* Khu vực Nhập liệu / Tìm kiếm */}
-      {isAdding && (
+      {isAdding && canManage && (
         <div className="relative">
           {mode === "create" ? (
             // ================= MODE 1: CREATE SUBTASK =================
@@ -294,7 +295,7 @@ export default function TaskSubtasks() {
                             groupTask.id === task.group_task_id,
                         )?.title || "No group task"}
                       </span>
-                      {activeStatus === task.id && (
+                      {activeStatus === task.id && canManage && (
                         <div
                           ref={activeRef}
                           className="absolute z-20 top-full left-1/2 transform -translate-x-1/2  mt-1 w-max bg-white border border-gray-200 rounded-md shadow-lg z-10"
@@ -334,7 +335,7 @@ export default function TaskSubtasks() {
                         e.stopPropagation(); // Ngăn không cho row chuyển hướng trang
                         handleRemoveSubtask(task.id);
                       }}
-                      disabled={isUpdatingTask}
+                      disabled={isUpdatingTask || !canManage}
                       className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
                       title="Remove subtask"
                     >

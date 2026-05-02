@@ -425,3 +425,14 @@ export const useDeleteTask = (projectId: string) => {
     },
   });
 };
+
+export const useUploadMedias = () => {
+  const api = useAPI();
+
+  return useMutation({
+    mutationFn: async (payload: FormData) => {
+      const res = await api.task.uploadMedias(payload);
+      return res?.data;
+    },
+  });
+};
