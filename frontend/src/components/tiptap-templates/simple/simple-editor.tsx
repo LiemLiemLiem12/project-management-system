@@ -72,6 +72,7 @@ import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils";
 
 // --- Styles ---
 import "@/components/tiptap-templates/simple/simple-editor.scss";
+import { useUploadMedias } from "@/services/task.service";
 
 const MainToolbarContent = ({
   onHighlighterClick,
@@ -184,9 +185,14 @@ const MobileToolbarContent = ({
 interface SimpleEditorProps {
   initialContent?: any;
   onChange?: (content: string) => void;
+  readOnly: boolean | undefined;
 }
 
-export function SimpleEditor({ initialContent, onChange }: SimpleEditorProps) {
+export function SimpleEditor({
+  initialContent,
+  onChange,
+  readOnly = false,
+}: SimpleEditorProps) {
   const isMobile = useIsBreakpoint();
   const { height } = useWindowSize();
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">(
@@ -194,7 +200,10 @@ export function SimpleEditor({ initialContent, onChange }: SimpleEditorProps) {
   );
   const toolbarRef = useRef<HTMLDivElement>(null);
 
+  const { mutateAsync: uploadMedias } = useUploadMedias();
+
   const editor = useEditor({
+    editable: !readOnly,
     immediatelyRender: false,
     content: initialContent || "<p></p>",
     onUpdate: ({ editor }) => {
@@ -233,7 +242,7 @@ export function SimpleEditor({ initialContent, onChange }: SimpleEditorProps) {
         accept: "image/*",
         maxSize: MAX_FILE_SIZE,
         limit: 3,
-        upload: handleImageUpload,
+        upload: (file) => handleImageUpload(file, uploadMedias),
         onError: (error) => console.error("Upload failed:", error),
       }),
     ],
@@ -259,29 +268,31 @@ export function SimpleEditor({ initialContent, onChange }: SimpleEditorProps) {
   return (
     <div className="simple-editor-wrapper">
       <EditorContext.Provider value={{ editor }}>
-        <Toolbar
-          ref={toolbarRef}
-          style={{
-            ...(isMobile
-              ? {
-                  bottom: `calc(100% - ${height - rect.y}px)`,
-                }
-              : {}),
-          }}
-        >
-          {mobileView === "main" ? (
-            <MainToolbarContent
-              onHighlighterClick={() => setMobileView("highlighter")}
-              onLinkClick={() => setMobileView("link")}
-              isMobile={isMobile}
-            />
-          ) : (
-            <MobileToolbarContent
-              type={mobileView === "highlighter" ? "highlighter" : "link"}
-              onBack={() => setMobileView("main")}
-            />
-          )}
-        </Toolbar>
+        {!readOnly && (
+          <Toolbar
+            ref={toolbarRef}
+            style={{
+              ...(isMobile
+                ? {
+                    bottom: `calc(100% - ${height - rect.y}px)`,
+                  }
+                : {}),
+            }}
+          >
+            {mobileView === "main" ? (
+              <MainToolbarContent
+                onHighlighterClick={() => setMobileView("highlighter")}
+                onLinkClick={() => setMobileView("link")}
+                isMobile={isMobile}
+              />
+            ) : (
+              <MobileToolbarContent
+                type={mobileView === "highlighter" ? "highlighter" : "link"}
+                onBack={() => setMobileView("main")}
+              />
+            )}
+          </Toolbar>
+        )}
 
         <EditorContent
           editor={editor}

@@ -13,13 +13,13 @@ export class CloudinaryService {
     folderName: string,
   ): Promise<UploadApiResponse | UploadApiErrorResponse> {
     return new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: folderName },
+      const uploadStream = cloudinary.uploader.upload_chunked_stream(
+        { folder: folderName, resource_type: 'auto' },
         (error, result) => {
           if (error) {
-            reject(error);
+            return reject(error);
           }
-          resolve(result);
+          return resolve(result);
         },
       );
 

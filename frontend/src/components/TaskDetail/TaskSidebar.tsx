@@ -27,6 +27,7 @@ import {
 import IconLoader from "../IconLoader";
 import { useCreateLabel, useGetLabels } from "@/services/label.service";
 import Image from "next/image";
+import { ROLE } from "@/enums";
 
 export default function TaskSidebar() {
   const inputDateRef = useRef<HTMLInputElement>(null);
@@ -55,6 +56,10 @@ export default function TaskSidebar() {
   const { data: groupTasksData, isPending: pendingGroupTasks } =
     useGetGroupTaskByProjectId(currentProject?.id || "");
 
+  const { data: createdUser, isPending: pendingCreatedUser } = useGetUserById(
+    currentTask?.created_by || "",
+  );
+
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [pendingUser, setPendingUser] = useState("");
@@ -67,6 +72,11 @@ export default function TaskSidebar() {
 
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [groupSearch, setGroupSearch] = useState("");
+
+  const currentUserRole = useProjectStore((s) => s.currentUserRole);
+
+  const canManage =
+    currentUserRole === ROLE.LEADER || currentUserRole === ROLE.MODERATOR;
 
   const selectedLabelIds =
     currentTask?.labels.map((label: any) => label.id) || [];
@@ -219,7 +229,7 @@ export default function TaskSidebar() {
 
   const handleClearDate = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!currentTask?.id || !currentProject.id) return;
+    if (!currentTask?.id || !currentProject.id || canManage) return;
 
     updateTask({
       projectId: currentProject.id,
@@ -253,7 +263,7 @@ export default function TaskSidebar() {
   };
 
   const openDatePicker = () => {
-    if (!pendingUpdateTask && inputDateRef.current) {
+    if (!pendingUpdateTask && inputDateRef.current && canManage) {
       try {
         inputDateRef.current.showPicker();
       } catch (error) {
@@ -281,7 +291,7 @@ export default function TaskSidebar() {
             {/* Trigger Button */}
             <div
               onClick={() => setIsAssigneeModalOpen(!isAssigneeModalOpen)}
-              className="flex items-center justify-between gap-2 font-medium cursor-pointer p-1.5 -ml-1.5 rounded-md hover:bg-slate-100 transition-colors w-fit pr-3"
+              className={`${!canManage ? "cursor-not-allowed" : "hover:bg-slate-100 cursor-pointer"} flex items-center justify-between gap-2 font-medium  p-1.5 -ml-1.5 rounded-md  transition-colors w-fit pr-3`}
             >
               <div className="flex items-center gap-2">
                 {currentTask.assignee_id ? (
@@ -333,7 +343,7 @@ export default function TaskSidebar() {
             )}
 
             {/* DROPDOWN MODAL */}
-            {isAssigneeModalOpen && (
+            {isAssigneeModalOpen && canManage && (
               <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden flex flex-col">
                 <div className="p-2 border-b border-slate-100">
                   <div className="relative">
@@ -406,7 +416,11 @@ export default function TaskSidebar() {
             {/* KHU VỰC CLICK ĐỂ MỞ MODAL (Thay thế cho nút +) */}
             <div
               onClick={() => setIsLabelModalOpen(!isLabelModalOpen)}
-              className="flex w-full flex-wrap gap-2 items-center cursor-pointer p-1.5 -ml-1.5 rounded-md hover:bg-slate-100 transition-colors min-h-[32px]"
+              className={`flex w-full flex-wrap gap-2 items-center p-1.5 -ml-1.5 rounded-md transition-colors min-h-[32px] ${
+                canManage
+                  ? "cursor-pointer hover:bg-slate-100"
+                  : "cursor-default"
+              }`}
               title="Click to edit labels"
             >
               {currentTask.labels && currentTask.labels.length > 0 ? (
@@ -435,7 +449,7 @@ export default function TaskSidebar() {
             )}
 
             {/* DROPDOWN MODAL */}
-            {isLabelModalOpen && (
+            {isLabelModalOpen && canManage && (
               <div className="absolute top-full left-0 mt-1.5 w-60 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
                 {/* Khung tìm kiếm */}
                 <div className="p-2 border-b border-slate-100">
@@ -512,7 +526,11 @@ export default function TaskSidebar() {
           <div className="relative w-full">
             <div
               onClick={() => setIsParentModalOpen(!isParentModalOpen)}
-              className="flex w-full flex-wrap gap-2 items-center cursor-pointer p-1.5 -ml-1.5 rounded-md hover:bg-slate-100 transition-colors min-h-[32px]"
+              className={`flex w-full flex-wrap gap-2 items-center p-1.5 -ml-1.5 rounded-md transition-colors min-h-[32px] ${
+                canManage
+                  ? "cursor-pointer hover:bg-slate-100"
+                  : "cursor-default"
+              }`}
               title="Click to change parent task"
             >
               {currentTask.parent ? (
@@ -534,7 +552,7 @@ export default function TaskSidebar() {
               />
             )}
 
-            {isParentModalOpen && (
+            {isParentModalOpen && canManage && (
               <div className="absolute top-full left-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
                 {/* Khung tìm kiếm */}
                 <div className="p-2 border-b border-slate-100">
@@ -646,7 +664,7 @@ export default function TaskSidebar() {
 
                 <button
                   onClick={handleClearDate}
-                  disabled={pendingUpdateTask}
+                  disabled={pendingUpdateTask || canManage}
                   className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity disabled:opacity-0"
                   title="Remove due date"
                 >
@@ -671,7 +689,11 @@ export default function TaskSidebar() {
             {/* Trigger Button */}
             <div
               onClick={() => setIsGroupModalOpen(!isGroupModalOpen)}
-              className="flex items-center justify-between gap-2 font-medium cursor-pointer p-1.5 -ml-1.5 rounded-md hover:bg-slate-100 transition-colors w-fit pr-3"
+              className={`flex items-center justify-between gap-2 font-medium p-1.5 -ml-1.5 rounded-md transition-colors w-fit pr-3 ${
+                canManage
+                  ? "cursor-pointer hover:bg-slate-100"
+                  : "cursor-default"
+              }`}
             >
               <div className="flex items-center gap-2">
                 <Layers size={14} className="text-slate-400" />
@@ -698,7 +720,7 @@ export default function TaskSidebar() {
             )}
 
             {/* DROPDOWN MODAL */}
-            {isGroupModalOpen && (
+            {isGroupModalOpen && canManage && (
               <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden flex flex-col">
                 <div className="p-2 border-b border-slate-100">
                   <div className="relative">
@@ -764,28 +786,23 @@ export default function TaskSidebar() {
           {/* Reporter */}
           <div className="text-slate-500 flex items-center">Reporter</div>
           <div className="flex items-center gap-2 font-medium">
-            <div className="w-6 h-6 rounded-full bg-teal-600 text-white flex items-center justify-center text-[10px]">
-              {currentTask.created_by.slice(0, 2).toUpperCase()}
-            </div>
-            <span className="text-slate-900">{currentTask.created_by}</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Linked Items Section */}
-      <section>
-        <h3 className="text-xs font-bold text-slate-400 tracking-wider uppercase mb-4">
-          Linked Items
-        </h3>
-        <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 group cursor-pointer hover:bg-slate-100 transition-colors">
-          <div className="p-1.5 bg-white rounded shadow-sm">
-            <FileText size={16} className="text-blue-500" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-900 leading-none mb-1">
-              UI Design Specs
-            </p>
-            <p className="text-xs text-slate-500">Figma Design</p>
+            {pendingCreatedUser ? (
+              <>
+                <div className="w-6 h-6 rounded-full bg-slate-200 animate-pulse"></div>
+                <div className="h-4 w-24 rounded bg-slate-200 animate-pulse"></div>
+              </>
+            ) : (
+              <>
+                <div className="flex relative overflow-hidden h-6 w-6 items-center justify-center rounded-full bg-teal-600 text-[10px] text-white">
+                  <Image
+                    fill
+                    src={createdUser?.avatarUrl}
+                    alt={createdUser?.fullName}
+                  />
+                </div>
+                <span className="text-slate-900">{createdUser?.fullName}</span>
+              </>
+            )}
           </div>
         </div>
       </section>

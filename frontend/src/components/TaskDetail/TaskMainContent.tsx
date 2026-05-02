@@ -11,11 +11,17 @@ import { SimpleEditor } from "../tiptap-templates/simple/simple-editor";
 import { useTaskStore } from "@/store/task.store";
 import { useProjectStore } from "@/store/project.store";
 import { useAutoSaveTaskField } from "@/hooks/use-autosave-task-field";
+import { ROLE } from "@/enums";
 
 export default function TaskMainContent() {
   const currentTask = useTaskStore((s) => s.currentTask);
 
   const currentProject = useProjectStore((s: any) => s.currentProject?.id);
+
+  const currentUserRole = useProjectStore((s) => s.currentUserRole);
+
+  const canManage =
+    currentUserRole === ROLE.LEADER || currentUserRole === ROLE.MODERATOR;
 
   // Hook cho
   const [title, setTitle] = useAutoSaveTaskField({
@@ -42,6 +48,7 @@ export default function TaskMainContent() {
   return (
     <div className="flex flex-col max-w-4xl gap-8 pb-20">
       <input
+        disabled={!canManage}
         type="text"
         onChange={(e) => setTitle(e.target.value)}
         className="w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl font-bold border-b border-slate-300 mb-4 bg-transparent"
@@ -67,9 +74,6 @@ export default function TaskMainContent() {
         >
           <Paperclip size={16} /> Attachment
         </button>
-        <button className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
-          <Globe size={16} /> Web Links
-        </button>
       </div>
 
       {/* 2. Description (Giữ nguyên như cũ) */}
@@ -84,13 +88,14 @@ export default function TaskMainContent() {
               setDescription(htmlContent);
             }}
             initialContent={currentTask?.description}
+            readOnly={!canManage}
           />
         </div>
       </section>
 
       {/* 3. Render các Component đã tách (Các component này đều có ID tương ứng để cuộn tới) */}
-      <TaskSubtasks />
-      <TaskChecklist />
+      <TaskSubtasks canManage={canManage} />
+      <TaskChecklist canManage={canManage} />
       <TaskAttachments />
 
       {/* 4. Activity/Comments (Nằm dưới cùng) */}

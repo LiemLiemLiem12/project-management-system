@@ -2,6 +2,9 @@ import { HttpException, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ProjectTasksResponse } from '../types';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import FormData from 'form-data';
 
 @Injectable()
 export class TaskService {
@@ -11,11 +14,46 @@ export class TaskService {
 
     @Inject(process.env.PROJECT_SERVICE_NAME || 'PROJECT_SERVICE')
     private readonly projectClient: ClientProxy,
+
+    private readonly httpService: HttpService,
+
+    private readonly configService: ConfigService,
   ) {}
 
   private async send<T>(pattern: string, payload: any): Promise<T> {
     try {
       return await firstValueFrom(this.projectClient.send(pattern, payload));
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
+  }
+
+  async uploadMedias(files: Express.Multer.File) {
+    const STORAGE_PORT = this.configService.get<string>('STORAGE_PORT');
+    const formData = new FormData();
+
+    if (files && files.length > 0) {
+      files.forEach((file: any) => {
+        formData.append('files', file.buffer, {
+          filename: file.originalname,
+          contentType: file.mimetype,
+        });
+      });
+    }
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `http://localhost:${STORAGE_PORT}/tasks/upload`,
+          formData,
+          {
+            headers: formData.getHeaders(),
+          },
+        ),
+      );
+
+      const data = response?.data.files || [];
+
+      return data;
     } catch (error: any) {
       throw new HttpException(error.message, error.statusCode || 500);
     }

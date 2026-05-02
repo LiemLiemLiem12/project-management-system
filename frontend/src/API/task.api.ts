@@ -131,6 +131,8 @@ export const taskApi = (axiosPrivate: AxiosInstance) => ({
       title,
     }),
 
+  uploadMedias: (body: FormData) => axiosPrivate.post("tasks/upload", body),
+
   deleteGroupWithFallback: (
     projectId: string,
     groupId: string,

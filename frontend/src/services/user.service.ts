@@ -31,7 +31,7 @@ export const useGetUserById = (userId: string) => {
   });
 
   return {
-    data: query?.data?.data.data || null,
+    data: query?.data?.data?.data || null,
     isPending: query.isPending,
   };
 };

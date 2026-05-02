@@ -9,6 +9,9 @@ import {
   UseGuards,
   Query,
   Req,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { TaskService } from '../services/task.service';
@@ -18,6 +21,8 @@ import { Role } from '../../auth/enums/role.enum';
 import { Roles } from '../../auth/decorators/role.decorator';
 import { SearchSubtaskQueryDto } from '../dto/search-subtask.dto';
 import { title } from 'process';
+import { FilesInterceptor } from '@nestjs/platform-express';
+
 
 @Controller('tasks')
 export class TaskController {
@@ -31,8 +36,24 @@ export class TaskController {
 
   @Post('recent-activities/feed')
   getFeedActivities(@Body('projectIds') projectIds: string[]) {
-    return this.taskService.getFeedActivities(projectIds);
+    return this.taskService.getFeedActivities(projectIds);}
+  @Post('/upload')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, { limits: { fileSize: 1024 * 1024 * 1024 } }),
+  )
+  uploadImages(@UploadedFiles() files: Array<Express.Multer.File>) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No files have been added');
+    }
+
+    try {
+      return this.taskService.uploadMedias(files);
+    } catch (error) {
+      throw error;
+    }
   }
+
+  
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
   @UseGuards(JwtAuthGuard, RoleGuard)
