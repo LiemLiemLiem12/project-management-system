@@ -8,7 +8,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
-  // ─── KANBAN BOARD ──────────────────────────────────────────────s───────────
+  // ─── KANBAN BOARD ─────────────────────────────────────────────────────────
 
   @MessagePattern('task.get-kanban-board')
   getKanbanBoard(@Payload() payload: { projectId: string }) {
@@ -31,6 +31,7 @@ export class TaskController {
   createTask(@Payload() payload: any) {
     return this.taskService.create(payload);
   }
+
   @MessagePattern('task.find-for-subtask')
   findTaskForSubtask(
     @Payload() payload: { keyword: string; projectId: string; taskId: string },
@@ -99,27 +100,33 @@ export class TaskController {
     };
   }
 
-  // @MessagePattern('updateTask')
-  // update(@Payload() updateTaskDto: UpdateTaskDto) {
-  //   return this.taskService.update(updateTaskDto.id, updateTaskDto);
-  // }
-
+  // 🚀 ĐÃ SỬA: Lấy user_id từ payload và truyền cho service
   @MessagePattern('task.update')
-  updateTask(@Payload() payload: { id: string; [key: string]: any }) {
-    const { id, ...data } = payload;
-    return this.taskService.update(id, data);
+  updateTask(
+    @Payload() payload: { id: string; user_id?: string; [key: string]: any },
+  ) {
+    const { id, user_id, ...data } = payload;
+    return this.taskService.update(id, data, user_id);
   }
 
+  // 🚀 ĐÃ SỬA: Truyền thêm payload.user_id
   @MessagePattern('task.move')
   moveTask(
-    @Payload() payload: { id: string; group_task_id: string; position: number },
+    @Payload()
+    payload: {
+      id: string;
+      group_task_id: string;
+      position: number;
+      user_id?: string;
+    },
   ) {
-    return this.taskService.moveTask(payload);
+    return this.taskService.moveTask(payload, payload.user_id);
   }
 
+  // 🚀 ĐÃ SỬA: Truyền thêm payload.user_id
   @MessagePattern('task.remove')
-  removeTask(@Payload() payload: { id: string }) {
-    return this.taskService.remove(payload.id);
+  removeTask(@Payload() payload: { id: string; user_id?: string }) {
+    return this.taskService.remove(payload.id, payload.user_id);
   }
 
   @MessagePattern('task.archive')
@@ -129,9 +136,12 @@ export class TaskController {
 
   // ─── GROUP TASKS (CÁC CỘT TRONG BẢNG) ─────────────────────────────────────
 
+  // 🚀 ĐÃ SỬA: Truyền thêm payload.user_id
   @MessagePattern('task.group.create')
-  createGroup(@Payload() payload: { project_id: string; title: string }) {
-    return this.taskService.createGroup(payload);
+  createGroup(
+    @Payload() payload: { project_id: string; title: string; user_id?: string },
+  ) {
+    return this.taskService.createGroup(payload, payload.user_id);
   }
 
   @MessagePattern('task.group.update')
@@ -139,9 +149,10 @@ export class TaskController {
     return this.taskService.updateGroup(payload.id, payload.title);
   }
 
+  // 🚀 ĐÃ SỬA: Truyền thêm payload.user_id
   @MessagePattern('task.group.remove')
-  removeGroup(@Payload() payload: { id: string }) {
-    return this.taskService.removeGroup(payload.id);
+  removeGroup(@Payload() payload: { id: string; user_id?: string }) {
+    return this.taskService.removeGroup(payload.id, payload.user_id);
   }
 
   @MessagePattern('task.group.reorder')
@@ -154,17 +165,24 @@ export class TaskController {
     );
   }
 
+  // 🚀 ĐÃ SỬA: Truyền thêm payload.user_id
   @MessagePattern('task.group.remove-with-fallback')
   removeGroupWithFallback(
-    @Payload() payload: { id: string; fallbackGroupId: string },
+    @Payload()
+    payload: {
+      id: string;
+      fallbackGroupId: string;
+      user_id?: string;
+    },
   ) {
     return this.taskService.removeGroupWithFallback(
       payload.id,
       payload.fallbackGroupId,
+      payload.user_id,
     );
   }
 
-  //Label
+  // ─── LABEL ────────────────────────────────────────────────────────────────
 
   @MessagePattern('label.create')
   createLabel(

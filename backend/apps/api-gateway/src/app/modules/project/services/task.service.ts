@@ -105,16 +105,23 @@ export class TaskService {
     return this.send('task.create', payload);
   }
 
-  updateTask(taskId: string, payload: any) {
-    return this.send('task.update', { id: taskId, ...payload });
+  updateTask(taskId: string, payload: any, userId: string) {
+    return this.send('task.update', {
+      id: taskId,
+      ...payload,
+      user_id: userId,
+    });
   }
 
-  moveTask(payload: { id: string; group_task_id: string; position: number }) {
-    return this.send('task.move', payload);
+  moveTask(
+    payload: { id: string; group_task_id: string; position: number },
+    userId: string,
+  ) {
+    return this.send('task.move', { ...payload, user_id: userId });
   }
 
-  deleteTask(taskId: string) {
-    return this.send('task.remove', { id: taskId });
+  deleteTask(taskId: string, userId: string) {
+    return this.send('task.remove', { id: taskId, user_id: userId });
   }
 
   archiveTask(taskId: string) {
@@ -123,16 +130,16 @@ export class TaskService {
 
   // ── Group Task ──────────────────────────────────────────────────────────────
 
-  createGroup(payload: { project_id: string; title: string }) {
-    return this.send('task.group.create', payload);
+  createGroup(payload: { project_id: string; title: string }, userId: string) {
+    return this.send('task.group.create', { ...payload, user_id: userId });
   }
 
   updateGroup(groupId: string, title: string) {
     return this.send('task.group.update', { id: groupId, title });
   }
 
-  deleteGroup(groupId: string) {
-    return this.send('task.group.remove', { id: groupId });
+  deleteGroup(groupId: string, userId: string) {
+    return this.send('task.group.remove', { id: groupId, user_id: userId });
   }
 
   reorderGroups(projectId: string, ordered_ids: string[]) {
@@ -199,10 +206,15 @@ export class TaskService {
     return this.send('task.group.update', { id: groupId, title });
   }
 
-  deleteGroupWithFallback(groupId: string, fallbackGroupId: string) {
+  deleteGroupWithFallback(
+    groupId: string,
+    fallbackGroupId: string,
+    userId: string,
+  ) {
     return this.send('task.group.remove-with-fallback', {
       id: groupId,
       fallbackGroupId,
+      user_id: userId,
     });
   }
 

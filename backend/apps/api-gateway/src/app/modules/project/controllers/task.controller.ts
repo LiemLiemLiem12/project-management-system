@@ -23,7 +23,6 @@ import { SearchSubtaskQueryDto } from '../dto/search-subtask.dto';
 import { title } from 'process';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
-
 @Controller('tasks')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
@@ -36,7 +35,8 @@ export class TaskController {
 
   @Post('recent-activities/feed')
   getFeedActivities(@Body('projectIds') projectIds: string[]) {
-    return this.taskService.getFeedActivities(projectIds);}
+    return this.taskService.getFeedActivities(projectIds);
+  }
   @Post('/upload')
   @UseInterceptors(
     FilesInterceptor('files', 10, { limits: { fileSize: 1024 * 1024 * 1024 } }),
@@ -52,8 +52,6 @@ export class TaskController {
       throw error;
     }
   }
-
-  
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
   @UseGuards(JwtAuthGuard, RoleGuard)
@@ -81,8 +79,13 @@ export class TaskController {
   // @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
   // @UseGuards(JwtAuthGuard, RoleGuard)
   @Patch(':taskId')
-  updateTaskData(@Param('taskId') taskId: string, @Body() body: any) {
-    return this.taskService.updateTask(taskId, body);
+  updateTaskData(
+    @Param('taskId') taskId: string,
+    @Body() body: any,
+    @Req() req: any,
+  ) {
+    const userId = req.user?.userId;
+    return this.taskService.updateTask(taskId, body, userId);
   }
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
@@ -109,8 +112,16 @@ export class TaskController {
   @UseGuards(RoleGuard)
   @UseGuards(JwtAuthGuard)
   @Post(':projectId/task/group')
-  createGroup(@Param('projectId') projectId: string, @Body() body: any) {
-    return this.taskService.createGroup({ ...body, project_id: projectId });
+  createGroup(
+    @Param('projectId') projectId: string,
+    @Body() body: any,
+    @Req() req: any,
+  ) {
+    const userId = req.user?.userId;
+    return this.taskService.createGroup(
+      { ...body, project_id: projectId },
+      userId,
+    );
   }
 
   // reorder TRƯỚC :groupId vì "reorder" là literal, :groupId là dynamic
@@ -140,8 +151,9 @@ export class TaskController {
   @UseGuards(RoleGuard)
   @UseGuards(JwtAuthGuard)
   @Delete(':projectId/task/group/:groupId')
-  deleteGroup(@Param('groupId') groupId: string) {
-    return this.taskService.deleteGroup(groupId);
+  deleteGroup(@Param('groupId') groupId: string, @Req() req: any) {
+    const userId = req.user?.userId;
+    return this.taskService.deleteGroup(groupId, userId);
   }
 
   // ── Task — /move và /archive TRƯỚC :taskId ────────────────────────────────
@@ -154,8 +166,10 @@ export class TaskController {
     @Param('projectId') projectId: string,
     @Param('taskId') taskId: string,
     @Body() body: any,
+    @Req() req: any,
   ) {
-    return this.taskService.moveTask({ id: taskId, ...body });
+    const userId = req.user?.userId;
+    return this.taskService.moveTask({ id: taskId, ...body }, userId);
   }
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
@@ -205,8 +219,10 @@ export class TaskController {
     @Param('projectId') projectId: string,
     @Param('taskId') taskId: string,
     @Body() body: any,
+    @Req() req: any,
   ) {
-    return this.taskService.updateTask(taskId, body);
+    const userId = req.user?.userId;
+    return this.taskService.updateTask(taskId, body, userId);
   }
 
   @Roles(Role.LEADER, Role.MODERATOR)
@@ -216,8 +232,10 @@ export class TaskController {
   deleteTask(
     @Param('projectId') projectId: string,
     @Param('taskId') taskId: string,
+    @Req() req: any,
   ) {
-    return this.taskService.deleteTask(taskId);
+    const userId = req.user?.userId;
+    return this.taskService.deleteTask(taskId, userId);
   }
 
   @Get(':taskId/subtasks')
@@ -247,10 +265,13 @@ export class TaskController {
   deleteGroupWithFallback(
     @Param('groupId') groupId: string,
     @Body() body: { fallbackGroupId: string },
+    @Req() req: any,
   ) {
+    const userId = req.user?.userId;
     return this.taskService.deleteGroupWithFallback(
       groupId,
       body.fallbackGroupId,
+      userId,
     );
   }
 
