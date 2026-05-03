@@ -8,16 +8,15 @@ import { Request } from 'express';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {
     super({
-      // jwtFromRequest: ExtractJwt.fromExtractors([
-      //   (request: Request) => {
-      //     let token = null;
-      //     if (request && request.cookies) {
-      //       token = request.cookies['accessToken'];
-      //     }
-      //     return token;
-      //   },
-      // ]),
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (request: Request) => {
+          let token = null;
+          if (request && request.cookies) {
+            token = request.cookies['accessToken'];
+          }
+          return token;
+        },
+      ]),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET') || '',
     });

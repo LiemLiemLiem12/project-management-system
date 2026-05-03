@@ -481,15 +481,23 @@ function TaskBar({
 }
 
 // ─── Main component ───────────────────────────────────────────
+// 🚀 THÊM PROP onTaskDateChange ĐỂ BÁO RA COMPONENT CHA GỌI API
 export default function TimelineGrid({
   groups,
   onGroupsChange,
+  onTaskDateChange, // <-- Thêm dòng này
   anchorDate,
   viewMode,
   filterText,
 }: {
   groups: TimelineGroup[];
   onGroupsChange: (g: TimelineGroup[]) => void;
+  onTaskDateChange?: (
+    taskId: string,
+    newStartDate: string,
+    newEndDate: string,
+    newGroupId: string,
+  ) => void; // <-- Thêm dòng này
   anchorDate: Date;
   viewMode: ViewMode;
   filterText: string;
@@ -660,8 +668,16 @@ export default function TimelineGrid({
       const newStart = new Date(newStartStr + "T00:00:00");
       const newEnd = new Date(newStart.getTime() + d.durationMs);
       const pad = (n: number) => String(n).padStart(2, "0");
+
       const fmt = (dt: Date) =>
         `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+
+      // 🚀 Format lại nhãn hiển thị thời gian (Ví dụ: "May 03 - May 05") để UI update ngay lập tức
+      const opts: Intl.DateTimeFormatOptions = {
+        month: "short",
+        day: "numeric",
+      };
+      const newTimeLabel = `${newStart.toLocaleDateString("en-US", opts)} - ${newEnd.toLocaleDateString("en-US", opts)}`;
 
       const rowTops = getRowTops();
       const containerRect = scrollRef.current?.getBoundingClientRect();
@@ -682,6 +698,10 @@ export default function TimelineGrid({
 
       const next = groups.map((g) => ({ ...g, tasks: [...g.tasks] }));
 
+      // 🚀 BIẾN LƯU NGÀY MỚI
+      const finalStartDate = fmt(newStart);
+      const finalEndDate = fmt(newEnd);
+
       if (targetGroupId !== d.srcGroupId) {
         const srcGrp = next.find((g) => g.id === d.srcGroupId);
         const dstGrp = next.find((g) => g.id === targetGroupId);
@@ -689,8 +709,9 @@ export default function TimelineGrid({
           const taskIdx = srcGrp.tasks.findIndex((t) => t.id === d.taskId);
           if (taskIdx !== -1) {
             const [moved] = srcGrp.tasks.splice(taskIdx, 1);
-            moved.startDate = fmt(newStart);
-            moved.endDate = fmt(newEnd);
+            moved.startDate = finalStartDate;
+            moved.endDate = finalEndDate;
+            moved.timeLabel = newTimeLabel; // Cập nhật hiển thị
             dstGrp.tasks.push(moved);
           }
         }
@@ -698,13 +719,20 @@ export default function TimelineGrid({
         for (const g of next) {
           const t = g.tasks.find((t) => t.id === d.taskId);
           if (t) {
-            t.startDate = fmt(newStart);
-            t.endDate = fmt(newEnd);
+            t.startDate = finalStartDate;
+            t.endDate = finalEndDate;
+            t.timeLabel = newTimeLabel; // Cập nhật hiển thị
             break;
           }
         }
       }
+
       onGroupsChange(next);
+
+      // 🚀 GỌI CALLBACK BÁO CHO CHA ĐỂ CÒN GỌI API LÊN DATABASE
+      if (onTaskDateChange) {
+        onTaskDateChange(d.taskId, finalStartDate, finalEndDate, targetGroupId);
+      }
     };
 
     window.addEventListener("mousemove", onMove);
@@ -715,7 +743,7 @@ export default function TimelineGrid({
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cols, viewMode, groups, onGroupsChange, getRowTops]);
+  }, [cols, viewMode, groups, onGroupsChange, getRowTops, onTaskDateChange]);
 
   const draggingTask = dragging
     ? groups.flatMap((g) => g.tasks).find((t) => t.id === dragging.taskId)

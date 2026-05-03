@@ -20,7 +20,7 @@ import { useAuthStore } from "@/store/auth.store";
 type Member = {
   id: string;
   email: string;
-  role: "Viewer" | "Member" | "Moderator";
+  role: "Leader" | "Member" | "Moderator";
 };
 
 export default function CreateProjectPage() {
@@ -195,7 +195,7 @@ export default function CreateProjectPage() {
                 disabled={isCheckingEmail}
                 className="px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
               >
-                <option value="Viewer">Viewer</option>
+                <option value="Leader">Leader</option>
                 <option value="Member">Member</option>
                 <option value="Moderator">Moderator</option>
               </select>

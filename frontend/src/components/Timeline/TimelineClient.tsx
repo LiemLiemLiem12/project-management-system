@@ -16,6 +16,9 @@ import TimelineHeader from "./TimelineHeader";
 import TimelineGrid from "./TimelineGrid";
 import TimelineFooter from "./TimelineFooter";
 
+// 🚀 NẾU ÔNG CÓ HOOK UPDATE TASK TỪ SERVICE THÌ IMPORT VÀO ĐÂY, HOẶC DÙNG DÙNG useAPI
+import { useAPI } from "@/API/useAPI";
+
 function getInitialAnchor(mode: ViewMode): Date {
   const today = new Date();
   if (mode === "Weeks") return startOfWeek(today);
@@ -27,6 +30,8 @@ export default function TimelineClient({ projectId }: { projectId: string }) {
   const [viewMode, setViewMode] = useState<ViewMode>("Weeks");
   const [anchorDate, setAnchorDate] = useState(() => getInitialAnchor("Weeks"));
   const [filterText, setFilterText] = useState("");
+
+  const api = useAPI(); // 🚀 Khởi tạo api để gọi Backend
 
   // Fetch data — dùng lại hooks kanban, data sync vào store
   useGetKanbanBoard(projectId);
@@ -55,10 +60,32 @@ export default function TimelineClient({ projectId }: { projectId: string }) {
   };
 
   // onGroupsChange — optimistic update local (drag & drop trên timeline)
-  // Không sync lên DB vì cần gọi moveTask API — bổ sung sau nếu cần
   const handleGroupsChange = (updated: TimelineGroup[]) => {
-    // TODO: gọi api.task.moveTask khi kéo task sang group khác
-    // Hiện tại chỉ update local vì TimelineGrid tự quản lý state kéo thả
+    // 💡 Ghi chú: Chỗ này không cần gọi API vì API sẽ được gọi ở handleTaskDateChange bên dưới
+    // TimelineGrid tự quản lý state mượt mà trước khi gọi API rồi.
+  };
+
+  // 🚀 HÀM MỚI: Hứng tín hiệu kéo thả từ TimelineGrid để gọi API Backend
+  const handleTaskDateChange = async (
+    taskId: string,
+    newStartDate: string,
+    newEndDate: string,
+    newGroupId: string,
+  ) => {
+    try {
+      // Gọi API cập nhật Task.
+      // Dựa vào code Backend của ông, tui đoán endpoint là PATCH /:projectId/task/:taskId
+      // Nhớ map đúng tên biến start_date và due_date theo Schema DB của ông nha!
+      await api.task.updateTask(projectId, taskId, {
+        start_date: newStartDate,
+        due_date: newEndDate,
+        group_task_id: newGroupId, // Kéo nhầm sang làn khác thì update luôn Group
+      });
+      console.log("Cập nhật ngày kéo thả thành công!");
+    } catch (error) {
+      console.error("Lỗi khi kéo thả cập nhật ngày:", error);
+      // Nâng cao: Nếu lỗi, ông có thể reload lại Kanban Board để undo thao tác kéo
+    }
   };
 
   // Tính stats cho footer
@@ -93,6 +120,8 @@ export default function TimelineClient({ projectId }: { projectId: string }) {
         <TimelineGrid
           groups={groups}
           onGroupsChange={handleGroupsChange}
+          // 🚀 TRUYỀN HÀM VÀO ĐÂY ĐỂ TIMELINEGRID CÓ THỂ BÁO CÁO LÊN CHA
+          onTaskDateChange={handleTaskDateChange}
           anchorDate={anchorDate}
           viewMode={viewMode}
           filterText={filterText}
