@@ -17,6 +17,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
 import { ALLOWED_MIME_TYPES } from './constant/allow-mime.constant';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { PERMISSION } from './enums/permission.enum';
 
 @Controller('assets')
 export class AssetController {
@@ -25,6 +26,15 @@ export class AssetController {
 
     private readonly cloudinaryService: CloudinaryService,
   ) {}
+
+  @Get('role')
+  checkPermission(
+    @Query('fileId') fileId: string,
+    @Query('userId') userId: string,
+  ) {
+    return this.assetService.checkPermission(fileId, userId);
+  }
+
   @Get('folder')
   findAllByFolder(@Query('id') id: string, @Query('userId') userId: string) {
     return this.assetService.findAllByFolder(id, userId);
@@ -90,7 +100,7 @@ export class AssetController {
     }
   }
 
-  @Get('')
+  @Get()
   findAllByProject(
     @Query('projectId') projectId: string,
     @Query('userId') userId: string,

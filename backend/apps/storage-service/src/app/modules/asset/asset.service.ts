@@ -174,4 +174,10 @@ export class AssetService {
 
     return { success: true, message: 'Asset deleted successfully' };
   }
+
+  async checkPermission(fileId: string, userId: string) {
+    return this.assetPermissionRepo.find({
+      where: { fileId, userId },
+    });
+  }
 }

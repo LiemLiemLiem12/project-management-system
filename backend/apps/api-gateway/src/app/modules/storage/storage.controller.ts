@@ -12,6 +12,7 @@ import {
   UnauthorizedException,
   UseInterceptors,
   UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { StorageService } from './storage.service';
@@ -21,11 +22,16 @@ import { JwtAuthGuard } from '../auth/guard/jwt.guard';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import FormData from 'form-data';
+import { AssetPermissionGrant } from './decorators/asset-permission.decorator';
+import { AssetPermission } from './enums/asset-permission.enum';
+import { AssetPermissionGuard } from './guard/asset-permission.guard';
 
 @Controller('storages')
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}
 
+  @AssetPermissionGrant(AssetPermission.CREATE)
+  @UseGuards(AssetPermissionGuard)
   @UseGuards(JwtAuthGuard)
   @Post('folder')
   createFolder(@Body() body: CreateFolderDto, @Req() request: Request) {
@@ -42,11 +48,13 @@ export class StorageController {
   }
 
   @Post()
+  @AssetPermissionGrant(AssetPermission.CREATE)
+  @UseGuards(JwtAuthGuard, AssetPermissionGuard)
   @UseInterceptors(FilesInterceptor('files'))
-  @UseGuards(JwtAuthGuard)
   create(
     @UploadedFiles() files: Express.Multer.File,
     @Body() createStorageDto: CreateStorageDto,
+    @Query('parentId') parentId: string,
     @Req() request: Request,
   ) {
     const user = request.user as { userId: string; username: string };
@@ -54,38 +62,50 @@ export class StorageController {
     return this.storageService.createAsset({
       ...createStorageDto,
       uploadedBy: user.userId,
+      parentId: parentId ? parentId : null,
       files,
     });
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('folder/:id')
-  getAssetsByFolder(@Param('id') id: string, @Req() request: Request) {
+  @AssetPermissionGrant(AssetPermission.READ)
+  @UseGuards(JwtAuthGuard, AssetPermissionGuard)
+  @Get('folder/:fileId')
+  getAssetsByFolder(@Param('fileId') fileId: string, @Req() request: Request) {
     const user = request.user as { userId: string; username: string };
     if (!user) return false;
-    return this.storageService.getAssetsByFolder(id, user.userId);
+    return this.storageService.getAssetsByFolder(fileId, user.userId);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('project')
+  @Get('project/:projectId')
   getAssetsByProject(
-    @Param('projectId') id: string,
+    @Param('projectId') projectId: string,
     @Query('isRoot') isRoot: boolean,
     @Req() request: Request,
   ) {
-    const projectId = request.cookies['projectId'];
     const user = request.user as { userId: string; username: string };
 
-    return this.storageService.getAssetsByProject(id, user.userId, isRoot);
+    return this.storageService.getAssetsByProject(
+      projectId,
+      user.userId,
+      isRoot,
+    );
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateStorageDto: UpdateStorageDto) {
-    return this.storageService.updateAsset(id, updateStorageDto);
+  @AssetPermissionGrant(AssetPermission.UPDATE)
+  @UseGuards(JwtAuthGuard, AssetPermissionGuard)
+  @Patch(':fileId')
+  update(
+    @Param('fileId') fileId: string,
+    @Body() updateStorageDto: UpdateStorageDto,
+  ) {
+    return this.storageService.updateAsset(fileId, updateStorageDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.storageService.deleteAsset(id);
+  @AssetPermissionGrant(AssetPermission.DELETE)
+  @UseGuards(JwtAuthGuard, AssetPermissionGuard)
+  @Delete(':fileId')
+  remove(@Param('fileId') fileId: string) {
+    return this.storageService.deleteAsset(fileId);
   }
 }
