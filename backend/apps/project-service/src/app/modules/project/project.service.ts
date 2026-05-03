@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, HttpStatus } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -154,20 +154,75 @@ export class ProjectService {
     }
   }
 
-  async addMember(data: { project_id: string; user_id: string; role: string }) {
+  async addMember(data: {
+    project_id: string;
+    user_id: string;
+    email: string;
+    role: string;
+  }) {
+    // 1. Kiểm tra xem user đã tồn tại trong project chưa
     const existingMember = await this.projectMemberRepository.findOne({
       where: { project_id: data.project_id, user_id: data.user_id },
     });
 
     if (existingMember) {
+      if (existingMember.status === 'Active') {
+        throw new RpcException({
+          message: 'User is already an active member of this project',
+          statusCode: 409,
+        });
+      } else {
+        throw new RpcException({
+          message: 'An invitation has already been sent to this user',
+          statusCode: 409,
+        });
+      }
+    }
+
+    // 2. Tìm thông tin Project để lấy cái Tên (name) nhét vào nội dung Email
+    const project = await this.projectRepository.findOne({
+      where: { id: data.project_id },
+    });
+
+    if (!project) {
       throw new RpcException({
-        message: 'User is already a member of this project',
-        statusCode: 409,
+        message: 'Project not found',
+        statusCode: 404,
       });
     }
 
-    const newMember = this.projectMemberRepository.create(data);
-    return await this.projectMemberRepository.save(newMember);
+    // 3. Tạo Member mới với trạng thái Pending & sinh token (Y chang createComplex)
+    const inviteToken = uuidv4();
+    const newMember = this.projectMemberRepository.create({
+      project_id: data.project_id,
+      user_id: data.user_id,
+      role: data.role,
+      status: 'Pending',
+      invite_token: inviteToken,
+      joined_date: new Date().toISOString(),
+    });
+
+    await this.projectMemberRepository.save(newMember);
+
+    // 4. Bắn Email mời vào project
+    if (data.email) {
+      this.mailService
+        .sendProjectInvite(
+          data.email,
+          project.name,
+          newMember.role,
+          inviteToken,
+        )
+        .catch((error) => {
+          console.error('Lỗi khi gửi email mời:', error);
+        });
+    }
+
+    return {
+      success: true,
+      message: 'Invitation sent successfully',
+      data: newMember,
+    };
   }
 
   async updateMemberRole(projectId: string, userId: string, data: any) {

@@ -55,7 +55,13 @@ export class ProjectController {
 
   @MessagePattern('project_member.create')
   addMember(
-    @Payload() payload: { project_id: string; user_id: string; role: string },
+    @Payload()
+    payload: {
+      project_id: string;
+      user_id: string;
+      email: string;
+      role: string;
+    },
   ) {
     return this.projectService.addMember(payload);
   }

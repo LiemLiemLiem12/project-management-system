@@ -43,6 +43,18 @@ import { CommentGateway } from './gateways/comment.gateway';
           },
         },
       },
+
+      {
+        name: 'AUTH_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBIT_MQ || 'amqp://localhost:5672'],
+          queue: process.env.AUTH_QUEUE_NAME || 'auth_queue',
+          queueOptions: {
+            durable: false,
+          },
+        },
+      },
     ]),
   ],
   controllers: [
