@@ -116,11 +116,11 @@ export const useUpdateMemberRole = (projectId: string) => {
       queryClient.invalidateQueries({
         queryKey: ["currentProject", projectId],
       });
-      toast.success("Cập nhật vai trò thành công!");
+      toast.success("Role updated successfully!");
     },
     onError: (error: any) => {
       console.error("Failed to update member role:", error);
-      toast.error(getErrorMessage(error, "Lỗi khi cập nhật vai trò."));
+      toast.error(getErrorMessage(error, "Failed to update member role."));
     },
   });
 };
@@ -141,11 +141,11 @@ export const useRemoveProjectMember = (projectId: string) => {
       queryClient.invalidateQueries({
         queryKey: ["currentProject", projectId],
       });
-      toast.success("Đã xóa thành viên khỏi dự án!");
+      toast.success("Member removed successfully!");
     },
     onError: (error: any) => {
       console.error("Failed to remove project member:", error);
-      toast.error(getErrorMessage(error, "Lỗi khi xóa thành viên khỏi dự án."));
+      toast.error(getErrorMessage(error, "Failed to remove member from project."));
     },
   });
 };
@@ -163,7 +163,7 @@ export const useProjectService = () => {
     }) => api.project.createProject(payload),
 
     onSuccess: () => {
-      toast.success("Tạo dự án và bảng Kanban thành công!");
+      toast.success("Project and Kanban board created successfully!");
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       router.push("/for-you");
     },
