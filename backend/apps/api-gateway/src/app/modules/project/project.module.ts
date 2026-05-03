@@ -31,6 +31,18 @@ import { CommentGateway } from './gateways/comment.gateway';
           },
         },
       },
+
+      {
+        name: 'AUDIT_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBIT_MQ || 'amqp://localhost:5672'],
+          queue: process.env.AUDIT_QUEUE_NAME || 'audit_queue',
+          queueOptions: {
+            durable: true,
+          },
+        },
+      },
     ]),
   ],
   controllers: [

@@ -161,7 +161,9 @@ export class TaskService {
 
     const newTask = await this.taskRepository.save(task);
 
+    // 🚀 LOG: CREATE TASK
     this.auditClient.emit('log_action_created', {
+      project_id: payload.project_id, // Đã thêm project_id
       user_id: payload.created_by || 'unknown_user',
       action: 'CREATE_TASK',
       entity_type: 'TASK',
@@ -205,7 +207,9 @@ export class TaskService {
     Object.assign(task, data);
     const newTask = await this.taskRepository.save(task);
 
+    // 🚀 LOG: UPDATE TASK
     this.auditClient.emit('log_action_created', {
+      project_id: task.groupTask?.project_id, // Đã thêm project_id
       user_id: currentUserId,
       action: 'UPDATE_TASK',
       entity_type: 'TASK',
@@ -217,12 +221,12 @@ export class TaskService {
     return newTask;
   }
 
-  async moveTask(payload: {
-    id: string;
-    group_task_id: string;
-    position: number;
-  }) {
-    const task = await this.findTaskById(payload.id); // Dùng hàm nội bộ
+  // 🚀 Thêm currentUserId vào moveTask
+  async moveTask(
+    payload: { id: string; group_task_id: string; position: number },
+    currentUserId: string = 'unknown_user',
+  ) {
+    const task = await this.findTaskById(payload.id);
     const oldGroupId = task.group_task_id;
     const oldPos = task.position;
     const newGroupId = payload.group_task_id;
@@ -291,6 +295,17 @@ export class TaskService {
       position: newPos,
     });
 
+    // 🚀 LOG: MOVE TASK
+    this.auditClient.emit('log_action_created', {
+      project_id: task.groupTask?.project_id,
+      user_id: currentUserId,
+      action: 'MOVE_TASK',
+      entity_type: 'TASK',
+      entity_id: task.id,
+      old_value: { group_task_id: oldGroupId, position: oldPos },
+      new_value: { group_task_id: newGroupId, position: newPos },
+    });
+
     return task;
   }
 
@@ -301,7 +316,9 @@ export class TaskService {
 
     const result = await this.taskRepository.remove(task);
 
+    // 🚀 LOG: DELETE TASK
     this.auditClient.emit('log_action_created', {
+      project_id: task.groupTask?.project_id, // Đã thêm project_id
       user_id: currentUserId,
       action: 'DELETE_TASK',
       entity_type: 'TASK',
@@ -320,7 +337,11 @@ export class TaskService {
 
   // ─── GROUP TASKS ──────────────────────────────────────────────────────────
 
-  async createGroup(payload: { project_id: string; title: string }) {
+  // 🚀 Thêm currentUserId
+  async createGroup(
+    payload: { project_id: string; title: string },
+    currentUserId: string = 'unknown_user',
+  ) {
     const maxOrder = await this.groupTaskRepo.findOne({
       where: { project_id: payload.project_id },
       order: { order: 'DESC' },
@@ -328,7 +349,20 @@ export class TaskService {
     const order = maxOrder ? maxOrder.order + 1 : 0;
 
     const group = this.groupTaskRepo.create({ ...payload, order });
-    return this.groupTaskRepo.save(group);
+    const savedGroup = await this.groupTaskRepo.save(group);
+
+    // 🚀 LOG: CREATE GROUP
+    this.auditClient.emit('log_action_created', {
+      project_id: payload.project_id,
+      user_id: currentUserId,
+      action: 'CREATE_GROUP',
+      entity_type: 'GROUP_TASK',
+      entity_id: savedGroup.id,
+      old_value: null,
+      new_value: savedGroup,
+    });
+
+    return savedGroup;
   }
 
   async updateGroup(id: string, title: string) {
@@ -342,14 +376,30 @@ export class TaskService {
     return this.groupTaskRepo.save(group);
   }
 
-  async removeGroup(id: string) {
+  // 🚀 Thêm currentUserId
+  async removeGroup(id: string, currentUserId: string = 'unknown_user') {
     const group = await this.groupTaskRepo.findOne({ where: { id } });
     if (!group)
       throw new RpcException({
         message: `GroupTask ${id} not found`,
         statusCode: 404,
       });
-    return this.groupTaskRepo.remove(group);
+
+    const oldGroup = JSON.parse(JSON.stringify(group));
+    const result = await this.groupTaskRepo.remove(group);
+
+    // 🚀 LOG: DELETE GROUP
+    this.auditClient.emit('log_action_created', {
+      project_id: oldGroup.project_id,
+      user_id: currentUserId,
+      action: 'DELETE_GROUP',
+      entity_type: 'GROUP_TASK',
+      entity_id: id,
+      old_value: oldGroup,
+      new_value: null,
+    });
+
+    return result;
   }
 
   async reorderGroups(projectId: string, ordered_ids: string[]) {
@@ -361,13 +411,20 @@ export class TaskService {
     return this.getKanbanBoard(projectId);
   }
 
-  async removeGroupWithFallback(id: string, fallbackGroupId: string) {
+  // 🚀 Thêm currentUserId
+  async removeGroupWithFallback(
+    id: string,
+    fallbackGroupId: string,
+    currentUserId: string = 'unknown_user',
+  ) {
     const group = await this.groupTaskRepo.findOne({ where: { id } });
     if (!group)
       throw new RpcException({
         message: `GroupTask ${id} not found`,
         statusCode: 404,
       });
+
+    const oldGroup = JSON.parse(JSON.stringify(group));
 
     // ── Không được xóa cột cuối cùng ──────────────────────────────────────────
     const totalGroups = await this.groupTaskRepo.count({
@@ -418,6 +475,18 @@ export class TaskService {
     }
 
     await this.groupTaskRepo.remove(group);
+
+    // 🚀 LOG: DELETE GROUP (có fallback chuyển task)
+    this.auditClient.emit('log_action_created', {
+      project_id: oldGroup.project_id,
+      user_id: currentUserId,
+      action: 'DELETE_GROUP',
+      entity_type: 'GROUP_TASK',
+      entity_id: id,
+      old_value: oldGroup,
+      new_value: { fallback_group_id: fallbackGroupId },
+    });
+
     return { success: true };
   }
 
@@ -483,6 +552,7 @@ export class TaskService {
   async getLogsFromAudit() {
     return this.auditClient.send('get_recent_logs', {});
   }
+
   async findMyTasks(userId: string) {
     const tasks = await this.taskRepository.find({
       where: {

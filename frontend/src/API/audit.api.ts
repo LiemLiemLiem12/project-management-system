@@ -13,6 +13,12 @@ export interface AuditLog {
 }
 
 export const auditApi = (axiosPrivate: AxiosInstance) => ({
-  // Nhớ thay đường dẫn này khớp với route bên BE của ông
-  getRecentLogs: () => axiosPrivate.get<AuditLog[]>(`/tasks/recent-activities`),
+  getRecentLogs: (projectId: string) =>
+    axiosPrivate.get<AuditLog[]>(`/tasks/recent-activities/${projectId}`),
+
+  getFeedActivities: (projectIds: string[]) => {
+    return axiosPrivate.post<AuditLog[]>("/tasks/recent-activities/feed", {
+      projectIds,
+    });
+  },
 });

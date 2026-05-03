@@ -9,6 +9,9 @@ import FormData from 'form-data';
 @Injectable()
 export class TaskService {
   constructor(
+    @Inject('AUDIT_SERVICE')
+    private readonly auditClient: ClientProxy,
+
     @Inject(process.env.PROJECT_SERVICE_NAME || 'PROJECT_SERVICE')
     private readonly projectClient: ClientProxy,
 
@@ -58,8 +61,28 @@ export class TaskService {
 
   // ── Audit Log / Recent Activities ───────────────────────────────────────────
 
-  getRecentActivities() {
-    return this.send('get_recent_activities', {});
+  async getRecentActivities(projectId: string) {
+    try {
+      return await firstValueFrom(
+        this.auditClient.send('get_recent_logs', { projectId }),
+      );
+    } catch (error: any) {
+      console.error('Lỗi gửi qua Audit Service:', error);
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
+  }
+
+  async getFeedActivities(projectIds: string[]) {
+    try {
+      if (!projectIds || projectIds.length === 0) return [];
+
+      // Bắn mảng ID sang Audit Service thông qua pattern mới
+      return await firstValueFrom(
+        this.auditClient.send('get_feed_logs', { projectIds }),
+      );
+    } catch (error: any) {
+      throw new HttpException(error.message, error.statusCode || 500);
+    }
   }
 
   // ── Kanban Board ────────────────────────────────────────────────────────────

@@ -23,10 +23,20 @@ import { SearchSubtaskQueryDto } from '../dto/search-subtask.dto';
 import { title } from 'process';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
+
 @Controller('tasks')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
+  @Get('recent-activities/:projectId')
+  getRecentActivities(@Param('projectId') projectId: string) {
+    // Gọi xuống service và truyền projectId vào
+    return this.taskService.getRecentActivities(projectId);
+  }
+
+  @Post('recent-activities/feed')
+  getFeedActivities(@Body('projectIds') projectIds: string[]) {
+    return this.taskService.getFeedActivities(projectIds);}
   @Post('/upload')
   @UseInterceptors(
     FilesInterceptor('files', 10, { limits: { fileSize: 1024 * 1024 * 1024 } }),
@@ -43,10 +53,7 @@ export class TaskController {
     }
   }
 
-  @Get('recent-activities')
-  getRecentActivities() {
-    return this.taskService.getRecentActivities();
-  }
+  
 
   @Roles(Role.MEMBER, Role.LEADER, Role.MODERATOR)
   @UseGuards(JwtAuthGuard, RoleGuard)
