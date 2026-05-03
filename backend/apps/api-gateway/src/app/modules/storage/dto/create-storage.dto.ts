@@ -8,10 +8,6 @@ import {
 } from 'class-validator';
 
 export class CreateStorageDto {
-  @IsBoolean()
-  @IsOptional()
-  parentId?: string;
-
   @IsNotEmpty()
   @IsString()
   projectId!: string;
@@ -42,5 +38,5 @@ export class CreateStorageDto {
 
   @IsOptional()
   @IsString()
-  uploadedBy!: string;
+  uploadedBy?: string;
 }

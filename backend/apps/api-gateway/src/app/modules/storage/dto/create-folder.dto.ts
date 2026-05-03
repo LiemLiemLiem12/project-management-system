@@ -12,7 +12,7 @@ export class CreateFolderDto {
   @IsOptional()
   name!: string;
 
-  @IsBoolean()
+  @IsString()
   @IsOptional()
   parentId?: string;
 

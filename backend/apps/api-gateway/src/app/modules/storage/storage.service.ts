@@ -2,6 +2,7 @@ import { Injectable, Inject, HttpException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import FormData from 'form-data';
+import { AssetPermission } from './enums/asset-permission.enum';
 
 @Injectable()
 export class StorageService {
@@ -83,5 +84,20 @@ export class StorageService {
 
   deleteAsset(id: string) {
     return this.request('delete', `${this.baseUrl}/${id}`);
+  }
+
+  checkPermission(fileId: string, userId: string) {
+    return this.request('get', `${this.baseUrl}/role`, {
+      fileId,
+      userId,
+    });
+  }
+
+  syncUserPermission(fileId: string, userId: string, newPermissions: any[]) {
+    return this.request('post', `${this.baseUrl}/role`, {
+      fileId,
+      userId,
+      newPermissions,
+    });
   }
 }
