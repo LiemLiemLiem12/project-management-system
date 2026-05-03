@@ -92,4 +92,12 @@ export class StorageService {
       userId,
     });
   }
+
+  syncUserPermission(fileId: string, userId: string, newPermissions: any[]) {
+    return this.request('post', `${this.baseUrl}/role`, {
+      fileId,
+      userId,
+      newPermissions,
+    });
+  }
 }

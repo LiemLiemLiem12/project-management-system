@@ -25,10 +25,23 @@ import FormData from 'form-data';
 import { AssetPermissionGrant } from './decorators/asset-permission.decorator';
 import { AssetPermission } from './enums/asset-permission.enum';
 import { AssetPermissionGuard } from './guard/asset-permission.guard';
+import { SyncUserPermissionDto } from './dto/sync-user-permission.dto';
 
 @Controller('storages')
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}
+
+  @AssetPermissionGrant(AssetPermission.UPDATE)
+  @UseGuards(AssetPermissionGuard)
+  @UseGuards(JwtAuthGuard)
+  @Post('role')
+  syncUserPermission(@Body() body: SyncUserPermissionDto) {
+    return this.storageService.syncUserPermission(
+      body.fileId,
+      body.userId,
+      body.newPermissions,
+    );
+  }
 
   @AssetPermissionGrant(AssetPermission.CREATE)
   @UseGuards(AssetPermissionGuard)
@@ -76,7 +89,8 @@ export class StorageController {
     return this.storageService.getAssetsByFolder(fileId, user.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @AssetPermissionGrant(AssetPermission.READ)
+  @UseGuards(JwtAuthGuard, AssetPermissionGuard)
   @Get('project/:projectId')
   getAssetsByProject(
     @Param('projectId') projectId: string,

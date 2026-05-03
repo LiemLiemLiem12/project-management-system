@@ -49,7 +49,7 @@ export class AssetPermissionGuard implements CanActivate {
       (permisson: any) => permisson.permission,
     );
 
-    console.log(`Permissions for targetId ${targetId}:`, permissions);
+    // console.log(`Permissions for targetId ${targetId}:`, permissions);
 
     const requiredPermsArray = Array.isArray(requiredPermission)
       ? requiredPermission

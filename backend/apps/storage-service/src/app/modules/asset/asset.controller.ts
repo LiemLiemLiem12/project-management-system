@@ -27,6 +27,17 @@ export class AssetController {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
+  @Post('role')
+  async syncUserPermission(
+    @Body() body: { fileId: string; userId: string; newPermissions: string[] },
+  ) {
+    return this.assetService.syncUserPermissions(
+      body.fileId,
+      body.userId,
+      body.newPermissions,
+    );
+  }
+
   @Get('role')
   checkPermission(
     @Query('fileId') fileId: string,

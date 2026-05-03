@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, IsNull, Repository } from 'typeorm';
 import { RpcException } from '@nestjs/microservices';
 import { Asset } from './entities/asset.entity';
 import { PERMISSION } from './enums/permission.enum';
@@ -17,6 +17,9 @@ export class AssetService {
     private readonly assetPermissionRepo: Repository<AssetPermission>,
 
     private readonly cloudinaryService: CloudinaryService,
+
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(data: any) {
@@ -179,5 +182,43 @@ export class AssetService {
     return this.assetPermissionRepo.find({
       where: { fileId, userId },
     });
+  }
+
+  async syncUserPermissions(
+    fileId: string,
+    userId: string,
+    newPermissions: string[],
+  ) {
+    await this.dataSource.transaction(async (manager) => {
+      await manager.delete(AssetPermission, { fileId, userId });
+
+      if (newPermissions && newPermissions.length > 0) {
+        const permissionsToInsert = newPermissions.map((perm) => {
+          return manager.create(AssetPermission, {
+            fileId,
+            userId,
+            permission: perm,
+          });
+        });
+        await manager.save(permissionsToInsert);
+      }
+    });
+
+    return this.getPermissionsOfUserOnFile(fileId, userId);
+  }
+
+  async getPermissionsOfUserOnFile(
+    fileId: string,
+    userId: string,
+  ): Promise<string[]> {
+    const records = await this.assetPermissionRepo.find({
+      where: {
+        fileId: fileId,
+        userId: userId,
+      },
+      select: ['permission'],
+    });
+
+    return records.map((record) => record.permission);
   }
 }
