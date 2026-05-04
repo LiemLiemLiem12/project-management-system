@@ -9,6 +9,7 @@ import { AppModule } from './app/app.module';
 import { ConfigService } from '@nestjs/config/dist/config.service';
 import * as cookieParser from 'cookie-parser';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -33,6 +34,9 @@ async function bootstrap() {
   });
 
   app.use(cookieParser.default());
+
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ extended: true, limit: '10mb' }));
 
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),

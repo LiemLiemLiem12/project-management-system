@@ -2,21 +2,50 @@
 
 import { useParams } from "next/navigation";
 import { useAuditStore } from "@/store/audit.store";
+import { useAuthStore } from "@/store/auth.store"; // 🚀 ĐÃ IMPORT STORE CỦA ÔNG
 import {
   useGetRecentActivities,
   useGetFeedActivities,
 } from "@/services/audit.service";
 
 function ActivityRow({ data }: { data: any }) {
+  // 🚀 Móc thông tin user đang đăng nhập từ Zustand Store
+  const currentUser = useAuthStore((s: any) => s.user);
+
+  // Kiểm tra xem hành động này có phải của mình không (so sánh tên hoặc ID)
+  const isMe =
+    currentUser &&
+    (data.user === currentUser.fullName ||
+      data.user === currentUser.username ||
+      data.user_id === currentUser.id);
+
+  // 🚀 LOGIC LẤY ẢNH ƯU TIÊN:
+  // 1. Nếu là hành động của mình -> Lấy ảnh trực tiếp từ Store (nhanh & luôn mới nhất)
+  // 2. Nếu của người khác -> Lấy từ data API (nếu có)
+  const avatar = isMe
+    ? currentUser.avatarUrl
+    : data.avatar_url || data.avatarUrl;
+
+  const initial = data.user ? data.user.charAt(0).toUpperCase() : "U";
+
   return (
     <div className="flex gap-3 py-4 border-b border-gray-50 last:border-0">
-      <div className="w-9 h-9 rounded-full bg-[#0052CC] flex items-center justify-center text-sm font-bold text-white flex-shrink-0 uppercase">
-        {data.avatar || data.user?.charAt(0) || "U"}
+      <div className="w-9 h-9 rounded-full bg-[#0052CC] flex items-center justify-center text-sm font-bold text-white flex-shrink-0 uppercase overflow-hidden">
+        {avatar ? (
+          <img
+            src={avatar}
+            alt={data.user || "User"}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          initial
+        )}
       </div>
       <div className="min-w-0">
         <p className="text-sm text-gray-800 break-words leading-relaxed">
           <span className="font-semibold text-[#0052CC] hover:underline cursor-pointer">
-            {data.user}
+            {isMe ? "You" : data.user}{" "}
+            {/* Nếu là mình thì đổi tên thành "You" cho xịn */}
           </span>{" "}
           <span className="text-gray-600">{data.action}</span>{" "}
           <span className="font-medium text-[#0052CC] hover:underline cursor-pointer">

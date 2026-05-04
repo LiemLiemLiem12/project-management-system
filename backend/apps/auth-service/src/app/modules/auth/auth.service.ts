@@ -576,4 +576,128 @@ export class AuthService {
 
     return { exists: false };
   }
+  async updateProfile(
+    userId: string,
+    payload: { full_name?: string; avatar_url?: string },
+  ) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new RpcException({ message: 'User not found', statusCode: 404 });
+    }
+
+    await this.userRepository.update(userId, {
+      fullName: payload.full_name ?? user.fullName,
+      avatarUrl: payload.avatar_url ?? user.avatarUrl,
+    });
+
+    const updatedUser = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    const { passwordHash, ...result } = updatedUser!;
+
+    return result;
+  }
+
+  async initChangePassword(
+    userId: string,
+    payload: { current_password: string; new_password: string },
+  ) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user)
+      throw new RpcException({ message: 'User not found', statusCode: 404 });
+
+    if (user.provider !== 'local') {
+      throw new RpcException({
+        message: `This account uses ${user.provider} login. Password change is not allowed.`,
+        statusCode: 400,
+      });
+    }
+
+    const strongPasswordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!strongPasswordRegex.test(payload.new_password)) {
+      throw new RpcException({
+        message:
+          'Password is too weak: Must include uppercase, lowercase, number, and special character',
+        statusCode: 400,
+      });
+    }
+
+    const isMatch = await bcrypt.compare(
+      payload.current_password,
+      user.passwordHash,
+    );
+    if (!isMatch) {
+      throw new RpcException({
+        message: 'Incorrect current password',
+        statusCode: 400,
+      });
+    }
+
+    // Tạo OTP và Token phiên giao dịch
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const token = uuidv4();
+
+    // Lưu OTP và thông tin mật khẩu mới tạm thời vào Cache (hết hạn 2 phút)
+    await this.cacheManager.set(`change_pass_otp_${userId}`, otp, 120000);
+    await this.cacheManager.set(`change_pass_token_${userId}`, token, 120000);
+    //  Lưu ý bảo mật: Đáng lẽ không nên lưu plain text password vào cache,
+    // nhưng để tiện lợi cho luồng 2 bước này, ta hash nó trước khi lưu cache.
+    const salt = await bcrypt.genSalt(10);
+    const newHash = await bcrypt.hash(payload.new_password, salt);
+    await this.cacheManager.set(
+      `change_pass_newhash_${userId}`,
+      newHash,
+      120000,
+    );
+
+   
+    this.eventEmitter.emit('sendOtpEmail', {
+      email: user.email,
+      otp,
+      appName: 'Popket',
+      context: 'change_password',
+    });
+
+    return { success: true, message: 'OTP sent to email', token };
+  }
+
+  
+  async verifyChangePasswordOtp(
+    userId: string,
+    payload: { otp: string; token: string },
+  ) {
+    const savedToken = await this.cacheManager.get(
+      `change_pass_token_${userId}`,
+    );
+    const savedOtp = await this.cacheManager.get(`change_pass_otp_${userId}`);
+    const newHash = await this.cacheManager.get<string>(
+      `change_pass_newhash_${userId}`,
+    );
+
+    if (!savedToken || savedToken !== payload.token) {
+      throw new RpcException({
+        message: 'Session expired or invalid token',
+        statusCode: 400,
+      });
+    }
+
+    if (!savedOtp || savedOtp !== payload.otp) {
+      throw new RpcException({
+        message: 'OTP is invalid or has expired',
+        statusCode: 400,
+      });
+    }
+
+   
+    await this.userRepository.update(userId, { passwordHash: newHash });
+
+    
+    await this.cacheManager.del(`change_pass_otp_${userId}`);
+    await this.cacheManager.del(`change_pass_token_${userId}`);
+    await this.cacheManager.del(`change_pass_newhash_${userId}`);
+
+    return { success: true, message: 'Password updated successfully' };
+  }
 }

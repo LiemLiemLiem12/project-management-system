@@ -72,4 +72,25 @@ export const authAPI = (axiosPrivate: AxiosInstance) => ({
   checkUserExists: (email: string) => {
     return axiosPrivate.post("/auth/check-email", { email });
   },
+
+  updateProfile: (payload: { full_name: string; avatar_url?: string }) => {
+    return axiosPrivate.patch("/auth/profile", payload);
+  },
+
+  changePassword: (payload: {
+    current_password: string;
+    new_password: string;
+  }) => {
+    return axiosPrivate.patch("/auth/password", payload);
+  },
+  initChangePassword: (payload: {
+    current_password: string;
+    new_password: string;
+  }) => {
+    return axiosPrivate.post("/auth/password/init", payload); // Dùng POST cho init
+  },
+
+  verifyChangePasswordOtp: (payload: { otp: string; token: string }) => {
+    return axiosPrivate.patch("/auth/password/verify", payload); // Dùng PATCH cho verify update
+  },
 });

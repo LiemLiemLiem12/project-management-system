@@ -255,6 +255,59 @@ export const useAuthService = () => {
     mutationFn: (email: string) => api.auth.checkUserExists(email),
   });
 
+  const handleUpdateProfile = useMutation({
+    mutationFn: (payload: { full_name: string; avatar_url?: string }) =>
+      api.auth.updateProfile(payload), // Gọi API update profile của ông
+    onSuccess: (res) => {
+      // Nhớ cập nhật lại User trong Zustand Store sau khi lưu thành công nhé
+      setUser(res.data);
+      toast.success("Profile updated successfully!");
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.message || "Failed to update profile";
+      toast.error(Array.isArray(msg) ? msg[0] : msg);
+    },
+  });
+
+  // 2. Mutation Đổi mật khẩu
+  const handleChangePassword = useMutation({
+    mutationFn: (payload: { current_password: string; new_password: string }) =>
+      api.auth.changePassword(payload), // Gọi API change password
+    onSuccess: () => {
+      toast.success("Password changed successfully!");
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.message || "Failed to change password";
+      toast.error(Array.isArray(msg) ? msg[0] : msg);
+    },
+  });
+
+  const handleInitChangePassword = useMutation({
+    mutationFn: (payload: { current_password: string; new_password: string }) =>
+      api.auth.initChangePassword(payload),
+    onSuccess: (res) => {
+      toast.success("OTP has been sent to your email.");
+      // Có thể trả về token ở đây nếu cần thiết lập state bên UI
+    },
+    onError: (error: any) => {
+      const msg =
+        error.response?.data?.message || "Failed to initiate password change";
+      toast.error(Array.isArray(msg) ? msg[0] : msg);
+    },
+  });
+
+  const handleVerifyChangePasswordOtp = useMutation({
+    mutationFn: (payload: { otp: string; token: string }) =>
+      api.auth.verifyChangePasswordOtp(payload),
+    onSuccess: () => {
+      toast.success("Password changed successfully!");
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.message || "Failed to verify OTP";
+      toast.error(Array.isArray(msg) ? msg[0] : msg);
+    },
+  });
+
   return {
     login: handleLogin.mutateAsync,
     loginStatus: handleLogin.isPending,
@@ -287,5 +340,16 @@ export const useAuthService = () => {
 
     checkUserExists: handleCheckUserExists.mutateAsync,
     isCheckingEmail: handleCheckUserExists.isPending,
+
+    updateProfile: handleUpdateProfile.mutateAsync,
+    isUpdatingProfile: handleUpdateProfile.isPending,
+    changePassword: handleChangePassword.mutateAsync,
+    isChangingPassword: handleChangePassword.isPending,
+
+    initChangePassword: handleInitChangePassword.mutateAsync,
+    isInitPassword: handleInitChangePassword.isPending,
+
+    verifyChangePasswordOtp: handleVerifyChangePasswordOtp.mutateAsync,
+    isVerifyingPassword: handleVerifyChangePasswordOtp.isPending,
   };
 };

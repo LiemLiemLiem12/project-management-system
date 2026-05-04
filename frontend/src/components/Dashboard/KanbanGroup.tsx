@@ -81,9 +81,6 @@ const KanbanGroup = ({
     return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  // ========================================================
-  // 🚀 LÕI LỌC DỮ LIỆU TASK (Fix lỗi chữ 'a')
-  // ========================================================
   const filteredTasks = column.tasks.filter((t: any) => {
     const safeSearch = (search || "").trim().toLowerCase();
     const taskName = String(t.title || t.name || "").toLowerCase();
@@ -179,9 +176,13 @@ const KanbanGroup = ({
           <div
             ref={provided.innerRef}
             {...provided.draggableProps}
-            // 🚀 h-full max-h-full giúp cột kéo dài chạm đáy
+            // 🚀 ĐÃ SỬA CHỖ NÀY: Nâng z-index lên 40 khi mở popup để đè cột bên cạnh
             className={`flex flex-col bg-[#F1F2F4] rounded-xl w-[320px] min-w-[320px] shrink-0 h-full max-h-full group/col transition-all relative ${
-              snapshot.isDragging ? "shadow-2xl ring-2 ring-blue-500 z-40" : ""
+              snapshot.isDragging
+                ? "shadow-2xl ring-2 ring-blue-500 z-50"
+                : showMemberPopup
+                  ? "z-40 ring-1 ring-blue-200"
+                  : "z-10"
             }`}
           >
             <div
@@ -285,7 +286,7 @@ const KanbanGroup = ({
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  // 🚀 overflow-y-auto đảm nhiệm cuộn dọc khi thẻ task bị nhiều quá
+                  // 🚀 Giữ nguyên pb-64 của ông để cuộn mượt khi mở popup
                   className={`flex-1 overflow-y-auto overflow-x-hidden px-3 flex flex-col gap-3 ${
                     showMemberPopup ? "pb-64" : "pb-4"
                   }`}
@@ -315,7 +316,6 @@ const KanbanGroup = ({
                             }}
                           />
 
-                          {/* 🚀 Cụm Tool Create Task (Ngày giờ & Assign) */}
                           <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 relative">
                             <div className="flex items-center gap-2 text-gray-400">
                               {/* Start Date */}
@@ -362,7 +362,7 @@ const KanbanGroup = ({
                                 />
                               </div>
 
-                              {/* Assign Member (Đã được hồi sinh) */}
+                              {/* 🚀 Assign Member (Đã gắn Avatar và tối ưu UI) */}
                               <div className="relative">
                                 <button
                                   onClick={() => setShowMemberPopup((v) => !v)}
@@ -375,13 +375,28 @@ const KanbanGroup = ({
                                   }`}
                                 >
                                   {selectedMemberInfo ? (
-                                    <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold">
-                                      {(
-                                        (selectedMemberInfo as any).full_name ||
-                                        selectedMemberInfo.user_id
-                                      )
-                                        .charAt(0)
-                                        .toUpperCase()}
+                                    <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0 overflow-hidden">
+                                      {(selectedMemberInfo as any).avatar_url ||
+                                      (selectedMemberInfo as any).avatarUrl ? (
+                                        <img
+                                          src={
+                                            (selectedMemberInfo as any)
+                                              .avatar_url ||
+                                            (selectedMemberInfo as any)
+                                              .avatarUrl
+                                          }
+                                          alt="avatar"
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        (
+                                          (selectedMemberInfo as any)
+                                            .full_name ||
+                                          selectedMemberInfo.user_id
+                                        )
+                                          .charAt(0)
+                                          .toUpperCase()
+                                      )}
                                     </div>
                                   ) : (
                                     <UserCircleIcon size={16} />
@@ -389,79 +404,98 @@ const KanbanGroup = ({
                                 </button>
 
                                 {showMemberPopup && (
-                                  <div className="absolute bottom-full left-0 mb-2 w-52 bg-white shadow-2xl border border-gray-200 rounded-lg z-[9999] p-2">
-                                    <p className="text-[10px] font-bold text-gray-400 px-2 py-1 uppercase tracking-wider">
-                                      Assign to member
-                                    </p>
-
-                                    <input
-                                      type="text"
-                                      value={searchQuery}
-                                      onChange={(e) =>
-                                        setSearchQuery(e.target.value)
-                                      }
-                                      placeholder="Search..."
-                                      className="w-full text-xs px-2 py-1.5 mb-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                  <>
+                                    <div
+                                      className="fixed inset-0 z-40"
+                                      onClick={() => setShowMemberPopup(false)}
                                     />
 
-                                    <div
-                                      onClick={() => {
-                                        setSelectedMember(null);
-                                        setShowMemberPopup(false);
-                                      }}
-                                      className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-md cursor-pointer"
-                                    >
-                                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-500 font-medium">
-                                        —
-                                      </div>
-                                      <span className="text-xs text-gray-400 italic">
-                                        Unassigned
-                                      </span>
-                                      {!selectedMember && (
-                                        <CheckIcon
-                                          size={12}
-                                          className="ml-auto text-blue-500"
-                                        />
-                                      )}
-                                    </div>
+                                    <div className="absolute top-full left-0 mt-2 w-56 bg-white shadow-xl border border-gray-200 rounded-lg z-[9999] p-2">
+                                      <p className="text-[10px] font-bold text-gray-400 px-2 py-1 uppercase tracking-wider">
+                                        Assign to member
+                                      </p>
 
-                                    <div className="max-h-48 overflow-y-auto">
-                                      {filteredMembers.map((m) => {
-                                        const displayName =
-                                          (m as any).full_name || m.user_id;
-                                        return (
-                                          <div
-                                            key={m.user_id}
-                                            onClick={() => {
-                                              setSelectedMember(m.user_id);
-                                              setShowMemberPopup(false);
-                                            }}
-                                            className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-md cursor-pointer"
-                                          >
-                                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0">
-                                              {displayName
-                                                .charAt(0)
-                                                .toUpperCase()}
+                                      <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) =>
+                                          setSearchQuery(e.target.value)
+                                        }
+                                        placeholder="Search..."
+                                        className="w-full text-xs px-2 py-1.5 mb-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                      />
+
+                                      <div
+                                        onClick={() => {
+                                          setSelectedMember(null);
+                                          setShowMemberPopup(false);
+                                        }}
+                                        className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                                      >
+                                        <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-500 font-medium shrink-0">
+                                          —
+                                        </div>
+                                        <span className="text-xs text-gray-400 italic flex-1">
+                                          Unassigned
+                                        </span>
+                                        {!selectedMember && (
+                                          <CheckIcon
+                                            size={12}
+                                            className="text-blue-500 shrink-0"
+                                          />
+                                        )}
+                                      </div>
+
+                                      <div className="max-h-48 overflow-y-auto scrollbar-thin">
+                                        {filteredMembers.map((m) => {
+                                          const displayName =
+                                            (m as any).full_name || m.user_id;
+                                          const avatarUrl =
+                                            (m as any).avatar_url ||
+                                            (m as any).avatarUrl;
+
+                                          return (
+                                            <div
+                                              key={m.user_id}
+                                              onClick={() => {
+                                                setSelectedMember(m.user_id);
+                                                setShowMemberPopup(false);
+                                              }}
+                                              className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-md cursor-pointer"
+                                            >
+                                              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0 overflow-hidden">
+                                                {avatarUrl ? (
+                                                  <img
+                                                    src={avatarUrl}
+                                                    alt="avatar"
+                                                    className="w-full h-full object-cover"
+                                                  />
+                                                ) : (
+                                                  displayName
+                                                    .charAt(0)
+                                                    .toUpperCase()
+                                                )}
+                                              </div>
+                                              <div className="flex-1 min-w-0">
+                                                <p className="text-xs text-gray-700 font-medium truncate">
+                                                  {displayName}
+                                                </p>
+                                                <p className="text-[10px] text-gray-400 truncate">
+                                                  {m.role}
+                                                </p>
+                                              </div>
+                                              {selectedMember === m.user_id && (
+                                                <CheckIcon
+                                                  size={12}
+                                                  className="text-blue-500 shrink-0"
+                                                />
+                                              )}
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                              <p className="text-xs text-gray-700 font-medium truncate">
-                                                {displayName}
-                                              </p>
-                                              <p className="text-[10px] text-gray-400">
-                                                {m.role}
-                                              </p>
-                                            </div>
-                                            {selectedMember === m.user_id && (
-                                              <CheckIcon
-                                                size={12}
-                                                className="text-blue-500 shrink-0"
-                                              />
-                                            )}
-                                          </div>
-                                        );
-                                      })}
+                                          );
+                                        })}
+                                      </div>
                                     </div>
-                                  </div>
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -503,7 +537,6 @@ const KanbanGroup = ({
         )}
       </Draggable>
 
-      {/* Modal Xóa Cột */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg shadow-xl w-[550px] p-6 text-gray-800">

@@ -19,7 +19,7 @@ import {
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useProjectStore } from "@/store/project.store";
-import { useAuthStore } from "@/store/auth.store"; // 🚀 IMPORT STORE CỦA ÔNG VÀO ĐÂY
+import { useAuthStore } from "@/store/auth.store";
 import {
   useGetProjectMembers,
   useAddProjectMember,
@@ -37,9 +37,8 @@ const ProjectMembersDropdown = ({ projectId }: { projectId: string }) => {
   );
   const [mounted, setMounted] = useState(false);
 
-  // 🚀 LẤY USER TỪ ZUSTAND STORE CỦA ÔNG
+  // 🚀 LẤY USER TỪ ZUSTAND STORE
   const currentUser = useAuthStore((s: any) => s.user);
-  // Đề phòng backend trả về tên field là id, user_id, hay _id
   const myUserId =
     currentUser?.id || currentUser?.user_id || currentUser?._id || "";
 
@@ -112,10 +111,21 @@ const ProjectMembersDropdown = ({ projectId }: { projectId: string }) => {
         {members.slice(0, 3).map((member, idx) => (
           <div
             key={member.user_id}
-            className="w-8 h-8 rounded-full border-[2px] border-white bg-[#5b81f8] text-white flex items-center justify-center text-xs font-bold shadow-sm relative"
+            className="w-8 h-8 rounded-full border-[2px] border-white bg-[#5b81f8] text-white flex items-center justify-center text-xs font-bold shadow-sm relative overflow-hidden"
             style={{ zIndex: 10 - idx }}
           >
-            {member.full_name ? member.full_name.charAt(0).toUpperCase() : "U"}
+            {/* 🚀 LOGIC HIỂN THỊ AVATAR NÚT DROPDOWN */}
+            {member.avatar_url ? (
+              <img
+                src={member.avatar_url}
+                alt={member.full_name || "User"}
+                className="w-full h-full object-cover"
+              />
+            ) : member.full_name ? (
+              member.full_name.charAt(0).toUpperCase()
+            ) : (
+              "U"
+            )}
           </div>
         ))}
         {members.length > 3 && (
@@ -188,7 +198,6 @@ const ProjectMembersDropdown = ({ projectId }: { projectId: string }) => {
             </h3>
             <div className="max-h-[220px] overflow-y-auto pr-2 space-y-1 scrollbar-thin scrollbar-thumb-gray-200">
               {members.map((member) => {
-                // 🚀 NÓ SO SÁNH ID Ở ĐÂY NÈ ÔNG
                 const isMe = member.user_id === myUserId;
 
                 return (
@@ -197,10 +206,19 @@ const ProjectMembersDropdown = ({ projectId }: { projectId: string }) => {
                     className="flex items-center justify-between p-2.5 hover:bg-gray-50 rounded-lg group border border-transparent hover:border-gray-100"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-[#5b81f8] text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                        {member.full_name
-                          ? member.full_name.charAt(0).toUpperCase()
-                          : "U"}
+                      <div className="w-9 h-9 rounded-full bg-[#5b81f8] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden shrink-0">
+                        {/* 🚀 LOGIC HIỂN THỊ AVATAR TRONG DANH SÁCH */}
+                        {member.avatar_url ? (
+                          <img
+                            src={member.avatar_url}
+                            alt={member.full_name || "User"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : member.full_name ? (
+                          member.full_name.charAt(0).toUpperCase()
+                        ) : (
+                          "U"
+                        )}
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-semibold text-gray-800">

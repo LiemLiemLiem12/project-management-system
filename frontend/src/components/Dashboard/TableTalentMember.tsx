@@ -107,7 +107,15 @@ export default function TableTalentMember({
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-400 flex items-center justify-center text-white font-bold shrink-0 shadow-sm">
-                        {member.avatarInitial}
+                        {member.avatar_url ? (
+                          <img
+                            src={member.avatar_url}
+                            alt={member.full_name}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        ) : (
+                          member.avatarInitial
+                        )}
                       </div>
                       <div className="flex flex-col">
                         <span className="font-bold text-gray-900 text-sm">

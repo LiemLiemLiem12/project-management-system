@@ -2,6 +2,7 @@ import { HttpException, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices/client/client-proxy';
 import { firstValueFrom } from 'rxjs';
 import { CompleteSignupDto } from './dto/complete-signup.dto';
+import * as fs from 'fs';
 
 @Injectable()
 export class AuthService {
@@ -190,5 +191,49 @@ export class AuthService {
         error.statusCode || 500,
       );
     }
+  }
+
+  async updateProfile(
+    userId: string,
+    data: { full_name?: string; avatar_url?: string },
+  ) {
+    let finalAvatarUrl = data.avatar_url;
+
+    if (finalAvatarUrl && finalAvatarUrl.includes('base64,')) {
+      const base64Data = finalAvatarUrl.split(';base64,').pop() || '';
+      const fileName = `avatar_${userId}_${Date.now()}.jpg`;
+
+      const uploadPath = `./uploads/${fileName}`;
+
+      fs.writeFileSync(uploadPath, base64Data, { encoding: 'base64' });
+
+      finalAvatarUrl = `http://localhost:4000/uploads/${fileName}`;
+    }
+
+    const payload = {
+      userId,
+      full_name: data.full_name,
+      avatar_url: finalAvatarUrl,
+    };
+
+    return firstValueFrom(this.authClient.send('user.update_profile', payload));
+  }
+
+  async initChangePassword(
+    userId: string,
+    data: { current_password: string; new_password: string },
+  ) {
+    return firstValueFrom(
+      this.authClient.send('user.change_password.init', { userId, ...data }),
+    );
+  }
+
+  async verifyChangePasswordOtp(
+    userId: string,
+    data: { otp: string; token: string },
+  ) {
+    return firstValueFrom(
+      this.authClient.send('user.change_password.verify', { userId, ...data }),
+    );
   }
 }
