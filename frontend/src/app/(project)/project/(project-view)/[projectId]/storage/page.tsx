@@ -19,7 +19,7 @@ export default function StoragePage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className=" relative flex h-screen bg-gray-50 overflow-hidden">
       {/* ── Main content ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="flex-1 overflow-y-auto">
@@ -45,7 +45,7 @@ export default function StoragePage() {
           {/* Panel */}
           <div
             className="
-            fixed right-0 top-0 bottom-0 z-20 -[300px] sm:w-[320px] g:relative lg:z-auto lg:w-[300px] xl:w-[320px] lex-shrink-0 overflow-hidden shadow-xl lg:shadow-none
+            absolute right-0 top-0 bottom-0 z-[99] -[300px] sm:w-[320px] g:relative lg:z-auto lg:w-[300px] xl:w-[320px] lex-shrink-0 overflow-hidden shadow-xl lg:shadow-none
           "
           >
             <FileDetailPanel

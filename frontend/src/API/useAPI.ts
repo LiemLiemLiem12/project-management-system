@@ -8,6 +8,7 @@ import { checklistApi } from "./checklist.api";
 import { labelApi } from "./label.api";
 import { auditApi } from "./audit.api";
 import { commentApi } from "./comment.api";
+import { storageApi } from "./storage.api";
 
 export const useAPI = () => {
   const api = useAxiosPrivate();
@@ -22,6 +23,7 @@ export const useAPI = () => {
       label: labelApi(api),
       audit: auditApi(api),
       comment: commentApi(api),
+      storage: storageApi(api),
     }),
     [api],
   );

@@ -138,3 +138,60 @@ export interface CreateCommentPayload {
 export interface UpdateCommentPayload extends Partial<CreateCommentPayload> {
   id: number;
 }
+
+//Storage
+
+export interface SyncUserPermissionPayload {
+  fileId: string;
+  userId: string;
+  newPermissions: string[];
+}
+
+export interface CreateFolderPayload {
+  name?: string;
+  parentId?: string;
+  projectId: string;
+}
+
+export interface UpdateStoragePayload {
+  name?: string;
+  parentId?: string;
+  projectId?: string;
+  isFolder?: boolean;
+  fileType?: string;
+  fileSize?: number;
+  storageUrl?: string;
+  publicId?: string;
+  uploadedBy?: string;
+}
+
+export interface AssetPermission {
+  id: string;
+  fileId: string;
+  userId: string;
+  permission: string;
+
+  file?: Asset;
+}
+
+export interface Asset {
+  id: string;
+  parentId: string | null;
+  projectId: string;
+  name: string;
+  isFolder: boolean;
+
+  fileType: string | null;
+  fileSize: number;
+  storageUrl: string | null;
+  publicId: string | null;
+  uploadedBy: string;
+  isDeleted: number;
+
+  createdAt: string;
+  updatedAt: string;
+
+  parent?: Asset | null;
+  permissions?: AssetPermission[];
+  children?: Asset[];
+}
