@@ -1,3 +1,5 @@
+import { AssetPermissionEnum } from "@/enums/asset-permission.enum";
+
 export interface User {
   id: string;
   email: string;
@@ -144,7 +146,7 @@ export interface UpdateCommentPayload extends Partial<CreateCommentPayload> {
 export interface SyncUserPermissionPayload {
   fileId: string;
   userId: string;
-  newPermissions: string[];
+  newPermissions: AssetPermissionEnum[];
 }
 
 export interface CreateFolderPayload {

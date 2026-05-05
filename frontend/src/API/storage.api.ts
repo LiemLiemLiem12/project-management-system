@@ -14,7 +14,11 @@ export const storageApi = (axiosPrivate: AxiosInstance) => ({
   createFolder: (payload: CreateFolderPayload) =>
     axiosPrivate.post<Asset>("/storages/folder", payload),
 
-  createAsset: (parentId: string | undefined, formData: FormData) =>
+  createAsset: (
+    parentId: string | undefined,
+    formData: FormData,
+    onUploadProgress: any,
+  ) =>
     axiosPrivate.post<Asset>(
       parentId ? `/storages?parentId=${parentId}` : "/storages",
       formData,
@@ -22,6 +26,7 @@ export const storageApi = (axiosPrivate: AxiosInstance) => ({
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        onUploadProgress: onUploadProgress,
       },
     ),
 
@@ -37,4 +42,16 @@ export const storageApi = (axiosPrivate: AxiosInstance) => ({
     axiosPrivate.patch<Asset>(`/storages/${fileId}`, payload),
 
   deleteAsset: (fileId: string) => axiosPrivate.delete(`/storages/${fileId}`),
+
+  // Get storage usage info (used/max storage)
+  getStorageUsage: (projectId: string) =>
+    axiosPrivate.get<{
+      usedBytes: number;
+      maxBytes: number;
+      breakdown: Array<{ type: string; bytes: number }>;
+    }>(`/storages/usage/${projectId}`),
+
+  // Get recently modified files
+  getRecentAssets: (projectId: string, limit: number = 10) =>
+    axiosPrivate.get<Asset[]>(`/storages/recent/${projectId}?limit=${limit}`),
 });

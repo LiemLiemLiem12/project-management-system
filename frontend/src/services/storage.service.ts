@@ -7,6 +7,7 @@ import {
   UpdateStoragePayload,
 } from "@/types";
 import toast from "react-hot-toast";
+import { Axios, AxiosError } from "axios";
 
 export const useGetAssetsByFolder = (fileId: string) => {
   const api = useAPI();
@@ -29,6 +30,34 @@ export const useGetAssetsByProject = (projectId: string, isRoot: boolean) => {
     queryKey: ["assets", "project", projectId, isRoot],
     queryFn: async () => {
       const res = await api.storage.getAssetsByProject(projectId, isRoot);
+      return res.data;
+    },
+    enabled: !!projectId,
+    refetchOnWindowFocus: false,
+  });
+};
+
+export const useGetStorageUsage = (projectId: string) => {
+  const api = useAPI();
+
+  return useQuery({
+    queryKey: ["storage", "usage", projectId],
+    queryFn: async () => {
+      const res = await api.storage.getStorageUsage(projectId);
+      return res.data;
+    },
+    enabled: !!projectId,
+    refetchOnWindowFocus: false,
+  });
+};
+
+export const useGetRecentAssets = (projectId: string, limit: number = 10) => {
+  const api = useAPI();
+
+  return useQuery({
+    queryKey: ["assets", "recent", projectId, limit],
+    queryFn: async () => {
+      const res = await api.storage.getRecentAssets(projectId, limit);
       return res.data;
     },
     enabled: !!projectId,
@@ -80,22 +109,22 @@ export const useCreateAsset = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      parentId,
-      formData,
-    }: {
-      parentId?: string;
-      formData: FormData;
-    }) => {
-      return api.storage.createAsset(parentId, formData);
+    mutationFn: async ({ parentId, formData, onUploadProgress }: any) => {
+      const response = await api.storage.createAsset(
+        parentId,
+        formData,
+        onUploadProgress,
+      );
+
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["assets"] });
       toast.success("Files uploaded successfully.");
     },
     onError: (error: any) => {
-      console.error("Failed to upload files:", error);
-      toast.error("Failed to upload files.");
+      console.error("Failed to upload files:", error.response?.data);
+      toast.error(error.response?.data?.message || "");
     },
   });
 };
@@ -118,8 +147,8 @@ export const useUpdateAsset = () => {
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     },
     onError: (error: any) => {
-      console.error("Failed to update asset:", error);
-      toast.error("Failed to update item.");
+      console.error("Failed to update asset:", error.response?.data);
+      toast.error(error.response?.data?.message);
     },
   });
 };
@@ -137,8 +166,8 @@ export const useDeleteAsset = () => {
       toast.success("Item deleted successfully.");
     },
     onError: (error: any) => {
-      console.error("Failed to delete asset:", error);
-      toast.error("Failed to delete item.");
+      console.error("Failed to delete asset:", error.response?.data?.message);
+      toast.error(error.response?.data?.message);
     },
   });
 };

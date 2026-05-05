@@ -4,7 +4,9 @@ import {
   UploadApiResponse,
   UploadApiErrorResponse,
 } from 'cloudinary';
+import { basename, extname } from 'path';
 import * as streamifier from 'streamifier';
+import { getResourceType } from './helpers';
 
 @Injectable()
 export class CloudinaryService {
@@ -13,8 +15,19 @@ export class CloudinaryService {
     folderName: string,
   ): Promise<UploadApiResponse | UploadApiErrorResponse> {
     return new Promise((resolve, reject) => {
+      // 1. Tách tên file gốc và đuôi file
+      const ext = extname(file.originalname);
+      const baseName = basename(file.originalname, ext);
+
+      const uniqueFileName = `${baseName}-${Date.now()}${ext}`;
+
       const uploadStream = cloudinary.uploader.upload_chunked_stream(
-        { folder: folderName, resource_type: 'auto' },
+        {
+          folder: folderName,
+          resource_type: 'auto',
+          public_id: uniqueFileName,
+          // raw_convert: 'aspose',
+        },
         (error, result) => {
           if (error) {
             return reject(error);
@@ -42,7 +55,7 @@ export class CloudinaryService {
     return results.map((res, index) => ({
       file_url: res.secure_url,
       file_name: files[index].originalname,
-      file_type: res.format,
+      file_type: res.display_name.split('.').pop(),
       file_size: res.bytes,
       public_id: res.public_id,
     }));
@@ -50,7 +63,11 @@ export class CloudinaryService {
 
   async deleteFile(publicId: string): Promise<any> {
     try {
-      const result = await cloudinary.uploader.destroy(publicId);
+      const resource_type = getResourceType(publicId);
+
+      const result = await cloudinary.uploader.destroy(publicId, {
+        resource_type,
+      });
 
       if (result.result !== 'ok') {
         throw new BadRequestException(`Can't delete file: ${result.result}`);

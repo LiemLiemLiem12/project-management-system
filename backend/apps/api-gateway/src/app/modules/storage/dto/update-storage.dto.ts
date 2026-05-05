@@ -7,9 +7,9 @@ export class UpdateStorageDto {
   @IsOptional()
   parentId?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  projectId!: string;
+  projectId?: string;
 
   @IsOptional()
   @IsString()
