@@ -50,12 +50,14 @@ export class ProjectService {
         );
       }
 
-      userResult.id ||
+      // 🚀 SỬA LỖI Ở ĐÂY: Gán ID của người được mời vào biến rõ ràng
+      const targetUserId =
+        userResult.id ||
         userResult._id ||
         userResult.userId ||
         (userResult.user && userResult.user.id);
 
-      if (!userId) {
+      if (!targetUserId) {
         throw new HttpException(
           'API check email chạy được nhưng không chịu nhả User ID',
           HttpStatus.INTERNAL_SERVER_ERROR,
@@ -66,7 +68,8 @@ export class ProjectService {
         project_id: payload.project_id,
         email: payload.email,
         role: payload.role,
-        user_id: userId,
+        user_id: targetUserId, // ID người được mời
+        currentUserId: payload.currentUserId, // 🚀 ID của Leader đang thao tác
       };
 
       const result = await firstValueFrom(
@@ -92,10 +95,11 @@ export class ProjectService {
     return this.projectClient.send('project_member.update', payload);
   }
 
-  removeMember(projectId: string, userId: string) {
+  removeMember(projectId: string, userId: string, currentUserId: string) {
     return this.projectClient.send('project_member.delete', {
       project_id: projectId,
       user_id: userId,
+      currentUserId: currentUserId,
     });
   }
 

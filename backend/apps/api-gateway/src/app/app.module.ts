@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProjectModule } from './modules/project/project.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { NotificationModule } from './modules/notification/notification.module';
 import googleOauthConfig from './modules/auth/config/google-oauth.config';
 import { ServeStaticModule } from '@nestjs/serve-static/dist/serve-static.module';
 import { join } from 'path/win32';
@@ -18,6 +19,7 @@ import { join } from 'path/win32';
       isGlobal: true,
     }),
     AuthModule,
+    NotificationModule,
     ProjectModule,
     StorageModule,
     ServeStaticModule.forRoot({

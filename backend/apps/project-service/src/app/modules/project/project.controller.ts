@@ -54,33 +54,32 @@ export class ProjectController {
   }
 
   @MessagePattern('project_member.create')
-  addMember(
-    @Payload()
-    payload: {
-      project_id: string;
-      user_id: string;
-      email: string;
-      role: string;
-    },
-  ) {
-    return this.projectService.addMember(payload);
+  addMember(@Payload() data: any) {
+    // 🚀 Bổ sung data.currentUserId vào đây
+    return this.projectService.addMember(data, data.currentUserId);
   }
 
   @MessagePattern('project_member.update')
-  updateMemberRole(
-    @Payload() payload: { project_id: string; user_id: string; role: string },
-  ) {
-    const { project_id, user_id, ...data } = payload;
-    return this.projectService.updateMemberRole(project_id, user_id, data);
+  updateMemberRole(@Payload() data: any) {
+    // 🚀 Bổ sung data.currentUserId vào cuối cùng
+    return this.projectService.updateMemberRole(
+      data.project_id,
+      data.user_id,
+      data,
+      data.currentUserId,
+    );
   }
 
   @MessagePattern('project_member.delete')
-  removeMember(@Payload() payload: { project_id: string; user_id: string }) {
+  removeMember(@Payload() data: any) {
+    // 🚀 Bổ sung data.currentUserId vào cuối cùng
     return this.projectService.removeMember(
-      payload.project_id,
-      payload.user_id,
+      data.project_id,
+      data.user_id,
+      data.currentUserId,
     );
   }
+
   @MessagePattern('project.find_all')
   findAllProjectsByMember(@Payload() userId: string) {
     return this.projectService.findAllByUser(userId);

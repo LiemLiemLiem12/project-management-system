@@ -58,6 +58,10 @@ const KanbanGroup = ({
   const startDateRef = useRef<HTMLInputElement>(null);
   const dueDateRef = useRef<HTMLInputElement>(null);
 
+  // 🚀 THÊM REF ĐỂ XỬ LÝ CLICK RA NGOÀI ĐÓNG POPUP MÀ KHÔNG LÀM CHẾT SCROLL
+  const assignRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const currentUserRole = useProjectStore((s) => s.currentUserRole);
   const members = useProjectStore((s) => s.members);
   const allGroups = useTaskStore((s) => s.groups);
@@ -115,6 +119,37 @@ const KanbanGroup = ({
       setFallbackGroupId(availableGroups[0].id);
     }
   }, [showDeleteModal, availableGroups, fallbackGroupId]);
+
+  // 🚀 LẮNG NGHE SỰ KIỆN CLICK RA NGOÀI CHO POPUP ASSIGN
+  useEffect(() => {
+    const handleClickOutsideAssign = (event: MouseEvent) => {
+      if (
+        assignRef.current &&
+        !assignRef.current.contains(event.target as Node)
+      ) {
+        setShowMemberPopup(false);
+      }
+    };
+    if (showMemberPopup) {
+      document.addEventListener("mousedown", handleClickOutsideAssign);
+    }
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutsideAssign);
+  }, [showMemberPopup]);
+
+  // 🚀 LẮNG NGHE SỰ KIỆN CLICK RA NGOÀI CHO COLUMN MENU
+  useEffect(() => {
+    const handleClickOutsideMenu = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutsideMenu);
+    }
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutsideMenu);
+  }, [isMenuOpen]);
 
   const handleCreateTask = () => {
     if (!newTaskTitle.trim() || isCreatingTask) return;
@@ -176,13 +211,13 @@ const KanbanGroup = ({
           <div
             ref={provided.innerRef}
             {...provided.draggableProps}
-            // 🚀 ĐÃ SỬA CHỖ NÀY: Nâng z-index lên 40 khi mở popup để đè cột bên cạnh
+            // 🚀 ĐÃ SỬA CHỖ NÀY: Xóa `z-10` mặc định đi để tránh đè Header & Task chui xuống dưới
             className={`flex flex-col bg-[#F1F2F4] rounded-xl w-[320px] min-w-[320px] shrink-0 h-full max-h-full group/col transition-all relative ${
               snapshot.isDragging
                 ? "shadow-2xl ring-2 ring-blue-500 z-50"
-                : showMemberPopup
+                : showMemberPopup || isMenuOpen
                   ? "z-40 ring-1 ring-blue-200"
-                  : "z-10"
+                  : ""
             }`}
           >
             <div
@@ -224,7 +259,7 @@ const KanbanGroup = ({
               </div>
 
               {canManage && (
-                <div className="relative">
+                <div className="relative" ref={menuRef}>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -241,10 +276,7 @@ const KanbanGroup = ({
 
                   {isMenuOpen && (
                     <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setIsMenuOpen(false)}
-                      />
+                      {/* 🚀 ĐÃ XÓA div.fixed.inset-0 gây lỗi cản click/cuộn */}
                       <div className="absolute right-0 mt-1 w-44 bg-white shadow-xl border border-gray-100 rounded-lg z-50 py-1 overflow-hidden">
                         <button
                           onClick={() => {
@@ -286,7 +318,7 @@ const KanbanGroup = ({
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  // 🚀 Giữ nguyên pb-64 của ông để cuộn mượt khi mở popup
+                  // Vẫn giữ pb-64 để tạo khoảng trống cuộn cho popup
                   className={`flex-1 overflow-y-auto overflow-x-hidden px-3 flex flex-col gap-3 ${
                     showMemberPopup ? "pb-64" : "pb-4"
                   }`}
@@ -362,8 +394,8 @@ const KanbanGroup = ({
                                 />
                               </div>
 
-                              {/* 🚀 Assign Member (Đã gắn Avatar và tối ưu UI) */}
-                              <div className="relative">
+                              {/* 🚀 Assign Member: Bọc ref vào đây */}
+                              <div className="relative" ref={assignRef}>
                                 <button
                                   onClick={() => setShowMemberPopup((v) => !v)}
                                   className={`p-1 rounded transition-colors flex items-center gap-1 ${
@@ -405,11 +437,7 @@ const KanbanGroup = ({
 
                                 {showMemberPopup && (
                                   <>
-                                    <div
-                                      className="fixed inset-0 z-40"
-                                      onClick={() => setShowMemberPopup(false)}
-                                    />
-
+                                    {/* 🚀 ĐÃ XÓA div.fixed.inset-0 gây lỗi cản scroll */}
                                     <div className="absolute top-full left-0 mt-2 w-56 bg-white shadow-xl border border-gray-200 rounded-lg z-[9999] p-2">
                                       <p className="text-[10px] font-bold text-gray-400 px-2 py-1 uppercase tracking-wider">
                                         Assign to member
