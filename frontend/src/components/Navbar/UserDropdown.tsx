@@ -1,7 +1,9 @@
 "use client";
 
 import { useAuthStore } from "@/store/auth.store";
+import { User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 function IconSwitch() {
   return (
@@ -94,21 +96,23 @@ function AvatarCircle({
 interface UserDropdownProps {
   name?: string;
   email?: string;
-  role?: string;
+
   avatarSrc?: string;
-  /** "full" = tên + role + avatar (desktop), "avatar" = chỉ avatar (mobile) */
+
   variant?: "full" | "avatar";
 }
 
-export default function UserDropdown({}) {
+export default function UserDropdown({}: UserDropdownProps) {
+  const router = useRouter(); // 🚀 Tui đã thêm cái router xịn xò vào đây!
+
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
-  const initials = user?.fullname
-    ? user.fullname
+  const initials = user?.fullName
+    ? user.fullName
         .split(" ")
         .filter(Boolean)
         .map((w) => w[0])
@@ -161,13 +165,11 @@ export default function UserDropdown({}) {
               whiteSpace: "nowrap",
             }}
           >
-            {user?.fullname || ""}
+            {user?.fullName || ""}
           </span>
           <span
             style={{ fontSize: 12, color: "#6B7280", whiteSpace: "nowrap" }}
-          >
-            Role
-          </span>
+          ></span>
         </div>
         <AvatarCircle src={user?.avatarUrl} initials={initials} size={36} />
       </button>
@@ -203,7 +205,7 @@ export default function UserDropdown({}) {
                   whiteSpace: "nowrap",
                 }}
               >
-                {user?.fullname || ""}
+                {user?.fullName || ""}
               </p>
               <p
                 style={{
@@ -223,7 +225,11 @@ export default function UserDropdown({}) {
           {/* Menu items */}
           <div className="py-1.5">
             {[
-              { icon: <IconSwitch />, label: "Switch account" },
+              {
+                icon: <User />,
+                label: "Profile",
+                onclick: () => router.push("/profile"), // 🚀 Chạy ngon lành cành đào
+              },
               {
                 icon: <IconLogout />,
                 label: "Log out",
@@ -277,7 +283,7 @@ const UserDropdownSkeleton = ({
           <div className="flex flex-col items-end gap-1.5">
             {/* Name Skeleton */}
             <div className="h-3.5 w-20 bg-gray-200 rounded animate-pulse" />
-            {/* Role Skeleton */}
+
             <div className="h-3 w-12 bg-gray-100 rounded animate-pulse" />
           </div>
         )}

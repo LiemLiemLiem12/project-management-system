@@ -24,7 +24,7 @@ export const projectAPI = (axiosPrivate: AxiosInstance) => ({
   },
 
   addMember: (projectId: string, payload: AddMemberPayload) => {
-    return axiosPrivate.post(`/projects/${projectId}/members`, payload);
+    return axiosPrivate.post(`/project/${projectId}/members`, payload);
   },
 
   updateMemberRole: (
@@ -33,13 +33,13 @@ export const projectAPI = (axiosPrivate: AxiosInstance) => ({
     payload: UpdateMemberRolePayload,
   ) => {
     return axiosPrivate.patch(
-      `/projects/${projectId}/members/${userId}`,
+      `/project/${projectId}/members/${userId}`,
       payload,
     );
   },
 
   removeMember: (projectId: string, userId: string) => {
-    return axiosPrivate.delete(`/projects/${projectId}/members/${userId}`);
+    return axiosPrivate.delete(`/project/${projectId}/members/${userId}`);
   },
 
   createProject: (payload: {

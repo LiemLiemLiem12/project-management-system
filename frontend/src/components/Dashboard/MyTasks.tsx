@@ -1,17 +1,18 @@
 "use client";
 
 import { useTaskStore } from "@/store/task.store";
+import { useState } from "react"; // 🚀 Bổ sung import useState
 
 export default function MyTasks() {
-  // 👉 Lấy mảng myTasks từ store (đã được useGetMyTasks nạp data vào)
-  // Thêm fallback [] để đề phòng lúc data chưa tải xong nó bị undefined
   const myTasks = useTaskStore((s) => s.myTasks) || [];
+  
+  // 🚀 Thêm state để theo dõi trạng thái đóng/mở
+  const [showAll, setShowAll] = useState(false);
 
-  // Lọc các task chưa hoàn thành (dựa vào cờ isSuccess từ Backend trả về)
   const openTasks = myTasks.filter((t) => !t.isSuccess);
 
-  // Hiển thị tối đa 5 task cho gọn Dashboard
-  const displayedTasks = myTasks.slice(0, 5);
+  // 🚀 Nếu showAll là true thì lấy hết, nếu false thì chỉ cắt 5 cái đầu
+  const displayedTasks = showAll ? myTasks : myTasks.slice(0, 5);
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
@@ -63,9 +64,13 @@ export default function MyTasks() {
         )}
       </div>
 
+      {/* 🚀 Gắn onClick vào nút để toggle state */}
       {myTasks.length > 5 && (
-        <button className="w-full mt-4 py-2.5 rounded-lg border-2 border-dashed border-gray-200 text-xs font-semibold text-gray-400 hover:border-blue-300 hover:text-blue-500 transition-all duration-150">
-          VIEW ALL {myTasks.length} TASKS
+        <button 
+          onClick={() => setShowAll(!showAll)}
+          className="w-full mt-4 py-2.5 rounded-lg border-2 border-dashed border-gray-200 text-xs font-semibold text-gray-400 hover:border-blue-300 hover:text-blue-500 transition-all duration-150"
+        >
+          {showAll ? "SHOW LESS" : `VIEW ALL ${myTasks.length} TASKS`}
         </button>
       )}
     </div>

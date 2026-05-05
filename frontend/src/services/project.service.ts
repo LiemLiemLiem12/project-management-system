@@ -1,6 +1,6 @@
 "use client";
-import { projectAPI } from "@/API/project.api";
 
+import axios from "axios";
 import { useAPI } from "@/API/useAPI";
 import { useProjectStore } from "@/store/project.store";
 import { AddMemberPayload, UpdateMemberRolePayload } from "@/types";
@@ -10,6 +10,19 @@ import { useEffect } from "react";
 import { toast } from "react-hot-toast";
 
 const RESERVED_ROUTES = ["for-you", "favourite"];
+
+// Hàm phụ trợ để bóc tách lỗi chuẩn từ Backend (NestJS / Gateway)
+const getErrorMessage = (error: any, defaultMessage: string) => {
+  if (axios.isAxiosError(error)) {
+    const backendMessage = error.response?.data?.message;
+    // Xử lý trường hợp class-validator của NestJS trả về mảng lỗi
+    return Array.isArray(backendMessage)
+      ? backendMessage[0]
+      : backendMessage || defaultMessage;
+  }
+  return error?.message || defaultMessage;
+};
+
 export const useGetCurrentProject = (projectId?: string) => {
   const api = useAPI();
   const router = useRouter();
@@ -22,7 +35,6 @@ export const useGetCurrentProject = (projectId?: string) => {
     queryFn: async () => {
       // 1. Thực hiện gọi API
       const res = await api.project.getProjects(projectId!);
-
       return res.data;
     },
     enabled: isRealProject,
@@ -36,12 +48,9 @@ export const useGetCurrentProject = (projectId?: string) => {
     }
 
     if (query.isError) {
-      const error: any = query.error;
-      const msg = error.response?.data?.message || error.message;
-
       router.push("/not-found");
     }
-  }, [query.data, query.isError, query.error, setCurrentProject, router]);
+  }, [query.data, query.isError, setCurrentProject, router]);
 
   return query;
 };
@@ -55,7 +64,6 @@ export const useGetProjectMembers = (projectId: string) => {
       const res = await api.project.getMembers(projectId);
       return res.data;
     },
-
     enabled: !!projectId,
     refetchOnWindowFocus: false,
   });
@@ -77,10 +85,11 @@ export const useAddProjectMember = (projectId: string) => {
       queryClient.invalidateQueries({
         queryKey: ["currentProject", projectId],
       });
+      toast.success("Đã thêm thành viên thành công!");
     },
     onError: (error: any) => {
       console.error("Failed to add project member:", error);
-      toast.error("Failed to add member to the project.");
+      toast.error(getErrorMessage(error, "Lỗi khi thêm thành viên vào dự án."));
     },
   });
 };
@@ -107,14 +116,16 @@ export const useUpdateMemberRole = (projectId: string) => {
       queryClient.invalidateQueries({
         queryKey: ["currentProject", projectId],
       });
+      toast.success("Role updated successfully!");
     },
     onError: (error: any) => {
       console.error("Failed to update member role:", error);
-      toast.error("Failed to update member role.");
+      toast.error(getErrorMessage(error, "Failed to update member role."));
     },
   });
 };
 
+// 4. DELETE: Xóa thành viên
 export const useRemoveProjectMember = (projectId: string) => {
   const api = useAPI();
   const queryClient = useQueryClient();
@@ -130,10 +141,11 @@ export const useRemoveProjectMember = (projectId: string) => {
       queryClient.invalidateQueries({
         queryKey: ["currentProject", projectId],
       });
+      toast.success("Member removed successfully!");
     },
     onError: (error: any) => {
       console.error("Failed to remove project member:", error);
-      toast.error("Failed to remove member from the project.");
+      toast.error(getErrorMessage(error, "Failed to remove member from project."));
     },
   });
 };
@@ -155,7 +167,11 @@ export const useProjectService = () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       router.push("/for-you");
     },
+    onError: (error: any) => {
+      toast.error(getErrorMessage(error, "Lỗi khi tạo dự án."));
+    },
   });
+
   const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
     queryKey: ["projects"],
     queryFn: () => api.project.getUserProjects(),

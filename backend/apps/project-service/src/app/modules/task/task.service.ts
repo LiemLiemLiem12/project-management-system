@@ -6,6 +6,10 @@ import { Task } from './entities/task.entity';
 import { GroupTask } from './entities/group-task.entity';
 import { Label } from './entities/label.entity';
 import { ClientProxy } from '@nestjs/microservices';
+import { catchError } from 'rxjs/internal/operators/catchError';
+import { timeout } from 'rxjs/internal/operators/timeout';
+import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
+import { of } from 'rxjs';
 
 @Injectable()
 export class TaskService {
@@ -21,9 +25,34 @@ export class TaskService {
 
     @Inject('AUDIT_SERVICE_CLIENT')
     private readonly auditClient: ClientProxy,
+
+    @Inject('NOTIFICATION_SERVICE_CLIENT')
+    private readonly notifClient: ClientProxy,
+
+    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
   ) {}
 
-  // ─── HÀM CỦA FILE CŨ (GIỮ NGUYÊN 100% LOGIC & MICROSERVICE EXCEPTION) ───
+  private async getSenderInfo(
+    userId: string,
+  ): Promise<{ name: string; avatar: string | null }> {
+    if (!userId || userId === 'unknown_user')
+      return { name: 'Hệ thống', avatar: null };
+    try {
+      const users = await firstValueFrom(
+        this.authClient.send('auth.get-users-by-ids', [userId]).pipe(
+          timeout(3000),
+          catchError(() => of([])),
+        ),
+      );
+      const user = users?.find((u: any) => u.id === userId);
+      return {
+        name: user?.fullName || user?.username || 'Hệ thống',
+        avatar: user?.avatarUrl || user?.avatar || user?.avatar_url || null,
+      };
+    } catch (error) {
+      return { name: 'Hệ thống', avatar: null };
+    }
+  }
 
   async findOne(taskId: string) {
     const task = await this.taskRepository.findOne({
@@ -136,16 +165,33 @@ export class TaskService {
     parent_id?: string;
   }) {
     const maxPosTask = await this.taskRepository.findOne({
-      where: {
-        groupTask: { project_id: payload.project_id },
-      },
+      where: { group_task_id: payload.group_task_id },
       order: { position: 'DESC' },
-      relations: ['groupTask'],
     });
-
     const position = maxPosTask ? maxPosTask.position + 1 : 1;
 
-    const nextIdValue = `task-${position}`;
+    // Quét tìm ID lớn nhất để không bị trùng lặp
+    const existingTasks = await this.taskRepository
+      .createQueryBuilder('task')
+      .innerJoin('task.groupTask', 'groupTask')
+      .where('groupTask.project_id = :projectId', {
+        projectId: payload.project_id,
+      })
+      .select('task.id')
+      .getMany();
+
+    let maxNumber = 0;
+    existingTasks.forEach((t) => {
+      const parts = t.id.split('-');
+      if (parts.length === 2) {
+        const num = parseInt(parts[1], 10);
+        if (!isNaN(num) && num > maxNumber) {
+          maxNumber = num;
+        }
+      }
+    });
+
+    const nextIdValue = `task-${maxNumber + 1}`;
 
     let labels: Label[] = [];
     if (payload.label_ids?.length) {
@@ -161,9 +207,22 @@ export class TaskService {
 
     const newTask = await this.taskRepository.save(task);
 
-    // 🚀 LOG: CREATE TASK
+    // Bắn event giao task (nếu có người nhận luôn lúc tạo)
+    if (newTask.assignee_id && newTask.assignee_id !== payload.created_by) {
+      const senderInfo = await this.getSenderInfo(payload.created_by);
+      this.notifClient.emit('notify.task_assigned', {
+        recipientId: newTask.assignee_id,
+        senderId: payload.created_by,
+        senderName: senderInfo.name,
+        senderAvatar: senderInfo.avatar,
+        projectId: payload.project_id,
+        taskId: newTask.id,
+        taskName: newTask.title,
+      });
+    }
+
     this.auditClient.emit('log_action_created', {
-      project_id: payload.project_id, // Đã thêm project_id
+      project_id: payload.project_id,
       user_id: payload.created_by || 'unknown_user',
       action: 'CREATE_TASK',
       entity_type: 'TASK',
@@ -177,7 +236,6 @@ export class TaskService {
 
   async update(id: string, data: any, currentUserId: string = 'unknown_user') {
     const task = await this.findTaskById(id);
-
     const oldTask = JSON.parse(JSON.stringify(task));
 
     if (data.label_ids !== undefined) {
@@ -200,16 +258,35 @@ export class TaskService {
       }
 
       task.groupTask = groupTask;
-
       delete data.group_task_id;
     }
+
+    const isAssigneeChanged =
+      data.assignee_id !== undefined && data.assignee_id !== task.assignee_id;
 
     Object.assign(task, data);
     const newTask = await this.taskRepository.save(task);
 
-    // 🚀 LOG: UPDATE TASK
+    // Bắn event đổi người nhận task
+    if (
+      isAssigneeChanged &&
+      newTask.assignee_id &&
+      newTask.assignee_id !== currentUserId
+    ) {
+      const senderInfo = await this.getSenderInfo(currentUserId);
+      this.notifClient.emit('notify.task_assigned', {
+        recipientId: newTask.assignee_id,
+        senderId: currentUserId,
+        senderName: senderInfo.name,
+        senderAvatar: senderInfo.avatar,
+        projectId: task.groupTask?.project_id,
+        taskId: newTask.id,
+        taskName: newTask.title,
+      });
+    }
+
     this.auditClient.emit('log_action_created', {
-      project_id: task.groupTask?.project_id, // Đã thêm project_id
+      project_id: task.groupTask?.project_id,
       user_id: currentUserId,
       action: 'UPDATE_TASK',
       entity_type: 'TASK',
@@ -221,7 +298,6 @@ export class TaskService {
     return newTask;
   }
 
-  // 🚀 Thêm currentUserId vào moveTask
   async moveTask(
     payload: { id: string; group_task_id: string; position: number },
     currentUserId: string = 'unknown_user',

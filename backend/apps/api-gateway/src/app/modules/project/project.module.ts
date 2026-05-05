@@ -43,6 +43,30 @@ import { CommentGateway } from './gateways/comment.gateway';
           },
         },
       },
+
+      {
+        name: 'NOTIFICATION_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBIT_MQ || 'amqp://localhost:5672'],
+          queue: process.env.NOTIFICATION_QUEUE_NAME || 'notification_queue',
+          queueOptions: {
+            durable: false,
+          },
+        },
+      },
+
+      {
+        name: 'AUTH_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBIT_MQ || 'amqp://localhost:5672'],
+          queue: process.env.AUTH_QUEUE_NAME || 'auth_queue',
+          queueOptions: {
+            durable: false,
+          },
+        },
+      },
     ]),
   ],
   controllers: [

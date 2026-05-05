@@ -1,4 +1,4 @@
-import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateProjectDto } from '../dto/create-project.dto';
 import { UpdateProjectDto } from '../dto/update-project.dto';
 import { ClientProxy } from '@nestjs/microservices';
@@ -9,6 +9,8 @@ export class ProjectService {
   constructor(
     @Inject(process.env.PROJECT_SERVICE_NAME || 'PROJECT_SERVICE')
     private readonly projectClient: ClientProxy,
+    @Inject('AUTH_SERVICE')
+    private readonly authClient: ClientProxy,
   ) {}
 
   findAll() {
@@ -33,8 +35,56 @@ export class ProjectService {
     });
   }
 
-  addMember(payload: any) {
-    return this.projectClient.send('project_member.create', payload);
+  async addMember(payload: any) {
+    try {
+      const userResult = (await firstValueFrom(
+        this.authClient
+          .send('auth.check_email', payload.email)
+          .pipe(timeout(5000)),
+      )) as any;
+
+      if (!userResult) {
+        throw new HttpException(
+          'Không tìm thấy tài khoản với email này',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // 🚀 SỬA LỖI Ở ĐÂY: Gán ID của người được mời vào biến rõ ràng
+      const targetUserId =
+        userResult.id ||
+        userResult._id ||
+        userResult.userId ||
+        (userResult.user && userResult.user.id);
+
+      if (!targetUserId) {
+        throw new HttpException(
+          'API check email chạy được nhưng không chịu nhả User ID',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      const fullPayload = {
+        project_id: payload.project_id,
+        email: payload.email,
+        role: payload.role,
+        user_id: targetUserId, // ID người được mời
+        currentUserId: payload.currentUserId, // 🚀 ID của Leader đang thao tác
+      };
+
+      const result = await firstValueFrom(
+        this.projectClient
+          .send('project_member.create', fullPayload)
+          .pipe(timeout(5000)),
+      );
+
+      return result;
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to add project member',
+        error.statusCode || error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   getMembers(projectId: string) {
@@ -45,10 +95,11 @@ export class ProjectService {
     return this.projectClient.send('project_member.update', payload);
   }
 
-  removeMember(projectId: string, userId: string) {
+  removeMember(projectId: string, userId: string, currentUserId: string) {
     return this.projectClient.send('project_member.delete', {
       project_id: projectId,
       user_id: userId,
+      currentUserId: currentUserId,
     });
   }
 

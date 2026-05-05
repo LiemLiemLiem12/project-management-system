@@ -115,4 +115,26 @@ export class AuthController {
   async handleCheckEmail(@Payload() email: string) {
     return this.authService.checkUserExists(email);
   }
+
+  @MessagePattern('user.update_profile')
+  async updateProfile(
+    @Payload()
+    payload: {
+      userId: string;
+      full_name?: string;
+      avatar_url?: string;
+    },
+  ) {
+    return this.authService.updateProfile(payload.userId, payload);
+  }
+
+  @MessagePattern('user.change_password.init')
+  async initChangePassword(@Payload() payload: any) {
+    return this.authService.initChangePassword(payload.userId, payload);
+  }
+
+  @MessagePattern('user.change_password.verify')
+  async verifyChangePasswordOtp(@Payload() payload: any) {
+    return this.authService.verifyChangePasswordOtp(payload.userId, payload);
+  }
 }

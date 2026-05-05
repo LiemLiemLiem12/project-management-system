@@ -4,6 +4,7 @@ import {
   Get,
   HttpException,
   Inject,
+  Patch,
   Post,
   Req,
   Request,
@@ -259,5 +260,34 @@ export class AuthController {
   @Post('check-email')
   async checkUserEmail(@Body() body: { email: string }) {
     return this.authService.checkUserExists(body.email);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  async updateProfile(@Req() req: any, @Body() body: any) {
+    const userId = req.user.userId;
+
+    return this.authService.updateProfile(userId, {
+      full_name: body.full_name,
+      avatar_url: body.avatar_url,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('password/init')
+  async initChangePassword(@Req() req: any, @Body() body: any) {
+    return this.authService.initChangePassword(req.user.userId, {
+      current_password: body.current_password,
+      new_password: body.new_password,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('password/verify')
+  async verifyChangePasswordOtp(@Req() req: any, @Body() body: any) {
+    return this.authService.verifyChangePasswordOtp(req.user.userId, {
+      otp: body.otp,
+      token: body.token,
+    });
   }
 }

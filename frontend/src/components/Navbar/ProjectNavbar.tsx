@@ -7,6 +7,7 @@ import NotificationDropdown from "./NotificationDropdown";
 import UserDropdown from "./UserDropdown";
 import { useAuthStore } from "@/store/auth.store";
 import { useGetMyTasks } from "@/services/task.service";
+import Link from "next/link";
 
 // ─── COMPONENT GLOBAL SEARCH (GIỮ NGUYÊN 100% UI GỐC) ──────────────────────
 const GlobalSearch = ({
@@ -141,10 +142,12 @@ export default function ProjectNavbar() {
             {/* 🚀 Desktop: Truyền đúng class w-full max-w-md của ô search cũ */}
             <GlobalSearch containerClassName="w-full max-w-md" />
 
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors text-sm font-medium whitespace-nowrap shadow-sm active:scale-95">
-              <Plus size={18} />
-              <span>Create</span>
-            </button>
+            <Link href="/create-project">
+              <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors text-sm font-medium whitespace-nowrap shadow-sm active:scale-95">
+                <Plus size={18} />
+                <span>Create</span>
+              </button>
+            </Link>
           </div>
 
           <div className="col-span-2 flex items-center justify-end gap-5">

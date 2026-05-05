@@ -70,6 +70,8 @@ export default function TaskRow({
   const assigneeInitial = assigneeName
     ? String(assigneeName).charAt(0).toUpperCase()
     : "?";
+  // 🚀 Lấy avatar từ DB (phòng hờ trả về snake hoặc camelCase)
+  const assigneeAvatar = realAssignee?.avatar_url || realAssignee?.avatarUrl;
 
   // ==========================================
   // XỬ LÝ HIỂN THỊ TÊN NGƯỜI TẠO
@@ -84,6 +86,8 @@ export default function TaskRow({
   const reporterInitial = reporterName
     ? String(reporterName).charAt(0).toUpperCase()
     : "?";
+  // 🚀 Lấy avatar người tạo
+  const reporterAvatar = realReporter?.avatar_url || realReporter?.avatarUrl;
 
   // Cấu hình trạng thái (Status)
   const statusStyle = getGroupStyle(task.status);
@@ -124,19 +128,28 @@ export default function TaskRow({
         </span>
       </div>
 
-      {/* Cột Người thực hiện */}
+      {/* 🚀 Cột Người thực hiện */}
       <div className="px-3 py-3.5 flex items-center gap-2 min-w-0">
         {assigneeId ? (
           <>
             <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium flex-shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium flex-shrink-0 overflow-hidden"
               style={{
                 background: assigneeColors?.color || "#F3F4F6",
                 color: assigneeColors?.textColor || "#4B5563",
               }}
               title={assigneeName}
             >
-              {assigneeInitial}
+              {/* Nếu có avatar thì ưu tiên vẽ ảnh, ngược lại vẽ chữ */}
+              {assigneeAvatar ? (
+                <img
+                  src={assigneeAvatar}
+                  alt={assigneeName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                assigneeInitial
+              )}
             </div>
             <span
               className="text-sm text-gray-700 truncate"
@@ -152,19 +165,28 @@ export default function TaskRow({
         )}
       </div>
 
-      {/* Cột Người tạo */}
+      {/* 🚀 Cột Người tạo */}
       <div className="px-3 py-3.5 flex items-center gap-2 min-w-0">
         {reporterId ? (
           <>
             <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium flex-shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium flex-shrink-0 overflow-hidden"
               style={{
                 background: reporterColors?.color || "#F3F4F6",
                 color: reporterColors?.textColor || "#4B5563",
               }}
               title={reporterName}
             >
-              {reporterInitial}
+              {/* Nếu có avatar thì ưu tiên vẽ ảnh, ngược lại vẽ chữ */}
+              {reporterAvatar ? (
+                <img
+                  src={reporterAvatar}
+                  alt={reporterName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                reporterInitial
+              )}
             </div>
             <span
               className="text-sm text-gray-700 truncate"

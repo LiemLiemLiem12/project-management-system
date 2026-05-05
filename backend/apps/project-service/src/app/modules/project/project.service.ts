@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, HttpStatus } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -35,7 +35,32 @@ export class ProjectService {
     private readonly groupTaskRepository: Repository<GroupTask>,
     @Inject('AUTH_SERVICE')
     private readonly authClient: ClientProxy,
+    @Inject('NOTIFICATION_SERVICE_CLIENT')
+    private readonly notifClient: ClientProxy,
   ) {}
+
+  private async getSenderInfo(
+    userId: string,
+  ): Promise<{ name: string; avatar: string | null }> {
+    if (!userId || userId === 'unknown_user')
+      return { name: 'Hệ thống', avatar: null };
+    try {
+      const users = await firstValueFrom(
+        this.authClient.send('auth.get-users-by-ids', [userId]).pipe(
+          timeout(3000),
+          catchError(() => of([])),
+        ),
+      );
+      const user = users?.find((u: any) => u.id === userId);
+      return {
+        name: user?.fullName || user?.username || 'Hệ thống',
+        // 🚀 Đã fix thêm avatar_url để hứng đúng data từ DB của Auth Service
+        avatar: user?.avatarUrl || user?.avatar_url || user?.avatar || null,
+      };
+    } catch (error) {
+      return { name: 'Hệ thống', avatar: null };
+    }
+  }
 
   create(createProjectDto: CreateProjectDto) {
     return 'This action adds a new project';
@@ -154,23 +179,90 @@ export class ProjectService {
     }
   }
 
-  async addMember(data: { project_id: string; user_id: string; role: string }) {
+  async addMember(
+    data: {
+      project_id: string;
+      user_id: string;
+      email: string;
+      role: string;
+    },
+    currentUserId: string = 'unknown_user',
+  ) {
     const existingMember = await this.projectMemberRepository.findOne({
       where: { project_id: data.project_id, user_id: data.user_id },
     });
 
     if (existingMember) {
-      throw new RpcException({
-        message: 'User is already a member of this project',
-        statusCode: 409,
-      });
+      if (existingMember.status === 'Active') {
+        throw new RpcException({
+          message: 'User is already an active member of this project',
+          statusCode: 409,
+        });
+      } else {
+        throw new RpcException({
+          message: 'An invitation has already been sent to this user',
+          statusCode: 409,
+        });
+      }
     }
 
-    const newMember = this.projectMemberRepository.create(data);
-    return await this.projectMemberRepository.save(newMember);
-  }
+    const project = await this.projectRepository.findOne({
+      where: { id: data.project_id },
+    });
 
-  async updateMemberRole(projectId: string, userId: string, data: any) {
+    if (!project) {
+      throw new RpcException({ message: 'Project not found', statusCode: 404 });
+    }
+
+    const inviteToken = uuidv4();
+    const newMember = this.projectMemberRepository.create({
+      project_id: data.project_id,
+      user_id: data.user_id,
+      role: data.role,
+      status: 'Pending',
+      invite_token: inviteToken,
+      joined_date: new Date().toISOString(),
+    });
+
+    await this.projectMemberRepository.save(newMember);
+
+    if (data.email) {
+      this.mailService
+        .sendProjectInvite(
+          data.email,
+          project.name,
+          newMember.role,
+          inviteToken,
+        )
+        .catch((error) => {
+          console.error('Lỗi khi gửi email mời:', error);
+        });
+    }
+
+    // Bắn thông báo
+    const senderInfo = await this.getSenderInfo(currentUserId);
+    this.notifClient.emit('notify.member_invited', {
+      recipientId: data.user_id,
+      senderId: currentUserId,
+      senderName: senderInfo.name,
+      senderAvatar: senderInfo.avatar,
+      projectId: project.id,
+      projectName: project.name,
+      role: data.role,
+    });
+
+    return {
+      success: true,
+      message: 'Invitation sent successfully',
+      data: newMember,
+    };
+  }
+  async updateMemberRole(
+    projectId: string,
+    userId: string,
+    data: any,
+    currentUserId: string,
+  ) {
     const member = await this.projectMemberRepository.findOne({
       where: { project_id: projectId, user_id: userId },
     });
@@ -182,11 +274,26 @@ export class ProjectService {
       });
     }
 
+    const oldRole = member.role;
     Object.assign(member, data);
-    return await this.projectMemberRepository.save(member);
+    const updatedMember = await this.projectMemberRepository.save(member);
+
+    // Bắn thông báo
+    const senderInfo = await this.getSenderInfo(currentUserId);
+    this.notifClient.emit('notify.role_changed', {
+      recipientId: userId,
+      senderId: currentUserId,
+      senderName: senderInfo.name,
+      senderAvatar: senderInfo.avatar,
+      projectId: projectId,
+      oldRole: oldRole,
+      newRole: data.role,
+    });
+
+    return updatedMember;
   }
 
-  async removeMember(projectId: string, userId: string) {
+  async removeMember(projectId: string, userId: string, currentUserId: string) {
     const member = await this.projectMemberRepository.findOne({
       where: { project_id: projectId, user_id: userId },
     });
@@ -199,6 +306,17 @@ export class ProjectService {
     }
 
     await this.projectMemberRepository.remove(member);
+
+    // Bắn thông báo
+    const senderInfo = await this.getSenderInfo(currentUserId);
+    this.notifClient.emit('notify.member_kicked', {
+      recipientId: userId,
+      senderId: currentUserId,
+      senderName: senderInfo.name,
+      senderAvatar: senderInfo.avatar,
+      projectId: projectId,
+    });
+
     return {
       success: true,
       message: 'Member removed from project successfully',

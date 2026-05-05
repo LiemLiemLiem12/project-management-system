@@ -95,8 +95,17 @@ export class ProjectController {
   @UseGuards(RoleGuard)
   @UseGuards(JwtAuthGuard)
   @Post(':projectId/members')
-  addMember(@Param('projectId') projectId: string, @Body() body: AddMemberDto) {
-    return this.projectService.addMember({ ...body, project_id: projectId });
+  addMember(
+    @Param('projectId') projectId: string,
+    @Body() body: AddMemberDto,
+    @Req() req: any,
+  ) {
+    const currentUserId = req.user?.userId;
+    return this.projectService.addMember({
+      ...body,
+      project_id: projectId,
+      currentUserId,
+    });
   }
 
   @Roles(Role.LEADER, Role.MODERATOR)
@@ -107,10 +116,15 @@ export class ProjectController {
     @Param('projectId') projectId: string,
     @Param('userId') userId: string,
     @Body() body: UpdateMemberRoleDto,
+    @Req() req: any,
   ) {
+    // ID của người đang đăng nhập (Người thao tác)
+    const currentUserId = req.user?.userId;
+
     return this.projectService.updateMemberRole({
       project_id: projectId,
       user_id: userId,
+      currentUserId: currentUserId,
       ...body,
     });
   }
@@ -122,8 +136,11 @@ export class ProjectController {
   removeMember(
     @Param('projectId') projectId: string,
     @Param('userId') userId: string,
+    @Req() req: any,
   ) {
-    return this.projectService.removeMember(projectId, userId);
+    const currentUserId = req.user?.userId;
+
+    return this.projectService.removeMember(projectId, userId, currentUserId);
   }
 
   @Patch(':id')
