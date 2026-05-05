@@ -2,26 +2,22 @@
 
 import { useParams } from "next/navigation";
 import { useAuditStore } from "@/store/audit.store";
-import { useAuthStore } from "@/store/auth.store"; // 🚀 ĐÃ IMPORT STORE CỦA ÔNG
+import { useAuthStore } from "@/store/auth.store";
 import {
   useGetRecentActivities,
   useGetFeedActivities,
 } from "@/services/audit.service";
+import { useState } from "react"; // 🚀 Import useState
 
 function ActivityRow({ data }: { data: any }) {
-  // 🚀 Móc thông tin user đang đăng nhập từ Zustand Store
   const currentUser = useAuthStore((s: any) => s.user);
 
-  // Kiểm tra xem hành động này có phải của mình không (so sánh tên hoặc ID)
   const isMe =
     currentUser &&
     (data.user === currentUser.fullName ||
       data.user === currentUser.username ||
       data.user_id === currentUser.id);
 
-  // 🚀 LOGIC LẤY ẢNH ƯU TIÊN:
-  // 1. Nếu là hành động của mình -> Lấy ảnh trực tiếp từ Store (nhanh & luôn mới nhất)
-  // 2. Nếu của người khác -> Lấy từ data API (nếu có)
   const avatar = isMe
     ? currentUser.avatarUrl
     : data.avatar_url || data.avatarUrl;
@@ -45,7 +41,6 @@ function ActivityRow({ data }: { data: any }) {
         <p className="text-sm text-gray-800 break-words leading-relaxed">
           <span className="font-semibold text-[#0052CC] hover:underline cursor-pointer">
             {isMe ? "You" : data.user}{" "}
-            {/* Nếu là mình thì đổi tên thành "You" cho xịn */}
           </span>{" "}
           <span className="text-gray-600">{data.action}</span>{" "}
           <span className="font-medium text-[#0052CC] hover:underline cursor-pointer">
@@ -78,11 +73,25 @@ export default function ActivityFeed({
 
   const { activities, isLoading, error } = useAuditStore();
 
+  // 🚀 STATE: Số lượng activity hiển thị (mặc định là 5)
+  const [visibleCount, setVisibleCount] = useState(5);
+
   const filteredActivities = targetUserId
     ? activities.filter(
         (a) => a.user_id === targetUserId || a.user === targetUserId,
       )
     : activities;
+
+  // 🚀 HÀM: Tải thêm 5 activity nữa mỗi khi bấm
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 5);
+  };
+
+  // Cắt mảng data dựa theo visibleCount
+  const displayedActivities = filteredActivities.slice(0, visibleCount);
+
+  // Biến kiểm tra xem đã hiện hết data chưa (để ẩn cái nút Load More đi)
+  const hasMore = filteredActivities.length > visibleCount;
 
   return (
     <section>
@@ -104,16 +113,23 @@ export default function ActivityFeed({
                 : "No activity found."}
             </p>
           ) : (
-            filteredActivities
-              .slice(0, 5)
-              .map((a) => <ActivityRow key={`feed-${a.id}`} data={a} />)
+            displayedActivities.map((a) => (
+              <ActivityRow key={`feed-${a.id}`} data={a} />
+            ))
           )}
         </div>
-        <div className="px-5 py-4 border-t border-gray-100">
-          <button className="w-full text-xs font-bold text-gray-400 hover:text-[#0052CC] tracking-widest uppercase transition-colors">
-            Load More Activity
-          </button>
-        </div>
+
+        {/* 🚀 LOGIC HIỂN THỊ NÚT LOAD MORE */}
+        {hasMore && !isLoading && !error && (
+          <div className="px-5 py-4 border-t border-gray-100">
+            <button
+              onClick={handleLoadMore}
+              className="w-full text-xs font-bold text-gray-400 hover:text-[#0052CC] tracking-widest uppercase transition-colors"
+            >
+              Load More Activity
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
