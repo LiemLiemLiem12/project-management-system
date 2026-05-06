@@ -89,6 +89,21 @@ export class StorageController {
     return this.storageService.getAssetsByFolder(fileId, user.userId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('usage/:projectId')
+  getStorageUsage(@Param('projectId') projectId: string) {
+    return this.storageService.getStorageUsage(projectId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('recent/:projectId')
+  getRecentAssets(
+    @Param('projectId') projectId: string,
+    @Query('limit') limit: string = '10',
+  ) {
+    return this.storageService.getRecentAssets(projectId, parseInt(limit, 10));
+  }
+
   @AssetPermissionGrant(AssetPermission.READ)
   @UseGuards(JwtAuthGuard, AssetPermissionGuard)
   @Get('project/:projectId')

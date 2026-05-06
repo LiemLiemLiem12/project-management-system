@@ -3,7 +3,7 @@
 import { useGetStorageUsage } from "@/services/storage.service";
 import { useParams } from "next/navigation";
 
-const MAX_STORAGE_GB = 1000; // Biến có thể chỉnh
+const MAX_STORAGE_GB = 10; // Biến có thể chỉnh
 
 const FILE_TYPE_COLORS: Record<string, string> = {
   image: "#22C55E",
@@ -77,7 +77,7 @@ export default function StorageStats() {
           </span>{" "}
           out of{" "}
           <span className="font-bold text-gray-900 text-base">
-            {MAX_STORAGE_GB / 1000} TB
+            {MAX_STORAGE_GB} GB
           </span>{" "}
           used
         </p>

@@ -174,6 +174,36 @@ export default function StorageContextMenu({
     setOpenNewFolderModal(false);
   };
 
+  const handleDownload = async () => {
+    if (!selectedAsset || !selectedAsset.storageUrl) {
+      toast.error("Cannot download this file");
+      return;
+    }
+
+    try {
+      const response = await fetch(selectedAsset.storageUrl);
+      if (!response.ok) {
+        throw new Error("Failed to download file");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = selectedAsset.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("File downloaded successfully");
+      onClose();
+    } catch (error) {
+      toast.error("Failed to download file");
+      console.error("Download error:", error);
+    }
+  };
+
   if (!position) return null;
 
   return (
@@ -337,6 +367,30 @@ export default function StorageContextMenu({
               >
                 <Info size={16} />
                 View Information
+              </button>
+
+              <button
+                onClick={handleDownload}
+                disabled={!selectedAsset.storageUrl}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {/* SVG Icon */}
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  className="text-gray-500"
+                >
+                  <path
+                    d="M8 2v8M4 6l4 4 4-4M2 14h12"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Download
               </button>
             </>
           )}

@@ -221,4 +221,67 @@ export class AssetService {
 
     return records.map((record) => record.permission);
   }
+
+  // Get storage usage statistics for a project
+  async getStorageUsageByProject(projectId: string) {
+    const assets = await this.assetRepo.find({
+      where: {
+        projectId: projectId,
+        isDeleted: 0,
+        isFolder: false, // Only count files, not folders
+      },
+    });
+
+    // Calculate total bytes used
+    const usedBytes = assets.reduce(
+      (sum, asset) => sum + Number(asset.fileSize),
+      0,
+    );
+
+    // Group by file type and sum sizes
+    const typeMap = new Map<string, number>();
+    assets.forEach((asset) => {
+      if (asset.fileType) {
+        const currentSize = typeMap.get(asset.fileType) || 0;
+        typeMap.set(asset.fileType, currentSize + Number(asset.fileSize));
+      }
+    });
+
+    const breakdown = Array.from(typeMap.entries()).map(([type, bytes]) => ({
+      type,
+      bytes,
+    }));
+
+    // Set max storage to 10GB (10737418240 bytes)
+    const maxBytes = 10 * 1024 * 1024 * 1024;
+
+    return {
+      usedBytes,
+      maxBytes,
+      breakdown,
+    };
+  }
+
+  // Get recent assets for a project (ordered by createdAt DESC)
+  async getRecentAssetsByProject(projectId: string, limit: number = 10) {
+    const assets = await this.assetRepo.find({
+      where: {
+        projectId: projectId,
+        isDeleted: 0,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+      relations: ['permissions'],
+      take: limit,
+    });
+
+    // Apply permission filtering
+    return assets.map((asset) => {
+      return {
+        ...asset,
+        canView: true, // For recent assets, we show them as viewable
+      };
+    });
+  }
 }

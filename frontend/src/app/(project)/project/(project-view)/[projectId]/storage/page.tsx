@@ -67,11 +67,11 @@ export default function StoragePage() {
   };
 
   return (
-    <div className="relative flex h-screen bg-gray-50 overflow-hidden">
+    <div className="relative flex h-screen bg-gray-50 ">
       {/* ── Main content ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-5 sm:p-7 max-w-none">
+      <div className="flex-1 flex flex-col min-w-0 ">
+        <div className="flex-1 ">
+          <div className="p-5 h-full sm:p-7 max-w-none overflow-y-auto">
             <StorageStats />
             <RecentFiles />
             <ProjectStorageSection
@@ -89,14 +89,14 @@ export default function StoragePage() {
         <>
           {/* Mobile overlay backdrop */}
           <div
-            className="absolute inset-0 bg-black/20 z-40"
+            className="fixed inset-0 bg-black/20 z-40"
             onClick={() => {
               setSelectedId(null);
               setOpenDetailSidebar(false);
             }}
           />
           {/* Panel */}
-          <div className="absolute right-0 top-0 bottom-0 z-50 w-[300px] sm:w-[320px] bg-white shadow-2xl border-l border-gray-200 overflow-hidden">
+          <div className="fixed right-0 top-0 bottom-0 z-50 w-[300px] sm:w-[320px] bg-white shadow-2xl border-l border-gray-200 overflow-hidden">
             <FileDetailPanel
               file={selectedAsset}
               onClose={() => {

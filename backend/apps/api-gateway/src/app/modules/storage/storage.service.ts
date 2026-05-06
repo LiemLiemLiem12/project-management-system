@@ -100,4 +100,14 @@ export class StorageService {
       newPermissions,
     });
   }
+
+  getStorageUsage(projectId: string) {
+    return this.request('get', `${this.baseUrl}/usage/${projectId}`);
+  }
+
+  getRecentAssets(projectId: string, limit: number = 10) {
+    return this.request('get', `${this.baseUrl}/recent/${projectId}`, {
+      limit,
+    });
+  }
 }

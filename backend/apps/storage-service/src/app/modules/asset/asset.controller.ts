@@ -51,6 +51,22 @@ export class AssetController {
     return this.assetService.findAllByFolder(id, userId);
   }
 
+  @Get('usage/:projectId')
+  getStorageUsage(@Param('projectId') projectId: string) {
+    return this.assetService.getStorageUsageByProject(projectId);
+  }
+
+  @Get('recent/:projectId')
+  getRecentAssets(
+    @Param('projectId') projectId: string,
+    @Query('limit') limit: string = '10',
+  ) {
+    return this.assetService.getRecentAssetsByProject(
+      projectId,
+      parseInt(limit, 10),
+    );
+  }
+
   @Post('folder')
   async createFolder(@Body() payload: any) {
     return this.assetService.create(payload);

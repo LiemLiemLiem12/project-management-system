@@ -8,6 +8,8 @@ import { MailModule } from './modules/mail/mail.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { User } from './modules/auth/entities/user.entity';
 import { UserModule } from './modules/user/user.module';
+import { ServeStaticModule } from '@nestjs/serve-static/dist/serve-static.module';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -34,6 +36,11 @@ import { UserModule } from './modules/user/user.module';
     EventEmitterModule.forRoot(),
 
     UserModule,
+
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), '..', 'public'),
+      serveRoot: '/public',
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

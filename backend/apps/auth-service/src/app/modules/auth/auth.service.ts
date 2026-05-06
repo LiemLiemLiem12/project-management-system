@@ -12,6 +12,7 @@ import { Repository, In } from 'typeorm';
 import { RpcException } from '@nestjs/microservices/exceptions/rpc-exception';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
+import { DefaultAvatarUrl } from './constant/default-avatar.constant';
 
 @Injectable()
 export class AuthService {
@@ -235,7 +236,7 @@ export class AuthService {
         email,
         passwordHash: hashedPassword,
         fullName,
-        avatarUrl: '',
+        avatarUrl: DefaultAvatarUrl,
         provider: 'local',
         birthday,
         createdAt: new Date(),
@@ -652,7 +653,6 @@ export class AuthService {
       120000,
     );
 
-   
     this.eventEmitter.emit('sendOtpEmail', {
       email: user.email,
       otp,
@@ -663,7 +663,6 @@ export class AuthService {
     return { success: true, message: 'OTP sent to email', token };
   }
 
-  
   async verifyChangePasswordOtp(
     userId: string,
     payload: { otp: string; token: string },
@@ -690,10 +689,8 @@ export class AuthService {
       });
     }
 
-   
     await this.userRepository.update(userId, { passwordHash: newHash });
 
-    
     await this.cacheManager.del(`change_pass_otp_${userId}`);
     await this.cacheManager.del(`change_pass_token_${userId}`);
     await this.cacheManager.del(`change_pass_newhash_${userId}`);

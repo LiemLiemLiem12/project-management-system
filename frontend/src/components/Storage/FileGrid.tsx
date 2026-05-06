@@ -305,7 +305,7 @@ function FileListRow({
           ) ? (
           <VideoIcon />
         ) : (
-          <DocThumbnail />
+          <LockedThumbnail />
         )}
       </div>
       <div className="flex-1 min-w-0">
@@ -343,7 +343,7 @@ export default function FileGrid({
 
   return (
     <div
-      className="h-full min-h-[50vh] w-full"
+      className="h-full min-h-[50vh] w-full pb-50"
       onContextMenu={handleEmptyAreaContextMenu}
     >
       {viewMode === "grid" ? (

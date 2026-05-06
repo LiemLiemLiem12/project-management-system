@@ -69,6 +69,7 @@ export const useGetRecentAssets = (projectId: string, limit: number = 10) => {
 
 export const useSyncUserPermission = () => {
   const api = useAPI();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (payload: SyncUserPermissionPayload) => {
@@ -76,6 +77,8 @@ export const useSyncUserPermission = () => {
     },
     onSuccess: () => {
       toast.success("Permissions updated successfully.");
+
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
     },
     onError: (error: any) => {
       console.error("Failed to sync user permission:", error);

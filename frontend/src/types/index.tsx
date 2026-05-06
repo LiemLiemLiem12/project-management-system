@@ -146,7 +146,7 @@ export interface UpdateCommentPayload extends Partial<CreateCommentPayload> {
 export interface SyncUserPermissionPayload {
   fileId: string;
   userId: string;
-  newPermissions: AssetPermissionEnum[];
+  newPermissions: string[];
 }
 
 export interface CreateFolderPayload {

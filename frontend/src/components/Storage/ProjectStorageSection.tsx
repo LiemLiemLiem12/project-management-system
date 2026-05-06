@@ -38,7 +38,7 @@ export default function ProjectStorageSection({
   return (
     <section>
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex  items-center justify-between mb-4">
         <button
           onClick={() => setCollapsed((c) => !c)}
           className="flex items-center gap-2 text-sm font-semibold text-gray-900 hover:text-gray-600 transition-colors"
