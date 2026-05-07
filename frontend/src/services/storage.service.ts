@@ -37,6 +37,19 @@ export const useGetAssetsByProject = (projectId: string, isRoot: boolean) => {
   });
 };
 
+export const useGetAssetsByTaskId = (taskId: string) => {
+  const api = useAPI();
+  return useQuery({
+    queryKey: ["assets", "task", taskId],
+    queryFn: async () => {
+      const res = await api.storage.getAssetsByTaskId(taskId);
+      return res.data;
+    },
+    enabled: !!taskId,
+    refetchOnWindowFocus: false,
+  });
+};
+
 export const useGetStorageUsage = (projectId: string) => {
   const api = useAPI();
 
@@ -127,7 +140,11 @@ export const useCreateAsset = () => {
     },
     onError: (error: any) => {
       console.error("Failed to upload files:", error.response?.data);
-      toast.error(error.response?.data?.message || "");
+      if (Array.isArray(error.response?.data?.message)) {
+        toast.error(error.response?.data?.message[0] || "");
+      } else {
+        toast.error(error.response?.data?.message || "");
+      }
     },
   });
 };

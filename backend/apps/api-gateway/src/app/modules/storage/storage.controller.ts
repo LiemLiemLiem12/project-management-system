@@ -121,6 +121,15 @@ export class StorageController {
     );
   }
 
+  @AssetPermissionGrant(AssetPermission.READ)
+  @UseGuards(JwtAuthGuard, AssetPermissionGuard)
+  @Get('task/:taskId')
+  getAssetsByTaskId(@Param('taskId') taskId: string, @Req() request: Request) {
+    const user = request.user as { userId: string; username: string };
+
+    return this.storageService.getAssetsByTaskId(taskId, user.userId);
+  }
+
   @AssetPermissionGrant(AssetPermission.UPDATE)
   @UseGuards(JwtAuthGuard, AssetPermissionGuard)
   @Patch(':fileId')

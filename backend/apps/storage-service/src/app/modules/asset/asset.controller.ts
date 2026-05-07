@@ -136,6 +136,14 @@ export class AssetController {
     return this.assetService.findAllByProject(projectId, isRoot, userId);
   }
 
+  @Get('task')
+  findAllByTaskId(
+    @Query('taskId') taskId: string,
+    @Query('userId') userId: string,
+  ) {
+    return this.assetService.findAllByTaskId(taskId, userId);
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() data: any) {
     return this.assetService.update(id, data);

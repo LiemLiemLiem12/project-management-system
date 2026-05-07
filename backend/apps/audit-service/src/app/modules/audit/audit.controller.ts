@@ -10,7 +10,6 @@ export class AuditController {
 
   @EventPattern('log_action_created')
   async handleLogAction(@Payload() data: CreateAuditLogDto) {
-    console.log(data);
     await this.auditService.createLog(data);
   }
 

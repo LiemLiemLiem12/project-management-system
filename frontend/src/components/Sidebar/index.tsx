@@ -70,16 +70,6 @@ export default function Sidebar() {
             />
             {isOpenSidebar && <span className="truncate">For you</span>}
           </Link>
-
-          <Link
-            href="/favourites"
-            className={navLinkClass(isActive("/favourites"))}
-          >
-            <Star
-              className={isOpenSidebar ? "w-4 h-4 shrink-0" : "w-5 h-5 mx-auto"}
-            />
-            {isOpenSidebar && <span className="truncate">Favourites</span>}
-          </Link>
         </div>
 
         {/* Projects Section */}

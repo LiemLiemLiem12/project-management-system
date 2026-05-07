@@ -12,8 +12,11 @@ import { useTaskStore } from "@/store/task.store";
 import { useProjectStore } from "@/store/project.store";
 import { useAutoSaveTaskField } from "@/hooks/use-autosave-task-field";
 import { ROLE } from "@/enums";
+import { FileStoringModal } from "./FileStoringModal";
+import { useState } from "react";
 
 export default function TaskMainContent() {
+  const [openStoreModal, setOpenStoreModal] = useState<boolean>(false);
   const currentTask = useTaskStore((s) => s.currentTask);
 
   const currentProject = useProjectStore((s: any) => s.currentProject?.id);
@@ -96,13 +99,18 @@ export default function TaskMainContent() {
       {/* 3. Render các Component đã tách (Các component này đều có ID tương ứng để cuộn tới) */}
       <TaskSubtasks canManage={canManage} />
       <TaskChecklist canManage={canManage} />
-      <TaskAttachments />
+      <TaskAttachments onOpenModal={() => setOpenStoreModal(true)} />
 
       {/* 4. Activity/Comments (Nằm dưới cùng) */}
       <section id="section-activity" className="mt-4">
         <h2 className="text-lg font-semibold mb-4">Activity</h2>
         <TaskActivity />
       </section>
+
+      <FileStoringModal
+        isOpen={openStoreModal}
+        onClose={() => setOpenStoreModal(false)}
+      />
     </div>
   );
 }

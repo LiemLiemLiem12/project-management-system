@@ -139,6 +139,39 @@ export class AssetService {
     };
   }
 
+  async findAllByTaskId(taskId: string, userId: string) {
+    let whereCondition: any = {
+      taskId: taskId,
+      isDeleted: 0,
+    };
+
+    const assets = await this.assetRepo.find({
+      where: whereCondition,
+      order: { createdAt: 'DESC' },
+      relations: ['permissions'],
+    });
+
+    return assets.map((asset) => {
+      const hasAccess = asset.permissions.some(
+        (p) =>
+          p.userId === userId &&
+          [PERMISSION.READ].includes(p.permission as PERMISSION),
+      );
+
+      if (hasAccess) {
+        return { ...asset, canView: true };
+      } else {
+        return {
+          ...asset,
+          fileSize: 0,
+          fileType: null,
+          storageUrl: null,
+          canView: false,
+        };
+      }
+    });
+  }
+
   // 3. Update
   async update(id: string, data: any) {
     const asset = await this.assetRepo.findOne({

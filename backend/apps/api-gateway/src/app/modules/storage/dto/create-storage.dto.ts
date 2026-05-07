@@ -34,6 +34,10 @@ export class CreateStorageDto {
 
   @IsOptional()
   @IsString()
+  taskId?: string;
+
+  @IsOptional()
+  @IsString()
   publicId?: string;
 
   @IsOptional()

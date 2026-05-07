@@ -38,6 +38,9 @@ export const storageApi = (axiosPrivate: AxiosInstance) => ({
       `/storages/project/${projectId}?isRoot=${isRoot}`,
     ),
 
+  getAssetsByTaskId: (taskId: string) =>
+    axiosPrivate.get<Asset[]>(`/storages/task/${taskId}`),
+
   updateAsset: (fileId: string, payload: UpdateStoragePayload) =>
     axiosPrivate.patch<Asset>(`/storages/${fileId}`, payload),
 

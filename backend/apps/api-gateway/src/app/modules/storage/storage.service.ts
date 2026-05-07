@@ -78,6 +78,13 @@ export class StorageService {
     });
   }
 
+  getAssetsByTaskId(taskId: string, userId: string) {
+    return this.request('get', `${this.baseUrl}/task`, {
+      taskId,
+      userId,
+    });
+  }
+
   updateAsset(id: string, payload: any) {
     return this.request('patch', `${this.baseUrl}/${id}`, payload);
   }

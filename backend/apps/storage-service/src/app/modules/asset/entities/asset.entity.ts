@@ -41,6 +41,9 @@ export class Asset {
   @OneToMany(() => Asset, (asset) => asset.parent)
   children!: Asset[];
 
+  @Column({ type: 'varchar', name: 'task_id', default: 0, nullable: true })
+  taskId!: string;
+
   @Column({ type: 'varchar', name: 'file_type', nullable: true })
   fileType!: string;
 

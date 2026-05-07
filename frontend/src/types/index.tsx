@@ -42,6 +42,7 @@ export interface TaskBase {
   description: string | null;
   position: number;
   due_date: string | null; // ISO Date string
+  start_date: string | null; // ISO Date string
   assignee_id: string | null;
   created_by: string;
   group_task_id: string;

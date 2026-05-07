@@ -30,6 +30,8 @@ import Image from "next/image";
 import { ROLE } from "@/enums";
 
 export default function TaskSidebar() {
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const dueDateRef = useRef<HTMLInputElement>(null);
   const inputDateRef = useRef<HTMLInputElement>(null);
   const currentProject = useProjectStore((s: any) => s.currentProject);
   const currentTask: Task | null = useTaskStore((s: any) => s.currentTask);
@@ -214,27 +216,33 @@ export default function TaskSidebar() {
     );
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = e.target.value;
+  const handleDateChange = (
+    field: "start_date" | "due_date",
+    newDate: string,
+  ) => {
     if (!currentTask?.id || !currentProject?.id) return;
 
     updateTask({
       projectId: currentProject.id,
       taskId: currentTask.id,
       payload: {
-        due_date: newDate ? new Date(newDate).toISOString() : null,
+        [field]: newDate ? new Date(newDate).toISOString() : null,
       },
     });
   };
 
-  const handleClearDate = (e: React.MouseEvent) => {
+  const handleClearDate = (
+    e: React.MouseEvent,
+    field: "start_date" | "due_date",
+  ) => {
     e.preventDefault();
-    if (!currentTask?.id || !currentProject.id || canManage) return;
+    e.stopPropagation();
+    if (!currentTask?.id || !currentProject.id || !canManage) return;
 
     updateTask({
       projectId: currentProject.id,
       taskId: currentTask.id,
-      payload: { due_date: null },
+      payload: { [field]: null },
     });
   };
 
@@ -262,12 +270,12 @@ export default function TaskSidebar() {
     );
   };
 
-  const openDatePicker = () => {
-    if (!pendingUpdateTask && inputDateRef.current && canManage) {
+  const openDatePicker = (ref: React.RefObject<HTMLInputElement | null>) => {
+    if (!pendingUpdateTask && ref && ref.current && canManage) {
       try {
-        inputDateRef.current.showPicker();
+        ref.current.showPicker();
       } catch (error) {
-        inputDateRef.current.focus();
+        ref.current.focus();
       }
     }
   };
@@ -629,26 +637,75 @@ export default function TaskSidebar() {
             )}
           </div>
 
+          {/* Start Date */}
+          <div className="text-slate-500 flex items-center">Start date</div>
+          <div className="relative flex items-center group">
+            <input
+              type="date"
+              ref={startDateRef}
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1 opacity-0 pointer-events-none"
+              value={
+                currentTask.start_date
+                  ? format(new Date(currentTask.start_date), "yyyy-MM-dd")
+                  : ""
+              }
+              onChange={(e) => handleDateChange("start_date", e.target.value)} // Truyền field start_date
+              disabled={pendingUpdateTask}
+            />
+
+            {currentTask.start_date ? (
+              <div className="flex items-center gap-1">
+                <div
+                  onClick={() => openDatePicker(startDateRef)}
+                  className={`flex items-center gap-1.5 font-medium px-2 py-1 rounded w-fit text-xs cursor-pointer hover:opacity-80 transition-opacity ${
+                    pendingUpdateTask ? "opacity-50 pointer-events-none" : ""
+                  } `}
+                >
+                  <Clock size={14} />
+                  {format(new Date(currentTask.start_date), "MMM dd, yyyy")}
+                </div>
+
+                <button
+                  onClick={(e) => handleClearDate(e, "start_date")} // Truyền field
+                  disabled={pendingUpdateTask || !canManage}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity disabled:opacity-0"
+                  title="Remove start date"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => openDatePicker(startDateRef)} // Truyền ref
+                className={`text-slate-400 italic cursor-pointer hover:text-slate-600 transition-colors ${
+                  pendingUpdateTask ? "opacity-50 pointer-events-none" : ""
+                }`}
+              >
+                No start date
+              </div>
+            )}
+          </div>
+
           {/* Due Date */}
           <div className="text-slate-500 flex items-center">Due date</div>
           <div className="relative flex items-center group">
             <input
               type="date"
-              ref={inputDateRef}
+              ref={dueDateRef} // Sử dụng dueDateRef
               className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1 opacity-0 pointer-events-none"
               value={
                 currentTask.due_date
                   ? format(new Date(currentTask.due_date), "yyyy-MM-dd")
                   : ""
               }
-              onChange={handleDateChange}
+              onChange={(e) => handleDateChange("due_date", e.target.value)} // Truyền field due_date
               disabled={pendingUpdateTask}
             />
 
             {currentTask.due_date ? (
               <div className="flex items-center gap-1">
                 <div
-                  onClick={openDatePicker}
+                  onClick={() => openDatePicker(dueDateRef)} // Truyền ref
                   className={`flex items-center gap-1.5 font-medium px-2 py-1 rounded w-fit text-xs cursor-pointer hover:opacity-80 transition-opacity ${
                     pendingUpdateTask ? "opacity-50 pointer-events-none" : ""
                   } ${
@@ -663,8 +720,8 @@ export default function TaskSidebar() {
                 </div>
 
                 <button
-                  onClick={handleClearDate}
-                  disabled={pendingUpdateTask || canManage}
+                  onClick={(e) => handleClearDate(e, "due_date")} // Truyền field
+                  disabled={pendingUpdateTask || !canManage}
                   className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity disabled:opacity-0"
                   title="Remove due date"
                 >
@@ -673,7 +730,7 @@ export default function TaskSidebar() {
               </div>
             ) : (
               <div
-                onClick={openDatePicker}
+                onClick={() => openDatePicker(dueDateRef)} // Truyền ref
                 className={`text-slate-400 italic cursor-pointer hover:text-slate-600 transition-colors ${
                   pendingUpdateTask ? "opacity-50 pointer-events-none" : ""
                 }`}
@@ -686,7 +743,6 @@ export default function TaskSidebar() {
           {/* Group Task / Team */}
           <div className="text-slate-500 flex items-center">Group</div>
           <div className="relative">
-            {/* Trigger Button */}
             <div
               onClick={() => setIsGroupModalOpen(!isGroupModalOpen)}
               className={`flex items-center justify-between gap-2 font-medium p-1.5 -ml-1.5 rounded-md transition-colors w-fit pr-3 ${
