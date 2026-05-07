@@ -19,11 +19,11 @@ import { ChecklistModule } from '../checklist/checklist.module';
     // Gắn loa RabbitMQ
     ClientsModule.register([
       {
-        name: 'AUDIT_SERVICE_CLIENT',
+        name: process.env.AUDIT_SERVICE_NAME || 'AUDIT_SERVICE',
         transport: Transport.RMQ,
         options: {
           urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
-          queue: 'audit_queue',
+          queue: process.env.AUDIT_QUEUE || 'AUDIT_QUEUE',
           queueOptions: {
             durable: true,
           },

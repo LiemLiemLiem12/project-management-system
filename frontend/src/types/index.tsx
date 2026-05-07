@@ -196,4 +196,5 @@ export interface Asset {
   parent?: Asset | null;
   permissions?: AssetPermission[];
   children?: Asset[];
+  canView: boolean;
 }

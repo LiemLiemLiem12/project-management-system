@@ -91,7 +91,7 @@ export class AssetService {
   async findAllByFolder(id: string, userId: string) {
     const folder = await this.assetRepo.findOne({
       where: { id, isFolder: true, isDeleted: 0 },
-      relations: ['permissions'],
+      relations: ['permissions', 'parent'],
     });
 
     if (!folder) {
@@ -106,7 +106,7 @@ export class AssetService {
         parent: { id: id },
         isDeleted: 0,
       },
-      relations: ['permissions'],
+      relations: ['permissions', 'parent'],
       order: {
         isFolder: 'DESC',
         createdAt: 'DESC',

@@ -214,7 +214,9 @@ export default function FileDetailPanel({
                 /* Đã load xong dữ liệu user và render grouped permissions */
                 <div className="space-y-3">
                   {groupedPermissions.map((group) => {
-                    const user = users?.find((u: any) => u.id === group.userId);
+                    const user = users?.find(
+                      (u: any) => u?.id === group.userId,
+                    );
 
                     const displayName =
                       user?.fullName || group.userId.substring(0, 8);

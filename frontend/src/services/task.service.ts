@@ -314,6 +314,10 @@ export const useUpdateTask = () => {
         queryKey: ["kanbanBoard", variables.projectId],
       });
 
+      queryClient.invalidateQueries({
+        queryKey: ["audit"],
+      });
+
       return res;
     },
 

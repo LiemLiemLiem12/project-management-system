@@ -45,6 +45,69 @@ function FolderIcon() {
   );
 }
 
+// ─── Folder Lock Icon ──────────────────────────────────────────────
+function FolderLockIcon() {
+  return (
+    <div className="relative w-full h-full">
+      {/* Folder base */}
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <path
+          d="M4 12C4 9.8 5.8 8 8 8h20l6 8h38a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V12z"
+          fill="#F59E0B"
+        />
+        <path
+          d="M4 20h72v28a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V20z"
+          fill="#FBBF24"
+        />
+        {/* folder tab decoration */}
+        <rect
+          x="20"
+          y="44"
+          width="12"
+          height="3"
+          rx="1.5"
+          fill="rgba(255,255,255,0.3)"
+        />
+        <rect
+          x="36"
+          y="44"
+          width="12"
+          height="3"
+          rx="1.5"
+          fill="rgba(255,255,255,0.3)"
+        />
+      </svg>
+      {/* Lock overlay - placed at the bottom-right */}
+      <div className="absolute bottom-1 right-1 bg-white/90 p-1 rounded-full shadow-sm border border-gray-200 text-gray-700 backdrop-blur-sm">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          className="w-3.5 h-3.5" // Smaller size for overlay
+        >
+          {/* Thân ổ khóa */}
+          <rect
+            x="5"
+            y="11"
+            width="14"
+            height="10"
+            rx="2"
+            ry="2"
+            strokeWidth={1.5}
+          />
+          {/* Móc khóa */}
+          <path
+            d="M7 11V7a5 5 0 0110 0v4"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 function LockedThumbnail() {
   return (
     <div className="relative w-full h-full bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
@@ -199,7 +262,11 @@ function FileGridCard({
         ${file.isFolder ? "p-3 bg-transparent" : "bg-gray-50"}`}
       >
         {file.isFolder ? (
-          <FolderIcon />
+          file.canView ? (
+            <FolderIcon />
+          ) : (
+            <FolderLockIcon />
+          )
         ) : file.storageUrl &&
           ["jpg", "jpeg", "png", "webp", "pdf"].includes(
             file.fileType?.toLowerCase() || "",
@@ -279,7 +346,11 @@ function FileListRow({
       {/* Icon */}
       <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center">
         {file.isFolder ? (
-          <FolderIcon />
+          file.canView ? (
+            <FolderIcon />
+          ) : (
+            <FolderLockIcon />
+          )
         ) : file.storageUrl &&
           ["jpg", "jpeg", "png", "webp", "pdf"].includes(
             file.fileType?.toLowerCase() || "",

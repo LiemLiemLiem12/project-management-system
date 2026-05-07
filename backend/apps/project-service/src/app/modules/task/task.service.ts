@@ -23,13 +23,14 @@ export class TaskService {
     @InjectRepository(Label)
     private readonly labelRepo: Repository<Label>,
 
-    @Inject('AUDIT_SERVICE_CLIENT')
+    @Inject(process.env.AUDIT_SERVICE_NAME || 'AUDIT_SERVICE')
     private readonly auditClient: ClientProxy,
 
     @Inject('NOTIFICATION_SERVICE_CLIENT')
     private readonly notifClient: ClientProxy,
 
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    @Inject(process.env.AUTH_SERVICE_NAME || 'AUTH_SERVICE')
+    private readonly authClient: ClientProxy,
   ) {}
 
   private async getSenderInfo(

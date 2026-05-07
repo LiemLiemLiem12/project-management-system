@@ -31,7 +31,7 @@ export const storageApi = (axiosPrivate: AxiosInstance) => ({
     ),
 
   getAssetsByFolder: (fileId: string) =>
-    axiosPrivate.get<Asset[]>(`/storages/folder/${fileId}`),
+    axiosPrivate.get(`/storages/folder/${fileId}`),
 
   getAssetsByProject: (projectId: string, isRoot: boolean) =>
     axiosPrivate.get<Asset[]>(

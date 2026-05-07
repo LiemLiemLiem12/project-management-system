@@ -10,7 +10,7 @@ export class MemberTalent {
   @PrimaryColumn('uuid')
   talent_label_id!: string;
 
-  @ManyToOne(() => ProjectMember, (pm) => pm.talents)
+  @ManyToOne(() => ProjectMember, (pm) => pm.talents, { onDelete: 'CASCADE' })
   @JoinColumn([
     { name: 'project_id', referencedColumnName: 'project_id' },
     { name: 'user_id', referencedColumnName: 'user_id' },

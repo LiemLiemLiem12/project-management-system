@@ -17,6 +17,7 @@ interface StorageContextMenuProps {
   position: { x: number; y: number } | null;
   selectedAsset: Asset | null;
   projectId: string;
+  parentId?: string | undefined;
   onClose: () => void;
   onCreateFolder: () => void;
   onRename: (asset: Asset) => void;
@@ -29,6 +30,7 @@ export default function StorageContextMenu({
   position,
   selectedAsset,
   projectId,
+  parentId,
   onClose,
   onCreateFolder,
   onRename,
@@ -127,7 +129,7 @@ export default function StorageContextMenu({
 
       createAsset.mutate(
         {
-          parentId: undefined,
+          parentId: parentId,
           formData,
           onUploadProgress: (progressEvent: any) => {
             if (progressEvent.total) {
@@ -161,7 +163,7 @@ export default function StorageContextMenu({
     createFolder.mutate(
       {
         name: folderName,
-        parentId: undefined,
+        parentId: parentId,
         projectId,
       },
       {

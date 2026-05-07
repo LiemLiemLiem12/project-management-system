@@ -10,6 +10,7 @@ export class AuditController {
 
   @EventPattern('log_action_created')
   async handleLogAction(@Payload() data: CreateAuditLogDto) {
+    console.log(data);
     await this.auditService.createLog(data);
   }
 
@@ -32,5 +33,49 @@ export class AuditController {
     }
 
     return this.auditService.getRecentActivities(projectId);
+  }
+
+  @MessagePattern('audit.get-by-field')
+  async getLogsByField(
+    @Payload()
+    data: {
+      fieldName: string;
+      fieldValue: string;
+      limit?: number;
+      offset?: number;
+    },
+  ) {
+    if (!data.fieldName || !data.fieldValue) {
+      throw new RpcException({
+        message: 'fieldName and fieldValue are required',
+        statusCode: 400,
+      });
+    }
+
+    return this.auditService.getLogsByFields(
+      data.fieldName,
+      data.fieldValue,
+      data.limit || 10,
+      data.offset || 0,
+    );
+  }
+
+  @MessagePattern('audit.create')
+  async createAuditLog(@Payload() data: CreateAuditLogDto) {
+    if (!data.user_id || !data.action || !data.entity_type || !data.entity_id) {
+      throw new RpcException({
+        message: 'user_id, action, entity_type, and entity_id are required',
+        statusCode: 400,
+      });
+    }
+
+    const result = await this.auditService.createLog(data);
+    if (!result) {
+      throw new RpcException({
+        message: 'Failed to create audit log',
+        statusCode: 500,
+      });
+    }
+    return result;
   }
 }

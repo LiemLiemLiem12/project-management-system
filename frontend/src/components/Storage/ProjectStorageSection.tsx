@@ -11,11 +11,15 @@ export default function ProjectStorageSection({
   onSelect,
   onDoubleClick,
   onContextMenu,
+  files: externalFiles,
+  isLoadingExternal,
 }: {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onDoubleClick: (file: Asset) => void;
   onContextMenu: (e: React.MouseEvent, file: Asset | null) => void;
+  files?: Asset[];
+  isLoadingExternal?: boolean;
 }) {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [collapsed, setCollapsed] = useState(false);
@@ -24,14 +28,26 @@ export default function ProjectStorageSection({
   const projectId = params?.projectId as string;
   const currentFolderId = selectedId || null; // For now, load root folder
 
+  // Use external files if provided, otherwise fetch from project
+  const shouldFetchData = externalFiles === undefined;
+
   const {
-    data: files = [],
-    isLoading,
+    data: fetchedFiles = [],
+    isLoading: isLoadingFetched,
     refetch,
   } = useGetAssetsByProject(projectId, !currentFolderId);
 
-  // Expose refetch for mutations
-  if (typeof window !== "undefined" && !window.__storageRefetch) {
+  // Use external data if provided, otherwise use fetched data
+  const files = externalFiles !== undefined ? externalFiles : fetchedFiles;
+  const isLoading =
+    isLoadingExternal !== undefined ? isLoadingExternal : isLoadingFetched;
+
+  // Expose refetch for mutations (only when fetching from project)
+  if (
+    shouldFetchData &&
+    typeof window !== "undefined" &&
+    !window.__storageRefetch
+  ) {
     (window as any).__storageRefetch = refetch;
   }
 

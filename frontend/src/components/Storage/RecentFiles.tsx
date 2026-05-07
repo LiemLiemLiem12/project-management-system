@@ -4,6 +4,8 @@ import { useGetRecentAssets } from "@/services/storage.service";
 import { useParams } from "next/navigation";
 import { Asset } from "@/types";
 import SmallDocumentPreview from "./SmallDocumentPreview"; // Đảm bảo đúng đường dẫn
+import { useProjectStore } from "@/store/project.store";
+import { useRouter } from "next/navigation";
 
 // ─── UTILS TỪ FILE GRID ──────────────────────────────────────
 function getThumbnailUrl(url: string | null | undefined): string {
@@ -91,7 +93,8 @@ function formatDate(dateString: string): string {
 
 function RecentFileCard({ file }: { file: Asset }) {
   const fileType = file.fileType?.toLowerCase() || "";
-
+  const currentProject = useProjectStore((s) => s.currentProject);
+  const router = useRouter();
   // Logic render thumbnail tương tự FileGrid
   const renderThumbnail = () => {
     if (file.isFolder) return <FolderIconSmall />;
@@ -124,8 +127,21 @@ function RecentFileCard({ file }: { file: Asset }) {
     return <LockedThumbnailSmall />;
   };
 
+  const handleClick = (file: Asset) => {
+    if (file.isFolder) {
+      router.push(`/project/${currentProject.id}/storage/folder/${file.id}`);
+    } else {
+      if (file.storageUrl) {
+        window.open(file.storageUrl, "_blank", "noopener,noreferrer");
+      }
+    }
+  };
+
   return (
-    <div className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer group min-w-0 flex-shrink-0 w-64">
+    <div
+      onClick={() => handleClick(file)}
+      className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer group min-w-0 flex-shrink-0 w-64"
+    >
       {/* Container Thumbnail mới thay cho text label cũ */}
       <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-100 flex items-center justify-center">
         {renderThumbnail()}

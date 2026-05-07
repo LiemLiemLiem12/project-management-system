@@ -52,12 +52,64 @@ export class AuditService {
       if (!projectIds || projectIds.length === 0) return [];
 
       return await this.auditLogRepo.find({
-        where: { project_id: In(projectIds) }, 
+        where: { project_id: In(projectIds) },
         order: { created_at: 'DESC' },
-        take: 30, 
+        take: 30,
       });
     } catch (error: any) {
       console.error(' Lỗi Query Feed Database:', error.message);
+      throw new RpcException('Database query failed');
+    }
+  }
+
+  /**
+   * Flexible query method to get logs by any supported field with pagination
+   * Supports fields: project_id, user_id, action, entity_type, entity_id
+   */
+  async getLogsByFields(
+    fieldName: string,
+    fieldValue: string,
+    limit: number = 10,
+    offset: number = 0,
+  ) {
+    try {
+      // Whitelist allowed fields for security
+      const allowedFields = [
+        'project_id',
+        'user_id',
+        'action',
+        'entity_type',
+        'entity_id',
+      ];
+
+      if (!allowedFields.includes(fieldName)) {
+        throw new RpcException({
+          message: `Field '${fieldName}' is not queryable`,
+          statusCode: 400,
+        });
+      }
+
+      // Build dynamic where clause
+      const where: any = {};
+      where[fieldName] = fieldValue;
+
+      // Execute query with pagination
+      const [logs, total] = await this.auditLogRepo.findAndCount({
+        where,
+        order: { created_at: 'DESC' },
+        take: limit,
+        skip: offset,
+      });
+
+      return {
+        data: logs,
+        total,
+        limit,
+        offset,
+      };
+    } catch (error: any) {
+      console.error('[Audit Service] getLogsByFields error:', error.message);
+      if (error instanceof RpcException) throw error;
       throw new RpcException('Database query failed');
     }
   }

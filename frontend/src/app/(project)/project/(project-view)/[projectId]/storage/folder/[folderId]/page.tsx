@@ -2,21 +2,22 @@
 
 import { useState, useMemo } from "react";
 import { Asset } from "@/types";
-import StorageStats from "@/components/Storage/StorageStats";
-import RecentFiles from "@/components/Storage/RecentFiles";
 import ProjectStorageSection from "@/components/Storage/ProjectStorageSection";
 import FileDetailPanel from "@/components/Storage/FileDetailPanel";
 import StorageContextMenu from "@/components/Storage/StorageContextMenu";
 import FilePreviewModal from "@/components/Storage/FilePreviewModal";
+import BreadcrumbNavigation from "@/components/Storage/BreadcrumbNavigation";
 import { useParams, useRouter } from "next/navigation";
-import { useGetAssetsByProject } from "@/services/storage.service";
+import { useGetAssetsByFolder } from "@/services/storage.service";
 import UploadProgress from "@/components/Storage/UploadProgress";
 import PermissionGrantModal from "@/components/Storage/PermissionGrantModal";
+import { AxiosError } from "axios";
 
-export default function StoragePage() {
+export default function FolderPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params?.projectId as string;
+  const folderId = params?.folderId as string;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{
@@ -31,13 +32,29 @@ export default function StoragePage() {
   const [openPermissionModal, setOpenPermissionModal] =
     useState<boolean>(false);
 
-  // Fetch all assets
-  const { data: allAssets = [] } = useGetAssetsByProject(projectId, true);
+  // Fetch folder assets
+  const {
+    data: dataFolders,
+    isLoading,
+    isError,
+    error,
+  } = useGetAssetsByFolder(folderId);
+
+  // Get current folder info (first item has parent info)
+  const currentFolder = useMemo(() => {
+    if (!dataFolders) return;
+    return dataFolders?.folderInfo;
+  }, [dataFolders]);
+
+  const folderAssets = useMemo(() => {
+    if (!dataFolders || dataFolders?.children?.length === 0) return [];
+    return dataFolders?.children;
+  }, [dataFolders]);
 
   const selectedAsset = useMemo(() => {
     if (!selectedId) return null;
-    return allAssets.find((a) => a.id === selectedId) || null;
-  }, [selectedId, allAssets]);
+    return folderAssets.find((a: any) => a.id === selectedId) || null;
+  }, [selectedId, folderAssets]);
 
   const handleSelect = (id: string) => {
     setSelectedId((prev) => (prev === id ? null : id));
@@ -58,6 +75,7 @@ export default function StoragePage() {
 
   const handleDoubleClick = (file: Asset) => {
     if (file.isFolder) {
+      // Navigate into nested folder
       router.push(`/project/${projectId}/storage/folder/${file.id}`);
     } else {
       if (file.storageUrl) {
@@ -66,20 +84,56 @@ export default function StoragePage() {
     }
   };
 
+  if (isError) {
+    return (
+      <div className="relative flex h-screen bg-gray-50 ">
+        <div className="flex items-center justify-center h-full w-full">
+          <div className="text-gray-500">
+            {error instanceof AxiosError
+              ? error.response?.data.message
+              : "Unknow Error"}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex h-screen bg-gray-50 ">
       {/* ── Main content ── */}
       <div className="flex-1 flex flex-col min-w-0 ">
         <div className="flex-1 ">
           <div className="p-5 h-full sm:p-7 max-w-none overflow-y-auto">
-            <StorageStats />
-            <RecentFiles />
-            <ProjectStorageSection
-              selectedId={selectedId}
-              onSelect={handleSelect}
-              onDoubleClick={handleDoubleClick}
-              onContextMenu={handleContextMenu}
-            />
+            {/* Breadcrumb Navigation */}
+            {currentFolder && (
+              <BreadcrumbNavigation
+                projectId={projectId}
+                currentFolder={currentFolder}
+              />
+            )}
+
+            {/* Folder contents section */}
+            {isLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-gray-500">Loading folder contents...</div>
+              </div>
+            ) : folderAssets.length === 0 ? (
+              <div
+                onContextMenu={(e) => handleContextMenu(e, null)}
+                className="flex items-center justify-center h-64"
+              >
+                <div className="text-gray-500">This folder is empty</div>
+              </div>
+            ) : (
+              <ProjectStorageSection
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onDoubleClick={handleDoubleClick}
+                onContextMenu={handleContextMenu}
+                files={folderAssets}
+                isLoadingExternal={isLoading}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -114,6 +168,7 @@ export default function StoragePage() {
         position={contextMenu}
         selectedAsset={contextMenuAsset}
         projectId={projectId}
+        parentId={currentFolder?.id}
         onClose={() => {
           setContextMenu(null);
           setContextMenuAsset(null);

@@ -14,6 +14,7 @@ import {
 import { useCreateTask } from "@/services/task.service";
 import { useProjectStore } from "@/store/project.store";
 import { useTaskStore } from "@/store/task.store";
+import Image from "next/image";
 
 interface TaskFooterProps {
   visibleCount: number;
@@ -226,13 +227,13 @@ export default function TaskFooter({
                 }`}
               >
                 {selectedMemberInfo ? (
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold">
-                    {(
-                      (selectedMemberInfo as any).full_name ||
-                      selectedMemberInfo.user_id
-                    )
-                      .charAt(0)
-                      .toUpperCase()}
+                  <div className="w-5 h-5 overflow-hidden rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold">
+                    <Image
+                      width={25}
+                      height={25}
+                      alt={selectedMemberInfo.full_name?.charAt(0) || ""}
+                      src={selectedMemberInfo?.avatar_url || ""}
+                    />
                   </div>
                 ) : (
                   <UserCircleIcon size={16} />
@@ -284,8 +285,13 @@ export default function TaskFooter({
                           }}
                           className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-md cursor-pointer"
                         >
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0">
-                            {displayName.charAt(0).toUpperCase()}
+                          <div className="w-6 h-6 overflow-hidden rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0">
+                            <Image
+                              width={25}
+                              height={25}
+                              alt={m.full_name?.charAt(0) || ""}
+                              src={m?.avatar_url || ""}
+                            />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-gray-700 font-medium truncate">

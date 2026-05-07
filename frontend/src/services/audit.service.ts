@@ -1,22 +1,18 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAPI } from "@/API/useAPI";
 import { useAuditStore } from "@/store/audit.store";
 import { useProjectStore } from "@/store/project.store";
 import { useAuthStore } from "@/store/auth.store";
 const EMPTY_ARRAY: any[] = [];
 
-// ==========================================
-// HÀM 1: DÙNG CHO TAB "RECENT ACTIVITIES" (Của 1 Project cụ thể)
-// ==========================================
 export const useGetRecentActivities = (projectId: string) => {
   const api = useAPI();
   const setActivitiesData = useAuditStore((s: any) => s.setActivitiesData);
   const members = useProjectStore((s: any) => s.members) || [];
 
-  // 🚀 Lôi AuthStore vào để biết "Tôi là ai"
   const currentUser = useAuthStore((s: any) => s.user);
 
   const query = useQuery({
@@ -34,10 +30,6 @@ export const useGetRecentActivities = (projectId: string) => {
   useEffect(() => {
     if (!query.data || query.isFetching) return;
 
-    // 🕵️ Thêm 2 dòng này để nếu nó vẫn lỗi thì mình bật F12 lên là bắt được tận tay:
-    console.log("🕵️ [Dashboard] Raw Log từ Backend:", query.data);
-    console.log("🕵️ [Dashboard] Danh sách Members:", members);
-
     const formattedData = query.data.map((log: any) => {
       const dateObj = new Date(log.created_at);
 
@@ -45,7 +37,7 @@ export const useGetRecentActivities = (projectId: string) => {
 
       // 1. Nếu là Hệ thống
       if (log.user_id === "unknown_user") {
-        displayName = "Hệ thống";
+        displayName = "System";
       }
       // 2. Nếu ID trùng với ID của chính mình đang đăng nhập
       else if (log.user_id === currentUser?.id) {
@@ -53,11 +45,8 @@ export const useGetRecentActivities = (projectId: string) => {
           currentUser?.fullName ||
           currentUser?.full_name ||
           currentUser?.username ||
-          "Tôi";
-      }
-      // 3. Nếu là ID của người khác trong team
-      else {
-        // Cải tiến: So sánh cả m.user_id lẫn m.id cho chắc cú
+          "Me";
+      } else {
         const memberInfo = members.find(
           (m: any) => m.user_id === log.user_id || m.id === log.user_id,
         );
@@ -72,7 +61,7 @@ export const useGetRecentActivities = (projectId: string) => {
 
       return {
         id: log.id,
-        user_id: log.user_id, // Truyền dư ra xíu để dễ debug
+        user_id: log.user_id,
         user: displayName,
         avatar: displayName.substring(0, 2).toUpperCase(),
         action: log.action.replace(/_/g, " ").toLowerCase(),
@@ -127,12 +116,10 @@ export const useGetFeedActivities = (projectIds: string[]) => {
 
     if (query.isFetching) return;
 
-    // 1. LỌC NGHIÊM NGẶT: Chỉ giữ lại log có ID trùng khớp với tài khoản đang đăng nhập
     const myLogs = query.data.filter(
       (log: any) => log.user_id === currentUser?.id,
     );
 
-    // 2. MAP DATA (Gán thẳng tên fullName của mình vào, khỏi cần dò mảng)
     const formattedData = myLogs.map((log: any) => {
       const dateObj = new Date(log.created_at);
 
@@ -141,7 +128,7 @@ export const useGetFeedActivities = (projectIds: string[]) => {
         currentUser?.fullName ||
         currentUser?.full_name ||
         currentUser?.username ||
-        "Tôi";
+        "Me";
 
       return {
         id: log.id,
@@ -164,7 +151,6 @@ export const useGetFeedActivities = (projectIds: string[]) => {
       };
     });
 
-    // 3. GOM NHÓM THEO NGÀY
     const grouped = formattedData.reduce((acc: any, current: any) => {
       if (!acc[current.date]) acc[current.date] = [];
       acc[current.date].push(current);
@@ -179,6 +165,26 @@ export const useGetFeedActivities = (projectIds: string[]) => {
     currentUser,
     setActivitiesData,
   ]);
+
+  return query;
+};
+
+export const useGetAuditLog = (
+  field: string,
+  value: string,
+  limit: number = 10,
+  offset: number = 0,
+) => {
+  const api = useAPI();
+  const query = useQuery({
+    queryKey: ["audit", field, value, limit, offset],
+    queryFn: async () => {
+      const res = await api.audit.getLogsByField(field, value, limit, offset);
+      return res.data;
+    },
+    enabled: !!field && !!value,
+    refetchOnWindowFocus: false,
+  });
 
   return query;
 };

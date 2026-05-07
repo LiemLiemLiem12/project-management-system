@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     "/login",
     "/sign-up",
     "/verify-code",
+    "/create-account",
     "/forgot-password",
     "/reset-password",
   ];

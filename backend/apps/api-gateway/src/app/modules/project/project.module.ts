@@ -14,6 +14,8 @@ import { CommentController } from './controllers/comment.controller';
 import { CommentService } from './services/comment.service';
 import { HttpModule } from '@nestjs/axios';
 import { CommentGateway } from './gateways/comment.gateway';
+import { AuditController } from './controllers/audit.controller';
+import { AuditService } from './services/audit.service';
 
 @Module({
   imports: [
@@ -33,11 +35,11 @@ import { CommentGateway } from './gateways/comment.gateway';
       },
 
       {
-        name: 'AUDIT_SERVICE',
+        name: process.env.AUDIT_SERVICE_NAME || 'AUDIT_SERVICE',
         transport: Transport.RMQ,
         options: {
           urls: [process.env.RABBIT_MQ || 'amqp://localhost:5672'],
-          queue: process.env.AUDIT_QUEUE_NAME || 'audit_queue',
+          queue: process.env.AUDIT_QUEUE_NAME || 'AUDIT_QUEUE',
           queueOptions: {
             durable: true,
           },
@@ -75,6 +77,7 @@ import { CommentGateway } from './gateways/comment.gateway';
     ChecklistController,
     LabelController,
     CommentController,
+    AuditController,
   ],
   providers: [
     ProjectService,
@@ -83,6 +86,7 @@ import { CommentGateway } from './gateways/comment.gateway';
     LabelService,
     CommentService,
     CommentGateway,
+    AuditService,
   ],
 })
 export class ProjectModule {}
