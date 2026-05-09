@@ -404,6 +404,10 @@ export class TaskService {
       new_value: null,
     });
 
+    this.auditClient.emit('audit.delete', {
+      entityId: id,
+    });
+
     return result;
   }
 

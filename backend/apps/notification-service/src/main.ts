@@ -1,25 +1,37 @@
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { AppModule } from './app/app.module';
+import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
+  const appContext = await NestFactory.createApplicationContext(AppModule);
+
+  const configService = appContext.get(ConfigService);
+
+  const RABBIT_MQ =
+    configService.get<string>('RABBIT_MQ') ||
+    'amqp://guest:guest@localhost:5672';
+
+  const QUEUE_NAME =
+    configService.get<string>('QUEUE_NAME') || 'NOTIFICATION_QUEUE';
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     AppModule,
     {
       transport: Transport.RMQ,
       options: {
-        urls: ['amqp://localhost:5672'],
-        queue: 'notification_queue',
+        urls: [RABBIT_MQ],
+        queue: QUEUE_NAME,
         queueOptions: {
-          durable: false,
+          durable: true,
         },
       },
     },
   );
 
   await app.listen();
-  console.log(
-    '[Notification Service] is running and listening on queue: notification_queue',
+  Logger.log(
+    '[NOTIFICATION SERVICE] is running and listening on queue: ' + QUEUE_NAME,
   );
 }
 

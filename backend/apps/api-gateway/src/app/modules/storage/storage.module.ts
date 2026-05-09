@@ -12,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
     {
       provide: 'STORAGE_PORT',
       useFactory: (configService: ConfigService) => {
-        return configService.get<number>('STORAGE_PORT') || 3000;
+        return configService.get<number>('STORAGE_PORT') || 4001;
       },
       inject: [ConfigService],
     },

@@ -66,7 +66,9 @@ const OTPInput = ({ length = 6, onComplete }: OTPInputProps) => {
           key={index}
           type="text"
           maxLength={1}
-          ref={(el) => (inputRefs.current[index] = el)}
+          ref={(el) => {
+            inputRefs.current[index] = el;
+          }}
           value={data}
           onChange={(e) => handleChange(e, index)}
           onKeyDown={(e) => handleKeyDown(e, index)}

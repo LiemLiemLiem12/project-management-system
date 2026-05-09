@@ -5,7 +5,7 @@ import { firstValueFrom, timeout } from 'rxjs';
 @Injectable()
 export class NotificationService {
   constructor(
-    @Inject('NOTIFICATION_SERVICE') // Khai báo đúng tên inject bên app.module.ts
+    @Inject(process.env.NOTIFICATION_QUEUE_NAME || 'NOTIFICATION_SERVICE') // Khai báo đúng tên inject bên app.module.ts
     private readonly notifClient: ClientProxy,
   ) {}
 

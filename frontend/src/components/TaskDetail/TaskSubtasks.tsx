@@ -164,7 +164,7 @@ export default function TaskSubtasks({ canManage }: { canManage: boolean }) {
                       <div className="px-3 pb-1 text-xs font-bold text-slate-500">
                         Matching work items
                       </div>
-                      {matchedTasks.map((task) => (
+                      {matchedTasks.map((task: any) => (
                         <div
                           key={task.id}
                           onClick={() => handleAddExistingSubtask(task.id)}
@@ -219,7 +219,7 @@ export default function TaskSubtasks({ canManage }: { canManage: boolean }) {
             </thead>
 
             <tbody className="divide-x divide-y divide-gray-200 border-b border-gray-200">
-              {subtasks.map((task: TaskBase, index) => (
+              {subtasks.map((task: TaskBase, index: number) => (
                 <tr
                   key={index}
                   className="bg-white hover:bg-slate-50 transition-colors group cursor-pointer"

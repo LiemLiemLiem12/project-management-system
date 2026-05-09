@@ -113,4 +113,8 @@ export class AuditService {
       throw new RpcException('Database query failed');
     }
   }
+
+  async deleteAuditLog(entityId: string) {
+    return await this.auditLogRepo.delete({ entity_id: entityId });
+  }
 }

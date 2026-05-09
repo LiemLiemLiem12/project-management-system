@@ -3,21 +3,27 @@
 import { Bell, CheckCheck } from "lucide-react";
 import Image from "next/image";
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useNotificationService } from "@/services/notification.service"; // 🚀 Import Hook vừa tạo
 
-// Hàm helper tính khoảng thời gian (VD: "2 hours ago")
 const timeAgo = (dateString: string) => {
   if (!dateString) return "";
+
   const date = new Date(dateString);
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
 
-  let interval = seconds / 86400;
-  if (interval > 1) return Math.floor(interval) + " days ago";
-  interval = seconds / 3600;
-  if (interval > 1) return Math.floor(interval) + " hours ago";
-  interval = seconds / 60;
-  if (interval > 1) return Math.floor(interval) + " mins ago";
+  const safeSeconds = Math.max(0, seconds);
+  console.log(dateString);
+
+  let interval = safeSeconds / 86400;
+  if (interval >= 1) return Math.floor(interval) + " days ago";
+
+  interval = safeSeconds / 3600;
+  if (interval >= 1) return Math.floor(interval) + " hours ago";
+
+  interval = safeSeconds / 60;
+  if (interval >= 1) return Math.floor(interval) + " mins ago";
+
   return "Just now";
 };
 

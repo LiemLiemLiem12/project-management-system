@@ -77,4 +77,16 @@ export class AuditController {
     }
     return result;
   }
+
+  @EventPattern('audit.delete')
+  async deleteAuditLog(@Payload() payload: { entityId: string }) {
+    const result = await this.auditService.deleteAuditLog(payload.entityId);
+    if (!result) {
+      throw new RpcException({
+        message: 'Failed to delete audit log',
+        statusCode: 500,
+      });
+    }
+    return result;
+  }
 }

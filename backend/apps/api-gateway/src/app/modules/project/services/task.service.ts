@@ -9,7 +9,7 @@ import FormData from 'form-data';
 @Injectable()
 export class TaskService {
   constructor(
-    @Inject('AUDIT_SERVICE')
+    @Inject(process.env.AUDIT_SERVICE_NAME || 'AUDIT_SERVICE')
     private readonly auditClient: ClientProxy,
 
     @Inject(process.env.PROJECT_SERVICE_NAME || 'PROJECT_SERVICE')
