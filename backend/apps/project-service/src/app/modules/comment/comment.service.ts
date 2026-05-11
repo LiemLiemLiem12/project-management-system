@@ -68,10 +68,11 @@ export class CommentService {
     return savedComment;
   }
 
-  async findAllByTask(taskId: string) {
+  async findAllByTaskProject(taskId: string, projectId: string) {
     const parentComments = await this.commentRepo.find({
       where: {
         task_id: taskId,
+        project_id: projectId,
         parent_comment_id: IsNull(),
       },
       relations: ['medias'],

@@ -226,6 +226,8 @@ services:
       QUEUE_NAME: ${PROJECT_QUEUE_NAME:-PROJECT_QUEUE}
       AUTH_SERVICE_NAME: ${AUTH_SERVICE_NAME:-AUTH_SERVICE}
       AUTH_QUEUE_NAME: ${AUTH_QUEUE_NAME:-AUTH_QUEUE}
+      AUDIT_SERVICE_NAME: ${AUDIT_SERVICE_NAME:-AUDIT_SERVICE}
+      AUDIT_QUEUE_NAME: ${AUDIT_QUEUE_NAME:-AUDIT_QUEUE}
       STORAGE_HOST: http://storage-service:4001
       DATABASE_HOST: mysql
       DATABASE_PORT: 3306
@@ -275,7 +277,15 @@ services:
     ports:
       - "${STORAGE_SERVICE_PORT:-4001}:4001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4001"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:4001",
+        ]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -311,17 +321,18 @@ services:
       RABBIT_MQ: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
       AUTH_SERVICE_NAME: ${AUTH_SERVICE_NAME:-AUTH_SERVICE}
       AUTH_QUEUE_NAME: ${AUTH_QUEUE_NAME:-AUTH_QUEUE}
-      AUDIT_SERVICE_NAME: ${AUTH_SERVICE_NAME:-AUDIT_SERVICE}
+      AUDIT_SERVICE_NAME: ${AUDIT_SERVICE_NAME:-AUDIT_SERVICE}
       AUDIT_QUEUE_NAME: ${AUDIT_QUEUE_NAME:-AUDIT_QUEUE}
       PROJECT_SERVICE_NAME: ${PROJECT_SERVICE_NAME:-PROJECT_SERVICE}
       PROJECT_QUEUE_NAME: ${PROJECT_QUEUE_NAME:-PROJECT_QUEUE}
       NOTIFICATION_SERVICE_NAME: ${NOTIFICATION_SERVICE_NAME:-NOTIFICATION_SERVICE}
       NOTIFICATION_QUEUE_NAME: ${NOTIFICATION_QUEUE_NAME:-notification_queue}
       STORAGE_PORT: 4001
+      STORAGE_HOST: storage-service
       JWT_SECRET: ${JWT_SECRET:-14ee39918ee725677f2166d9de571d682024edd6a883a7d61e30ff65e5a7e379}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-3600s}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4001}
-      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://frontend:3000}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_SECRET: ${GOOGLE_SECRET:-}
       GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-http://localhost:4000/api/auth/google/callback}
@@ -331,7 +342,15 @@ services:
     ports:
       - "${API_GATEWAY_PORT:-4000}:4000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:4000/api/auth/health",
+        ]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -355,13 +374,22 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api-gateway:4000/api}
-      NEXT_PUBLIC_API_GATEWAY_URL: ${NEXT_PUBLIC_API_GATEWAY_URL:-http://api-gateway:4000}
-      NEXT_PUBLIC_FRONTEND: ${NEXT_PUBLIC_FRONTEND:-http://frontend:3000}
+      HOSTNAME: "0.0.0.0"
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api
+      NEXT_PUBLIC_API_GATEWAY_URL: http://localhost:4000
+      NEXT_PUBLIC_FRONTEND: http://localhost:3000
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "[http://127.0.0.1:3000](http://127.0.0.1:3000)",
+        ]
       interval: 30s
       timeout: 3s
       retries: 3

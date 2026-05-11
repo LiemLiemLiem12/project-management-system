@@ -67,6 +67,8 @@ export class AssetService {
       relations: ['permissions'],
     });
 
+    console.log(assets);
+
     return assets.map((asset) => {
       const hasAccess = asset.permissions.some(
         (p) =>

@@ -10,6 +10,7 @@ import {
   UploadedFile,
   UploadedFiles,
   BadRequestException,
+  Req,
 } from '@nestjs/common';
 
 import FormData from 'form-data';
@@ -21,6 +22,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { CreateCommentMediaDto } from '../dto/create-comment-media.dto';
+import Request from 'express';
 
 @Controller('comments')
 export class CommentController {
@@ -53,8 +55,9 @@ export class CommentController {
   }
 
   @Get('task/:taskId')
-  getCommentsByTask(@Param('taskId') taskId: string) {
-    return this.commentService.getCommentsByTask(taskId);
+  getCommentsByTask(@Param('taskId') taskId: string, @Req() request: Request) {
+    const projectId = request.cookies['projectId'] || '';
+    return this.commentService.getCommentsByTask(taskId, projectId);
   }
 
   @Patch(':id')

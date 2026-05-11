@@ -17,6 +17,9 @@ export class CreateCommentDto {
   @IsNotEmpty()
   user_id!: string;
 
+  @IsNotEmpty()
+  project_id!: string;
+
   @IsString()
   @IsNotEmpty()
   content!: string;

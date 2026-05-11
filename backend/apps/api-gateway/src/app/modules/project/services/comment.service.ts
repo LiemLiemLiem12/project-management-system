@@ -44,6 +44,7 @@ export class CommentService {
           id: result.id,
           task_id: result.task_id,
           user_id: result.user_id,
+          project_id: result.project_id,
           content: result.content,
           parent_comment_id: result.parent_comment_id,
           medias: result.medias,
@@ -88,9 +89,9 @@ export class CommentService {
     }
   }
 
-  async getCommentsByTask(taskId: string) {
+  async getCommentsByTask(taskId: string, projectId: string) {
     const comments: any[] = await firstValueFrom(
-      this.send('comment.findAllByTask', { taskId }),
+      this.send('comment.findAllByTask', { taskId, projectId }),
     );
 
     if (!comments || comments.length === 0) {

@@ -16,6 +16,13 @@ import { ConfigService } from '@nestjs/config';
       },
       inject: [ConfigService],
     },
+    {
+      provide: 'STORAGE_HOST',
+      useFactory: (configService: ConfigService) => {
+        return configService.get<string>('STORAGE_HOST') || 'storage-service';
+      },
+      inject: [ConfigService],
+    },
   ],
 })
 export class StorageModule {}

@@ -5,9 +5,11 @@ import { useCreateComment, useGetComments } from "@/services/comment.service";
 import { useTaskStore } from "@/store/task.store";
 import { useCommentSocket } from "@/hooks/useCommentSocket";
 import { useAuthStore } from "@/store/auth.store";
+import { useProjectStore } from "@/store/project.store";
 
 export default function ActivityComment() {
   const currentTask = useTaskStore((s) => s.currentTask);
+  const currentProject = useProjectStore((s) => s.currentProject);
   const user = useAuthStore((s) => s.user);
   const { data: comments, isPending: pendingComments } = useGetComments(
     currentTask?.id,
@@ -20,6 +22,7 @@ export default function ActivityComment() {
     if (currentTask && user) {
       formData.append("task_id", currentTask?.id);
       formData.append("user_id", user?.id);
+      formData.append("project_id", currentProject?.id);
 
       await createComment(formData);
     }

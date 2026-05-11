@@ -127,7 +127,7 @@ export class AssetController {
     }
   }
 
-  @Get()
+  @Get('')
   findAllByProject(
     @Query('projectId') projectId: string,
     @Query('userId') userId: string,

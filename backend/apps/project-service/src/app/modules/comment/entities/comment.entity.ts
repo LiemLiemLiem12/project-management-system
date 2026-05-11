@@ -20,6 +20,9 @@ export class Comment {
   task_id!: string;
 
   @Column()
+  project_id!: string;
+
+  @Column()
   user_id!: string;
 
   @Column({ type: 'text' })

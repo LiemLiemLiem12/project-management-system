@@ -12,7 +12,7 @@ export class StorageService {
     private readonly httpService: HttpService,
     @Inject('STORAGE_PORT') private readonly PORT: number,
   ) {
-    this.baseUrl = `http://localhost:${this.PORT}/assets`;
+    this.baseUrl = `http://storage-service:${this.PORT}/assets`;
   }
 
   private async request(method: string, url: string, data?: any) {
