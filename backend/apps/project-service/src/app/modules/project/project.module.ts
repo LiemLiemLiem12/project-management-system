@@ -32,10 +32,10 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         name: 'NOTIFICATION_SERVICE_CLIENT',
         transport: Transport.RMQ,
         options: {
-          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
-          queue: 'notification_queue',
+          urls: [process.env.RABBIT_MQ || 'amqp://guest:guest@localhost:5672'],
+          queue: process.env.NOTIFICATION_QUEUE_NAME || 'NOTIFICATION_QUEUE',
           queueOptions: {
-            durable: false,
+            durable: true,
           },
         },
       },

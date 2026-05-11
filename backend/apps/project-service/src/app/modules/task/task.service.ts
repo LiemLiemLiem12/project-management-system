@@ -103,10 +103,10 @@ export class TaskService {
         new Brackets((qb) => {
           qb.where('task.title LIKE :keyword', {
             keyword: `%${keyword}%`,
-          }).orWhere('task.id LIKE :keyword', { keyword: `%${keyword}%` });
+          }).orWhere('task.task_id LIKE :keyword', { keyword: `%${keyword}%` });
         }),
       )
-      .select(['task.id', 'task.title'])
+      .select(['task.id', 'task.task_id', 'task.title'])
       .limit(10)
       .getMany();
   }
@@ -178,12 +178,12 @@ export class TaskService {
       .where('groupTask.project_id = :projectId', {
         projectId: payload.project_id,
       })
-      .select('task.id')
+      .select('task.task_id')
       .getMany();
 
     let maxNumber = 0;
     existingTasks.forEach((t) => {
-      const parts = t.id.split('-');
+      const parts = t.task_id.split('-');
       if (parts.length === 2) {
         const num = parseInt(parts[1], 10);
         if (!isNaN(num) && num > maxNumber) {
@@ -201,7 +201,7 @@ export class TaskService {
 
     const task = this.taskRepository.create({
       ...payload,
-      id: nextIdValue,
+      task_id: nextIdValue,
       position,
       labels,
     });

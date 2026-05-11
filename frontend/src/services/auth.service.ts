@@ -65,6 +65,8 @@ export const useAuthService = () => {
       } else {
         toast.error(msg);
       }
+
+      window.location.href= '/login'
     },
   });
 

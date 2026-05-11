@@ -331,13 +331,15 @@ export class ProjectService {
     return `This action removes a #${id} project`;
   }
 
-  checkRole(userId: string, projectId: string) {
-    return this.projectMemberRepository
+  async checkRole(userId: string, projectId: string) {
+    const res = await this.projectMemberRepository
       .createQueryBuilder('member')
       .where('member.project_id = :projectId', { projectId })
       .andWhere('member.user_id = :userId', { userId })
       .andWhere('member.status = :status', { status: 'Active' })
       .getOne();
+
+    return res;
   }
 
   async findAllByUser(userId: string) {

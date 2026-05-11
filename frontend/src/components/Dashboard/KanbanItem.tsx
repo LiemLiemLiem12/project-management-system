@@ -64,7 +64,7 @@ const KanbanItem = ({ task, index }: KanbanItemProps) => {
   const avatarUrl = (assignee as any)?.avatar || (assignee as any)?.avatar_url;
 
   // 🚀 Sửa lỗi slice(0,6) cắn mất số 0
-  const displayTaskId = task.taskCode || task.id;
+  const displayTaskId = task.task_id || task.id;
 
   return (
     <>
@@ -146,8 +146,11 @@ const KanbanItem = ({ task, index }: KanbanItemProps) => {
                 {task.labels.map((label) => (
                   <span
                     key={label.id}
-                    className="text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded-sm"
-                    style={{ backgroundColor: label.color_code }}
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm border"
+                    style={{
+                      color: label.color_code,
+                      borderColor: label.color_code,
+                    }}
                   >
                     {label.name}
                   </span>

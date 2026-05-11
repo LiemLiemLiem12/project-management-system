@@ -36,6 +36,7 @@ export interface GroupTask {
 
 export interface TaskBase {
   id: string;
+  task_id: string;
   parent_id: string | null;
   parent: Task;
   title: string;

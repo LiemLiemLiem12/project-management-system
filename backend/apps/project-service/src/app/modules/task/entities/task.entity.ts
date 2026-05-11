@@ -15,8 +15,11 @@ import { Checklist } from '../../checklist/entities/checklist.entity';
 
 @Entity('tasks')
 export class Task {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  @Column({ type: 'text' })
+  task_id!: string;
 
   @Column({ nullable: true })
   parent_id!: string;

@@ -50,9 +50,9 @@ import { ChecklistModule } from '../checklist/checklist.module';
         transport: Transport.RMQ,
         options: {
           urls: [process.env.RABBIT_MQ || 'amqp://guest:guest@localhost:5672'],
-          queue: 'notification_queue',
+          queue: process.env.NOTIFICATION_QUEUE_NAME || 'NOTIFICATION_QUEUE',
           queueOptions: {
-            durable: false,
+            durable: true,
           },
         },
       },

@@ -69,7 +69,7 @@ function AcceptInviteContent() {
 
           // Đợi 2 giây rồi chuyển về dashboard
           setTimeout(() => {
-            router.push("/dashboard");
+            router.push("/for-you");
           }, 2000);
         } else {
           setStatus("error");

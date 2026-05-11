@@ -120,6 +120,7 @@ const ProjectMembersDropdown = ({ projectId }: { projectId: string }) => {
                 src={member.avatar_url}
                 alt={member.full_name || "User"}
                 className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
               />
             ) : member.full_name ? (
               member.full_name.charAt(0).toUpperCase()

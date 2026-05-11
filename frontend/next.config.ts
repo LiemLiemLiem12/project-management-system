@@ -12,6 +12,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        // Dùng /** để cho phép tất cả các đường dẫn ảnh phía sau tên miền này
+        pathname: "/**",
+      },
       // Bạn có thể thêm các hostname khác của Facebook/Meta tại đây
       {
         protocol: "https",

@@ -28,6 +28,9 @@ export class CommentService {
 
     @Optional()
     private readonly commentGateway: CommentGateway,
+
+    @Inject('STORAGE_PORT') private readonly PORT: number,
+    @Inject('STORAGE_HOST') private readonly STORAGE_HOST: string,
   ) {}
 
   private send(pattern: string, data: any) {
@@ -201,7 +204,6 @@ export class CommentService {
   async uploadFiles(
     files: Express.Multer.File,
   ): Promise<CreateCommentMediaDto[]> {
-    const STORAGE_PORT = this.configService.get<string>('STORAGE_PORT');
     const formData = new FormData();
 
     if (files && files.length > 0) {
@@ -216,7 +218,7 @@ export class CommentService {
     try {
       const response = await firstValueFrom(
         this.httpService.post(
-          `http://localhost:${STORAGE_PORT}/comments/upload`,
+          `http://${this.STORAGE_HOST}:${this.PORT}/comments/upload`,
           formData,
           {
             headers: formData.getHeaders(),

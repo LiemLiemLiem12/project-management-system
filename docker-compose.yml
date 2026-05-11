@@ -37,7 +37,7 @@ services:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./script/init-databases.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test:
         [
@@ -326,9 +326,9 @@ services:
       PROJECT_SERVICE_NAME: ${PROJECT_SERVICE_NAME:-PROJECT_SERVICE}
       PROJECT_QUEUE_NAME: ${PROJECT_QUEUE_NAME:-PROJECT_QUEUE}
       NOTIFICATION_SERVICE_NAME: ${NOTIFICATION_SERVICE_NAME:-NOTIFICATION_SERVICE}
-      NOTIFICATION_QUEUE_NAME: ${NOTIFICATION_QUEUE_NAME:-notification_queue}
+      NOTIFICATION_QUEUE_NAME: ${NOTIFICATION_QUEUE_NAME:-NOTIFICATION_QUEUE}
       STORAGE_PORT: 4001
-      STORAGE_HOST: storage-service
+      STORAGE_HOST: ${STORAGE_HOST:-storage-service}
       JWT_SECRET: ${JWT_SECRET:-14ee39918ee725677f2166d9de571d682024edd6a883a7d61e30ff65e5a7e379}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-3600s}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4001}

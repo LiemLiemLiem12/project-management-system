@@ -16,6 +16,7 @@ import { HttpModule } from '@nestjs/axios';
 import { CommentGateway } from './gateways/comment.gateway';
 import { AuditController } from './controllers/audit.controller';
 import { AuditService } from './services/audit.service';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -87,6 +88,23 @@ import { AuditService } from './services/audit.service';
     CommentService,
     CommentGateway,
     AuditService,
+    {
+      provide: 'STORAGE_PORT',
+      useFactory: (configService: ConfigService) => {
+        return configService.get<number>('STORAGE_PORT') || 4001;
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: 'STORAGE_HOST',
+      useFactory: (configService: ConfigService) => {
+        if (configService.get<string>('NODE_ENV') === 'production') {
+          return configService.get<string>('STORAGE_HOST') || 'storage-service';
+        }
+        return 'localhost';
+      },
+      inject: [ConfigService],
+    },
   ],
 })
 export class ProjectModule {}
