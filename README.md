@@ -1,5 +1,6 @@
 # Popket - Project Management Platform
 Demo clip: https://drive.google.com/file/d/1YF3Yxb_l2IJx7fWKxQBhV3NJoeO58Pe6/view?usp=drive_link
+
 Popket là một nền tảng quản lý dự án mạnh mẽ, giúp các nhóm làm việc (teams) lên kế hoạch, phân chia công việc (task management), theo dõi tiến độ và cộng tác một cách hiệu quả. Được xây dựng dựa trên kiến trúc Microservices hiện đại, Popket đảm bảo hiệu suất cao, khả năng mở rộng tốt và tính khả dụng cao cho doanh nghiệp.
 
 ## ✨ Tính năng chính (Dự kiến)
