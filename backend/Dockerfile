@@ -21,7 +21,7 @@ ENV PORT=3000
 
 COPY --from=builder /app/apps/${APP_NAME}/dist/package*.json .
 
-RUN npm install --omit=dev
+RUN npm install --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/apps/${APP_NAME}/dist ./dist
 

@@ -58,15 +58,12 @@ export const useAuthService = () => {
       setUser(user);
     },
     onError: (error: any) => {
-      const msg = "Session has expired";
-
-      if (Array.isArray(msg)) {
-        toast.error(msg[0]);
-      } else {
-        toast.error(msg);
-      }
-
-      window.location.href= '/login'
+      // const msg = "Session has expired";
+      // if (Array.isArray(msg)) {
+      //   toast.error(msg[0]);
+      // } else {
+      //   toast.error(msg);
+      // }
     },
   });
 
