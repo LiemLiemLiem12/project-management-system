@@ -1,4 +1,5 @@
 # Popket - Project Management Platform
+Demo clip: https://drive.google.com/file/d/1YF3Yxb_l2IJx7fWKxQBhV3NJoeO58Pe6/view?usp=drive_link
 
 Popket là một nền tảng quản lý dự án mạnh mẽ, giúp các nhóm làm việc (teams) lên kế hoạch, phân chia công việc (task management), theo dõi tiến độ và cộng tác một cách hiệu quả. Được xây dựng dựa trên kiến trúc Microservices hiện đại, Popket đảm bảo hiệu suất cao, khả năng mở rộng tốt và tính khả dụng cao cho doanh nghiệp.
 
@@ -85,7 +86,13 @@ copy .env.example .env
 
 **Lưu ý:** Mở file `.env` vừa tạo và điền/chỉnh sửa các thông số (như mật khẩu DB, API keys...) nếu cần thiết.
 
-### Bước 3: Khởi động hệ thống với Docker Compose
+### Bước 3: Docker Build
+
+```bash
+docker compose build
+```
+
+### Bước 4: Khởi động hệ thống với Docker Compose
 
 Popket sử dụng Docker Compose để khởi chạy toàn bộ các services (Next.js, NestJS, PostgreSQL, Redis, RabbitMQ...) chỉ bằng một lệnh duy nhất.
 
@@ -101,7 +108,7 @@ Sau khi lệnh chạy xong, bạn có thể kiểm tra trạng thái các contai
 docker compose ps
 ```
 
-### Bước 4: Truy cập ứng dụng
+### Bước 5: Truy cập ứng dụng
 
 Sau khi các container khởi động thành công:
 
