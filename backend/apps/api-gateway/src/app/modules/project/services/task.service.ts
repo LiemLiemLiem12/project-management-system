@@ -9,7 +9,7 @@ import FormData from 'form-data';
 @Injectable()
 export class TaskService {
   constructor(
-    @Inject('AUDIT_SERVICE')
+    @Inject(process.env.AUDIT_SERVICE_NAME || 'AUDIT_SERVICE')
     private readonly auditClient: ClientProxy,
 
     @Inject(process.env.PROJECT_SERVICE_NAME || 'PROJECT_SERVICE')
@@ -18,6 +18,9 @@ export class TaskService {
     private readonly httpService: HttpService,
 
     private readonly configService: ConfigService,
+
+    @Inject('STORAGE_PORT') private readonly PORT: number,
+    @Inject('STORAGE_HOST') private readonly STORAGE_HOST: string,
   ) {}
 
   private async send<T>(pattern: string, payload: any): Promise<T> {
@@ -29,7 +32,6 @@ export class TaskService {
   }
 
   async uploadMedias(files: Express.Multer.File) {
-    const STORAGE_PORT = this.configService.get<string>('STORAGE_PORT');
     const formData = new FormData();
 
     if (files && files.length > 0) {
@@ -43,7 +45,7 @@ export class TaskService {
     try {
       const response = await firstValueFrom(
         this.httpService.post(
-          `http://localhost:${STORAGE_PORT}/tasks/upload`,
+          `http://${this.STORAGE_HOST}:${this.PORT}/tasks/upload`,
           formData,
           {
             headers: formData.getHeaders(),
@@ -94,7 +96,7 @@ export class TaskService {
   // ── Task ────────────────────────────────────────────────────────────────────
 
   async findManyTask(projectId: string): Promise<ProjectTasksResponse> {
-    return this.send('task.get-many', projectId);
+    return this.send('task.get-many', { projectId });
   }
 
   findTask(projectId: string, taskId: string) {

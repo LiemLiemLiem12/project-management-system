@@ -10,6 +10,7 @@ export interface Label {
 
 export interface Task {
   id: string;
+  task_id: string;
   project_id: string;
   group_task_id: string;
   parent_id?: string;

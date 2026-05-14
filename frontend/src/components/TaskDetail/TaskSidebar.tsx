@@ -313,10 +313,9 @@ export default function TaskSidebar() {
                       <>
                         <div className="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] relative overflow-hidden">
                           {assignee.avatarUrl ? (
-                            <Image
+                            <img
                               src={assignee.avatarUrl}
                               alt={assignee.fullName || "Avatar"}
-                              fill
                               className="object-cover" // Giúp ảnh không bị méo, tự cắt trung tâm
                             />
                           ) : (
@@ -391,10 +390,9 @@ export default function TaskSidebar() {
                         <div className="flex items-center gap-2.5">
                           <div className="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] relative overflow-hidden">
                             {user.avatar_url ? (
-                              <Image
+                              <img
                                 src={user.avatar_url}
                                 alt={user.full_name || "Avatar"}
-                                fill
                                 className="object-cover"
                               />
                             ) : (
@@ -850,10 +848,10 @@ export default function TaskSidebar() {
             ) : (
               <>
                 <div className="flex relative overflow-hidden h-6 w-6 items-center justify-center rounded-full bg-teal-600 text-[10px] text-white">
-                  <Image
-                    fill
+                  <img
                     src={createdUser?.avatarUrl}
                     alt={createdUser?.fullName}
+                    referrerPolicy="no-referrer"
                   />
                 </div>
                 <span className="text-slate-900">{createdUser?.fullName}</span>

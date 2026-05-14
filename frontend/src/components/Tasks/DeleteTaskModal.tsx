@@ -49,7 +49,7 @@ export default function DeleteTaskModal({
               </svg>
             </div>
             <h2 className="text-base font-semibold text-gray-900">
-              Delete or archive {taskCode}?
+              Delete {taskCode}?
             </h2>
           </div>
           <button
@@ -69,10 +69,10 @@ export default function DeleteTaskModal({
 
         {/* Body */}
         <p className="text-sm text-gray-600 leading-relaxed mb-5">
-          You can choose to delete or archive this work item and all its
-          subtasks. Deleting is irreversible. It permanently removes the work
-          item, subtasks, comments and attachments. To keep subtasks move them
-          to a different parent.
+          You can choose to delete this work item and all its subtasks. Deleting
+          is irreversible. It permanently removes the work item, subtasks,
+          comments and attachments. To keep subtasks move them to a different
+          parent.
         </p>
 
         {/* Input */}
@@ -93,12 +93,6 @@ export default function DeleteTaskModal({
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-2">
-          <button
-            onClick={onArchive}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            Archive
-          </button>
           <button
             onClick={canDelete ? onConfirm : undefined}
             disabled={!canDelete}

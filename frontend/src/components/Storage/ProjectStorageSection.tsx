@@ -43,11 +43,7 @@ export default function ProjectStorageSection({
     isLoadingExternal !== undefined ? isLoadingExternal : isLoadingFetched;
 
   // Expose refetch for mutations (only when fetching from project)
-  if (
-    shouldFetchData &&
-    typeof window !== "undefined" &&
-    !window.__storageRefetch
-  ) {
+  if (shouldFetchData && typeof window !== "undefined") {
     (window as any).__storageRefetch = refetch;
   }
 

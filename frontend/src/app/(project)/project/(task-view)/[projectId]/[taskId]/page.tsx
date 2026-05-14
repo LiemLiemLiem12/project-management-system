@@ -42,7 +42,7 @@ export default function TaskDetailPage() {
         <span>/</span>
 
         <a className="text-primary hover:text-blue-600" href="">
-          {data?.id || "Task Title"}
+          {data?.task_id || "Task Title"}
         </a>
       </div>
 

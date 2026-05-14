@@ -57,6 +57,7 @@ export class StorageController {
       fileSize: 0,
       uploadedBy: user.userId,
     };
+
     return this.storageService.createFolder(payload);
   }
 

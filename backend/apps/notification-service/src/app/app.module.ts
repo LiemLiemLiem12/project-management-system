@@ -25,6 +25,7 @@ import { AppService } from './app.service';
       entities: [Notification],
       synchronize: true,
       autoLoadEntities: true,
+      timezone: 'Z',
     }),
   ],
   controllers: [AppController],

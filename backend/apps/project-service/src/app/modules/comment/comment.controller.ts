@@ -12,8 +12,11 @@ export class CommentController {
   }
 
   @MessagePattern('comment.findAllByTask')
-  findAllByTask(@Payload() payload: { taskId: string }) {
-    return this.commentService.findAllByTask(payload.taskId);
+  findAllByTask(@Payload() payload: { taskId: string; projectId: string }) {
+    return this.commentService.findAllByTaskProject(
+      payload.taskId,
+      payload.projectId,
+    );
   }
 
   @MessagePattern('comment.update')

@@ -1,0 +1,420 @@
+version: "3.8"
+
+services:
+  # ========================================
+  # INFRASTRUCTURE SERVICES
+  # ========================================
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: pms-rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  mysql:
+    image: mysql:8.0
+    container_name: pms-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-root}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  postgres:
+    image: ankane/pgvector
+    container_name: pms-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+      POSTGRES_DB: ${POSTGRES_DB:-root}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-root}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    container_name: pms-redis
+    restart: always
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  # ========================================
+  # BACKEND MICROSERVICES
+  # ========================================
+
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: auth-service
+    container_name: pms-auth-service
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      RABBIT_MQ: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      QUEUE_NAME: ${AUTH_QUEUE_NAME:-AUTH_QUEUE}
+      DATABASE_HOST: mysql
+      DATABASE_PORT: 3306
+      DATABASE_USER: ${MYSQL_ROOT_PASSWORD:-root}
+      DATABASE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      DATABASE_NAME: authdb
+      JWT_SECRET: ${JWT_SECRET:-14ee39918ee725677f2166d9de571d682024edd6a883a7d61e30ff65e5a7e379}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-14ee39918ee725677f2166d9de571d682024edd6a883a7d61e30ff65e5a7e379}
+      RESET_PASSWORD_SECRET: ${RESET_PASSWORD_SECRET:-7fd80ece4ac075736bf592fead3bd97b17e3534f8e16bbe7653ffc0788800234}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      SIGN_UP_VERIFY_SECRET: ${SIGN_UP_VERIFY_SECRET:-14ee39918ee725677f2166d9de571d682024edd6a883a7d61e30ff65e5a7e379}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      TTL: ${REDIS_TTL:-120}
+      MAX: ${REDIS_MAX:-100}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('healthy')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - backend
+
+  audit-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: audit-service
+    container_name: pms-audit-service
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      RABBIT_MQ: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      QUEUE_NAME: ${AUDIT_QUEUE_NAME:-AUDIT_QUEUE}
+      DATABASE_HOST: mysql
+      DATABASE_PORT: 3306
+      DATABASE_USER: ${MYSQL_ROOT_PASSWORD:-root}
+      DATABASE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      DATABASE_NAME: auditdb
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('healthy')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - backend
+
+  notification-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: notification-service
+    container_name: pms-notification-service
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      RABBIT_MQ: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      QUEUE_NAME: ${NOTIFICATION_QUEUE_NAME:-notification_queue}
+      DATABASE_HOST: mysql
+      DATABASE_PORT: 3306
+      DATABASE_USER: ${MYSQL_ROOT_PASSWORD:-root}
+      DATABASE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      DATABASE_NAME: notificationdb
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('healthy')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - backend
+
+  project-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: project-service
+    container_name: pms-project-service
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      RABBIT_MQ: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      QUEUE_NAME: ${PROJECT_QUEUE_NAME:-PROJECT_QUEUE}
+      AUTH_SERVICE_NAME: ${AUTH_SERVICE_NAME:-AUTH_SERVICE}
+      AUTH_QUEUE_NAME: ${AUTH_QUEUE_NAME:-AUTH_QUEUE}
+      AUDIT_SERVICE_NAME: ${AUDIT_SERVICE_NAME:-AUDIT_SERVICE}
+      AUDIT_QUEUE_NAME: ${AUDIT_QUEUE_NAME:-AUDIT_QUEUE}
+      STORAGE_HOST: http://storage-service:4001
+      DATABASE_HOST: mysql
+      DATABASE_PORT: 3306
+      DATABASE_USER: ${MYSQL_ROOT_PASSWORD:-root}
+      DATABASE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      DATABASE_NAME: projectdb
+      PG_ID_NAME: ${PG_ID_NAME:-postgres_vector_db}
+      PG_HOST: postgres
+      PG_USER: ${POSTGRES_USER:-admin}
+      PG_PASSWORD: ${POSTGRES_PASSWORD:-root}
+      PG_NAME: ${POSTGRES_DB:-root}
+      PG_PORT: 5432
+      AI_API_KEY: ${AI_API_KEY:-}
+      CHAT_MODEL: ${CHAT_MODEL:-gemini-2.5-flash}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-gemini-embedding-2}
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('healthy')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - backend
+
+  storage-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: storage-service
+    container_name: pms-storage-service
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      STORAGE_SERVICE_NAME: ${STORAGE_SERVICE_NAME:-STORAGE_SERVICE}
+      PORT: 4001
+      DATABASE_HOST: mysql
+      DATABASE_PORT: 3306
+      DATABASE_USER: ${MYSQL_ROOT_PASSWORD:-root}
+      DATABASE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      DATABASE_NAME: storagedb
+      CLD_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLD_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLD_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+    ports:
+      - "${STORAGE_SERVICE_PORT:-4001}:4001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:4001",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - backend
+
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: api-gateway
+    container_name: pms-api-gateway
+    restart: always
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      audit-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      project-service:
+        condition: service_healthy
+      storage-service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      API_GATEWAY_PORT: ${API_GATEWAY_PORT:-4000}
+      GLOBAL_PREFIX: ${GLOBAL_PREFIX:-api}
+      RABBIT_MQ: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      AUTH_SERVICE_NAME: ${AUTH_SERVICE_NAME:-AUTH_SERVICE}
+      AUTH_QUEUE_NAME: ${AUTH_QUEUE_NAME:-AUTH_QUEUE}
+      AUDIT_SERVICE_NAME: ${AUDIT_SERVICE_NAME:-AUDIT_SERVICE}
+      AUDIT_QUEUE_NAME: ${AUDIT_QUEUE_NAME:-AUDIT_QUEUE}
+      PROJECT_SERVICE_NAME: ${PROJECT_SERVICE_NAME:-PROJECT_SERVICE}
+      PROJECT_QUEUE_NAME: ${PROJECT_QUEUE_NAME:-PROJECT_QUEUE}
+      NOTIFICATION_SERVICE_NAME: ${NOTIFICATION_SERVICE_NAME:-NOTIFICATION_SERVICE}
+      NOTIFICATION_QUEUE_NAME: ${NOTIFICATION_QUEUE_NAME:-NOTIFICATION_QUEUE}
+      STORAGE_PORT: 4001
+      STORAGE_HOST: ${STORAGE_HOST:-storage-service}
+      JWT_SECRET: ${JWT_SECRET:-14ee39918ee725677f2166d9de571d682024edd6a883a7d61e30ff65e5a7e379}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-3600s}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4001}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_SECRET: ${GOOGLE_SECRET:-}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-http://localhost:4000/api/auth/google/callback}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-}
+      FACEBOOK_SECRET: ${FACEBOOK_SECRET:-}
+      FACEBOOK_CALLBACK_URL: ${FACEBOOK_CALLBACK_URL:-http://localhost:4000/api/auth/facebook/callback}
+    ports:
+      - "${API_GATEWAY_PORT:-4000}:4000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:4000/api/auth/health",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - backend
+      - frontend
+
+  # ========================================
+  # FRONTEND
+  # ========================================
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: pms-frontend
+    restart: always
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api
+      NEXT_PUBLIC_API_GATEWAY_URL: http://localhost:4000
+      NEXT_PUBLIC_FRONTEND: http://localhost:3000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "[http://127.0.0.1:3000](http://127.0.0.1:3000)",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    networks:
+      - frontend
+
+# ========================================
+# VOLUMES
+# ========================================
+volumes:
+  mysql_data:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+# ========================================
+# NETWORKS
+# ========================================
+networks:
+  backend:
+    driver: bridge
+  frontend:
+    driver: bridge

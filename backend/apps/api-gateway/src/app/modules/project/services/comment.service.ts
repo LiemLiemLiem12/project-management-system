@@ -28,6 +28,9 @@ export class CommentService {
 
     @Optional()
     private readonly commentGateway: CommentGateway,
+
+    @Inject('STORAGE_PORT') private readonly PORT: number,
+    @Inject('STORAGE_HOST') private readonly STORAGE_HOST: string,
   ) {}
 
   private send(pattern: string, data: any) {
@@ -44,6 +47,7 @@ export class CommentService {
           id: result.id,
           task_id: result.task_id,
           user_id: result.user_id,
+          project_id: result.project_id,
           content: result.content,
           parent_comment_id: result.parent_comment_id,
           medias: result.medias,
@@ -88,9 +92,9 @@ export class CommentService {
     }
   }
 
-  async getCommentsByTask(taskId: string) {
+  async getCommentsByTask(taskId: string, projectId: string) {
     const comments: any[] = await firstValueFrom(
-      this.send('comment.findAllByTask', { taskId }),
+      this.send('comment.findAllByTask', { taskId, projectId }),
     );
 
     if (!comments || comments.length === 0) {
@@ -200,7 +204,6 @@ export class CommentService {
   async uploadFiles(
     files: Express.Multer.File,
   ): Promise<CreateCommentMediaDto[]> {
-    const STORAGE_PORT = this.configService.get<string>('STORAGE_PORT');
     const formData = new FormData();
 
     if (files && files.length > 0) {
@@ -215,7 +218,7 @@ export class CommentService {
     try {
       const response = await firstValueFrom(
         this.httpService.post(
-          `http://localhost:${STORAGE_PORT}/comments/upload`,
+          `http://${this.STORAGE_HOST}:${this.PORT}/comments/upload`,
           formData,
           {
             headers: formData.getHeaders(),

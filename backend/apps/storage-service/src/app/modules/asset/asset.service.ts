@@ -296,7 +296,12 @@ export class AssetService {
   }
 
   // Get recent assets for a project (ordered by createdAt DESC)
-  async getRecentAssetsByProject(projectId: string, limit: number = 10) {
+  // Get recent assets for a project (ordered by createdAt DESC)
+  async getRecentAssetsByProject(
+    projectId: string,
+    userId: string,
+    limit: number = 10,
+  ) {
     const assets = await this.assetRepo.find({
       where: {
         projectId: projectId,
@@ -311,10 +316,23 @@ export class AssetService {
 
     // Apply permission filtering
     return assets.map((asset) => {
-      return {
-        ...asset,
-        canView: true, // For recent assets, we show them as viewable
-      };
+      const hasAccess = asset.permissions.some(
+        (p) =>
+          p.userId === userId &&
+          [PERMISSION.READ].includes(p.permission as PERMISSION),
+      );
+
+      if (hasAccess) {
+        return { ...asset, canView: true };
+      } else {
+        return {
+          ...asset,
+          fileSize: 0,
+          fileType: null,
+          storageUrl: null,
+          canView: false,
+        };
+      }
     });
   }
 }

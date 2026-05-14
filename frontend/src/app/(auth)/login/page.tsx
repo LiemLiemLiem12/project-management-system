@@ -8,14 +8,14 @@ import { useContext, useState } from "react";
 import { useAuthService } from "@/services/auth.service";
 import { Loader } from "lucide-react";
 import IconLoader from "@/components/IconLoader";
-import { MyContext } from "@/contexts/MyContext";
+import { useMyContext } from "@/contexts/MyContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const { login, loginStatus } = useAuthService();
-  const { persist, setPersist } = useContext(MyContext);
+  const { persist, setPersist } = useMyContext();
 
   const handleLogin = async (email: string, password: string) => {
     if (loginStatus) return;

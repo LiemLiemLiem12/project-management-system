@@ -265,7 +265,7 @@ export class AuthService {
   async refreshToken(refreshToken: string) {
     try {
       const payload = this.JwtService.verify(refreshToken, {
-        secret: process.env.REFRESH_SECRET,
+        secret: process.env.JWT_REFRESH_SECRET,
       });
 
       const cachedToken = await this.cacheManager.get<string>(

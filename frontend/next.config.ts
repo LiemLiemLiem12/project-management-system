@@ -4,12 +4,20 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
 
+  output: "standalone",
+
   images: {
     remotePatterns: [
       {
         protocol: "https",
         hostname: "scontent.fsgn5-12.fna.fbcdn.net",
         port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        // Dùng /** để cho phép tất cả các đường dẫn ảnh phía sau tên miền này
         pathname: "/**",
       },
       // Bạn có thể thêm các hostname khác của Facebook/Meta tại đây

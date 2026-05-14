@@ -12,7 +12,17 @@ import { ConfigService } from '@nestjs/config';
     {
       provide: 'STORAGE_PORT',
       useFactory: (configService: ConfigService) => {
-        return configService.get<number>('STORAGE_PORT') || 3000;
+        return configService.get<number>('STORAGE_PORT') || 4001;
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: 'STORAGE_HOST',
+      useFactory: (configService: ConfigService) => {
+        if (configService.get<string>('NODE_ENV') === 'production') {
+          return configService.get<string>('STORAGE_HOST') || 'storage-service';
+        }
+        return 'localhost';
       },
       inject: [ConfigService],
     },

@@ -11,8 +11,9 @@ export class StorageService {
   constructor(
     private readonly httpService: HttpService,
     @Inject('STORAGE_PORT') private readonly PORT: number,
+    @Inject('STORAGE_HOST') private readonly STORAGE_HOST: string,
   ) {
-    this.baseUrl = `http://localhost:${this.PORT}/assets`;
+    this.baseUrl = `http://${this.STORAGE_HOST}:${this.PORT}/assets`;
   }
 
   private async request(method: string, url: string, data?: any) {

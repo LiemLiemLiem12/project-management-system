@@ -112,7 +112,7 @@ export default function ActivityHistory() {
   // Hàm tiện ích để lấy tên user từ ID
   const getUserName = (id: any) => {
     if (id === "None") return id;
-    const user = users?.find((u) => u.id === id);
+    const user = users?.find((u) => u?.id === id);
     return user?.fullName || formatValue(id); // Nếu không tìm thấy user, hiển thị ID gốc
   };
 
@@ -130,7 +130,7 @@ export default function ActivityHistory() {
         const diffs = getDiffs(item.old_value, item.new_value);
 
         // Thông tin người thực hiện hành động
-        const authorInfo = users?.find((u) => u.id === item.user_id) || {
+        const authorInfo = users?.find((u) => u?.id === item.user_id) || {
           fullName: item.user_id,
         };
 

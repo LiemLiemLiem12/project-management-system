@@ -42,6 +42,11 @@ export class AuthController {
     private readonly authClient: ClientProxy,
   ) {}
 
+  @Get('health')
+  async checkHealth() {
+    return 'Done';
+  }
+
   @Post('login')
   @UseGuards(LocalGuard)
   async login(@Request() req: any, @Body() body: LoginDto) {

@@ -14,6 +14,9 @@ export class CreateCommentDto {
   @IsNotEmpty()
   task_id!: string;
 
+  @IsNotEmpty()
+  project_id!: string;
+
   @IsUUID()
   @IsNotEmpty()
   user_id!: string;

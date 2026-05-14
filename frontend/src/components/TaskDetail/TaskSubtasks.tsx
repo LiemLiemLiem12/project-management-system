@@ -164,14 +164,14 @@ export default function TaskSubtasks({ canManage }: { canManage: boolean }) {
                       <div className="px-3 pb-1 text-xs font-bold text-slate-500">
                         Matching work items
                       </div>
-                      {matchedTasks.map((task) => (
+                      {matchedTasks.map((task: any) => (
                         <div
                           key={task.id}
                           onClick={() => handleAddExistingSubtask(task.id)}
                           className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 cursor-pointer"
                         >
                           <Copy size={14} className="text-blue-500" />
-                          <span className="text-slate-500">{task.id}</span>
+                          <span className="text-slate-500">{task.task_id}</span>
                           <span className="text-slate-900">{task.title}</span>
                         </div>
                       ))}
@@ -219,7 +219,7 @@ export default function TaskSubtasks({ canManage }: { canManage: boolean }) {
             </thead>
 
             <tbody className="divide-x divide-y divide-gray-200 border-b border-gray-200">
-              {subtasks.map((task: TaskBase, index) => (
+              {subtasks.map((task: TaskBase, index: number) => (
                 <tr
                   key={index}
                   className="bg-white hover:bg-slate-50 transition-colors group cursor-pointer"
@@ -228,7 +228,7 @@ export default function TaskSubtasks({ canManage }: { canManage: boolean }) {
                     <div className="flex items-center gap-2">
                       <Copy size={14} className="text-blue-500 flex-shrink-0" />
                       <span className="font-medium text-slate-500 whitespace-nowrap">
-                        {task.id}
+                        {task.task_id}
                       </span>
                       <a
                         className="text-slate-900 truncate max-w-[200px] hover:text-blue-500 hover:underline lg:max-w-md"

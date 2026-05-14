@@ -22,8 +22,8 @@ import { ChecklistModule } from '../checklist/checklist.module';
         name: process.env.AUDIT_SERVICE_NAME || 'AUDIT_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
-          queue: process.env.AUDIT_QUEUE || 'AUDIT_QUEUE',
+          urls: [process.env.RABBIT_MQ || 'amqp://guest:guest@localhost:5672'],
+          queue: process.env.AUDIT_QUEUE_NAME || 'AUDIT_QUEUE',
           queueOptions: {
             durable: true,
           },
@@ -49,10 +49,10 @@ import { ChecklistModule } from '../checklist/checklist.module';
         name: 'NOTIFICATION_SERVICE_CLIENT',
         transport: Transport.RMQ,
         options: {
-          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
-          queue: 'notification_queue',
+          urls: [process.env.RABBIT_MQ || 'amqp://guest:guest@localhost:5672'],
+          queue: process.env.NOTIFICATION_QUEUE_NAME || 'NOTIFICATION_QUEUE',
           queueOptions: {
-            durable: false,
+            durable: true,
           },
         },
       },
