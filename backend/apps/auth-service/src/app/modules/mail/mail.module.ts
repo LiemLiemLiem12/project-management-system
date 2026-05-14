@@ -13,8 +13,8 @@ import { MailController } from './mail.controller';
         host: 'smtp.gmail.com',
         secure: false,
         auth: {
-          user: process.env.MAIL_USER || 'tranthanhliemvvt@gmail.com',
-          pass: process.env.MAIL_PASSWORD || 'qhuzyzqevidyvfyw',
+          user: process.env.MAIL_USER || 'your_email_here',
+          pass: process.env.MAIL_PASSWORD || 'your_app_password_here',
         },
       },
       defaults: {
